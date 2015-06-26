@@ -69,6 +69,8 @@ typedef struct spec_array_entry
   double sum_speciation_edges_subtree;
   double coalescent_sum_subtree;
   double score;
+  int taken_left_index;
+  int taken_right_index;
 } spec_entry;
 
 typedef struct node_information_ptpmulti
