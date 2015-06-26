@@ -64,6 +64,26 @@ typedef struct rtree_noderec
   void * data;
 } rtree_t;
 
+typedef struct spec_array_entry
+{
+  double sum_speciation_edges_subtree;
+  double coalescent_sum_subtree;
+  double score;
+} spec_entry;
+
+typedef struct node_information_ptpmulti
+{
+  int num_edges_subtree;
+  double sum_edges_subtree;
+  double coalescent;
+  spec_entry * spec_array;
+
+  // additional data
+  int num_known_speciation_edges;
+  double sum_known_speciation_edges;
+
+} node_information;
+
 /* macros */
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -129,3 +149,7 @@ rtree_t * yy_parse_rtree(const char * filename);
 
 unsigned long arch_get_memused();
 unsigned long arch_get_memtotal();
+
+/* functions in ptp_multi.c */
+
+void ptp_multi_heuristic(rtree_t * rtree);

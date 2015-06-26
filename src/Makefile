@@ -36,7 +36,7 @@ PROG=delimit
 
 all: $(PROG)
 
-OBJS=util.o delimit.o newick.o lex.o arch.o rtree.o
+OBJS=util.o delimit.o newick.o lex.o arch.o rtree.o ptp_multi.o
 
 $(PROG): $(OBJS)
 	$(CC) -Wall $(LINKFLAGS) $+ -o $@ $(LIBS)

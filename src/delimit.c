@@ -177,6 +177,7 @@ void cmd_ptpmulti()
 
 
   /* TODO: Sarah's heuristic function should be called here */
+  ptp_multi_heuristic(rtree);
 
   if (opt_treeshow)
     show_ascii_rtree(rtree);

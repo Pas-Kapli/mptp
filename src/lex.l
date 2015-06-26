@@ -67,7 +67,7 @@ static char * append(size_t * current_len, const char * s2, size_t append_len)
 \,                                           return COMMA;
 \"                                           {string_length =0; BEGIN(quot);}
 \'                                           {string_length =0; BEGIN(apos);}
-[a-zA-Z_][a-zA-Z_0-9]*                       {yylval.s = xstrndup(yytext, yyleng); return STRING;}
+[a-zA-Z_0-9]+                                {yylval.s = xstrndup(yytext, yyleng); return STRING;}
 [\+|\-]?[0-9]+                               {yylval.d = xstrndup(yytext, yyleng); return NUMBER;}
 [\+|\-]?[0-9]+\.[0-9]+([e|E][\+|\-]?[0-9]+)? {yylval.d = xstrndup(yytext, yyleng); return NUMBER;}
 [ \t\n\r]                                    ;
