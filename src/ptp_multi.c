@@ -181,19 +181,16 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda)
   node_information* data = (node_information*) (tree->data);
   spec_entry* spec_array_act = data->spec_array;
 
-  if (!tree->left && !tree->right) // leaf vertex
-  {
-    spec_array_act[0].coalescent_value = 0;
-    double combined_spec_sum = data->sum_known_speciation_edges;
-    int combined_spec_num = data->num_known_speciation_edges;
-    double speciation_value = compute_loglikelihood(combined_spec_num, combined_spec_sum);
-    spec_array_act[0].speciation_value = speciation_value;
-    spec_array_act[0].sum_speciation_edges_subtree = 0;
-    spec_array_act[0].score_multi = speciation_value;
-    spec_array_act[0].score_single = speciation_value;
-  }
+  spec_array_act[0].coalescent_value = data->coalescent;
+  double combined_spec_sum = data->sum_known_speciation_edges;
+  int combined_spec_num = data->num_known_speciation_edges;
+  double speciation_value = compute_loglikelihood(combined_spec_num, combined_spec_sum);
+  spec_array_act[0].speciation_value = speciation_value;
+  spec_array_act[0].sum_speciation_edges_subtree = 0;
+  spec_array_act[0].score_multi = data->coalescent + speciation_value;
+  spec_array_act[0].score_single = data->coalescent + speciation_value;
 
-  if (tree->left && tree->right)
+  if (tree->left && tree->right) // inner node with two children
   {
     node_information* data_left = (node_information*) (tree->left->data);
     node_information* data_right = (node_information*) (tree->right->data);
@@ -201,15 +198,6 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda)
       ((node_information*) (tree->left->data))->spec_array;
     spec_entry* spec_array_right =
       ((node_information*) (tree->right->data))->spec_array;
-
-    spec_array_act[0].coalescent_value = data->coalescent;
-    double combined_spec_sum = data->sum_known_speciation_edges;
-    int combined_spec_num = data->num_known_speciation_edges;
-    spec_array_act[0].sum_speciation_edges_subtree = 0;
-    double speciation_value = compute_loglikelihood(combined_spec_num, combined_spec_sum);
-    spec_array_act[0].speciation_value = speciation_value;
-    spec_array_act[0].score_multi = data->coalescent + speciation_value;
-    spec_array_act[0].score_single = data->coalescent + speciation_value;
 
     int i;
     for (i = 0; i <= data_left->num_edges_subtree; i+=2)
