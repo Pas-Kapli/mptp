@@ -23,7 +23,48 @@
 
 double compute_loglikelihood(int num, double sum)
 {
-  return num * log(num) - num - num * log(sum);
+  if (num == 0) {
+    return 0;
+  }
+  else
+  {
+    return num * log(num) - num - num * log(sum);
+  }
+}
+
+void print_spec_entry(spec_entry * entry)
+{
+  printf("{sum_speciation_edges_subtree: %f, coalescent_value: %f, "
+      "speciation_value: %f, score_multi: %f, score_single: %f, "
+      "taken_left_index: %d, taken_right_index: %d}\n",
+      entry->sum_speciation_edges_subtree, entry->coalescent_value,
+      entry->speciation_value, entry->score_multi, entry->score_single,
+      entry->taken_left_index, entry->taken_right_index);
+}
+
+void print_debug_information(rtree_t * tree)
+{
+  /*if (tree->left)
+  {
+    print_debug_information(tree->left);
+  }
+  if (tree->right)
+  {
+    print_debug_information(tree->right);
+  }*/
+  node_information* data = (node_information*) (tree->data);
+  printf("num_edges_subtree: %d, ", data->num_edges_subtree);
+  printf("sum_edges_subtree: %f, ", data->sum_edges_subtree);
+  printf("coalescent: %f, ", data->coalescent);
+  printf("num_known_speciation_edges: %d, ", data->num_known_speciation_edges);
+  printf("sum_known_speciation_edges: %f\n", data->sum_known_speciation_edges);
+  printf("spec_array: \n");
+  int i = 0;
+  for (i = 0; i < data->num_edges_subtree; i+=2) {
+    printf("%d: ", i);
+    print_spec_entry(&data->spec_array[i]);
+  }
+  printf("\n");
 }
 
 void init_tree_data(rtree_t * tree)
@@ -262,6 +303,9 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda)
   init_tree_data(tree);
   init_additional_tree_data(tree);
   multi_traversal(tree, multiple_lambda);
+
+  print_debug_information(tree);
+
   double max = 0;
   node_information* data = (node_information*) (tree->data);
   spec_entry* spec_array = data->spec_array;
