@@ -39,7 +39,6 @@ void rtree_destroy(rtree_t * root)
 
 static void rtree_error(rtree_t * tree, const char * s) 
 {
-  fprintf(stderr, "%s.\n", s);
 }
 
 %}

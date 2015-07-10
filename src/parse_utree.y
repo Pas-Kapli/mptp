@@ -70,7 +70,6 @@ void utree_destroy(utree_t * root)
 
 static void utree_error(utree_t * tree, const char * s) 
 {
-  fprintf(stderr, "%s.\n", s);
 }
 
 %}
