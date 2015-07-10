@@ -19,22 +19,28 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 %{
-#include "newick.h"
+#include "parse_rtree.h"
 #include "delimit.h"
 
 static size_t string_length = 0;
 
-static char * append(size_t * current_len, const char * s2, size_t append_len)
+static char * append(size_t * dstlen, const char * src, size_t srclen)
 {
-  yylval.s = (char *)xrealloc(yylval.s, sizeof(char) * (*current_len+append_len+1));
-  strncpy(&yylval.s[*current_len], s2, append_len);
-  yylval.s[*current_len + append_len]=0;
-  *current_len += append_len;
-  return yylval.s;
+  char * mem = (char *)realloc(rtree_lval.s, (*dstlen + srclen + 1));
+  if (!mem)
+  {
+    fatal("Unable to allocate enough memory.");
+  }
+  rtree_lval.s =  mem;
+  strncpy(&rtree_lval.s[*dstlen], src, srclen);
+  rtree_lval.s[*dstlen + srclen] = 0;
+  *dstlen += srclen;
+  return rtree_lval.s;
 }
 
 %}
 %option noyywrap
+%option prefix="rtree_"
 %option nounput
 %option noinput
 %s apos
@@ -57,7 +63,7 @@ static char * append(size_t * current_len, const char * s2, size_t append_len)
 \\n                                          append(&string_length, "\n", 1);
 \\t                                          append(&string_length, "\t", 1);
 \\\\                                         append(&string_length, "\\", 1);
-([^\"\'\\]|\n)+                              append(&string_length, yytext, yyleng);
+([^\"\'\\]|\n)+                              append(&string_length, rtree_text, rtree_leng);
 }
 
 \:                                           return COLON;
@@ -65,11 +71,11 @@ static char * append(size_t * current_len, const char * s2, size_t append_len)
 \)                                           return CPAR;
 \(                                           return OPAR;
 \,                                           return COMMA;
-\"                                           {string_length =0; BEGIN(quot);}
-\'                                           {string_length =0; BEGIN(apos);}
-[a-zA-Z_0-9]+                                {yylval.s = xstrndup(yytext, yyleng); return STRING;}
-[\+|\-]?[0-9]+                               {yylval.d = xstrndup(yytext, yyleng); return NUMBER;}
-[\+|\-]?[0-9]+\.[0-9]+([e|E][\+|\-]?[0-9]+)? {yylval.d = xstrndup(yytext, yyleng); return NUMBER;}
+\"                                           {string_length = 0; BEGIN(quot);}
+\'                                           {string_length = 0; BEGIN(apos);}
+[a-zA-Z_][a-zA-Z_0-9]*                       {rtree_lval.s = xstrndup(rtree_text, rtree_leng); return STRING;}
+[\+|\-]?[0-9]+                               {rtree_lval.d = xstrndup(rtree_text, rtree_leng); return NUMBER;}
+[\+|\-]?[0-9]+\.[0-9]+([e|E][\+|\-]?[0-9]+)? {rtree_lval.d = xstrndup(rtree_text, rtree_leng); return NUMBER;}
 [ \t\n\r]                                    ;
-.                                            {fprintf(stderr, "Syntax error (%c)\n", yytext[0]); exit(EXIT_FAILURE);}
+.                                            {fatal("Syntax error (%c)\n", rtree_text[0]);}
 %%

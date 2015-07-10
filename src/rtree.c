@@ -23,25 +23,15 @@
 
 static int indend_space = 4;
 
-rtree_t * yy_create_rtree()
+static void print_node_info(rtree_t * tree)
 {
-  rtree_t * t = xrealloc(0, sizeof(rtree_t));
-  memset(t, 0, sizeof(rtree_t));
-  return t;
+  printf (" %s", tree->label);
+  printf (" %f", tree->length);
+  printf("\n");
 }
 
-void yy_dealloc_rtree(rtree_t * tree)
-{
-  if (!tree) return;
-
-  free(tree->label);
-  yy_dealloc_rtree(tree->left);
-  yy_dealloc_rtree(tree->right);
-  free(tree);
-}
-
-static void print_tree_recurse(rtree_t * tree,
-                               int indend_level,
+static void print_tree_recurse(rtree_t * tree, 
+                               int indend_level, 
                                int * active_node_order)
 {
   int i,j;
@@ -76,44 +66,48 @@ static void print_tree_recurse(rtree_t * tree,
     printf ("-");
   if (tree->left || tree->right) printf("+");
 
-  printf (" %s:%f\n", tree->label, tree->length);
+  print_node_info(tree);
 
   if (active_node_order[indend_level-1] == 2) 
     active_node_order[indend_level-1] = 0;
 
   active_node_order[indend_level] = 1;
-  print_tree_recurse(tree->left, indend_level+1, active_node_order);
+  print_tree_recurse(tree->left,
+                     indend_level+1,
+                     active_node_order);
   active_node_order[indend_level] = 2;
-  print_tree_recurse(tree->right, indend_level+1, active_node_order);
+  print_tree_recurse(tree->right,
+                     indend_level+1,
+                     active_node_order);
 
 }
 
-int tree_indend_level(rtree_t * tree, int indend)
+static int tree_indend_level(rtree_t * tree, int indend)
 {
   if (!tree) return indend;
 
-  int a,b;
+  int a = tree_indend_level(tree->left,  indend+1);
+  int b = tree_indend_level(tree->right, indend+1);
 
-  a = tree_indend_level(tree->left, indend+1);
-  b = tree_indend_level(tree->right, indend+1);
-
-  return MAX(a,b);
+  return (a > b ? a : b);
 }
 
-void show_ascii_rtree(rtree_t * tree)
+void rtree_show_ascii(rtree_t * tree)
 {
+  
   int indend_max = tree_indend_level(tree,0);
+
   int * active_node_order = (int *)malloc((indend_max+1) * sizeof(int));
   active_node_order[0] = 1;
   active_node_order[1] = 1;
 
-  printf (" %s:%f\n", tree->label, tree->length);
-  print_tree_recurse(tree->left, 1, active_node_order);
+  print_node_info(tree);
+  print_tree_recurse(tree->left,  1, active_node_order);
   print_tree_recurse(tree->right, 1, active_node_order);
   free(active_node_order);
 }
 
-char * export_newick(rtree_t * root)
+static char * rtree_export_newick_recursive(rtree_t * root)
 {
   char * newick;
 
@@ -123,8 +117,8 @@ char * export_newick(rtree_t * root)
     asprintf(&newick, "%s:%f", root->label, root->length);
   else
   {
-    char * subtree1 = export_newick(root->left);
-    char * subtree2 = export_newick(root->right);
+    char * subtree1 = rtree_export_newick_recursive(root->left);
+    char * subtree2 = rtree_export_newick_recursive(root->right);
 
     asprintf(&newick, "(%s,%s)%s:%f", subtree1,
                                       subtree2,
@@ -135,4 +129,141 @@ char * export_newick(rtree_t * root)
   }
 
   return newick;
+}
+
+char * rtree_export_newick(rtree_t * root)
+{
+  char * newick;
+
+  if (!root) return NULL;
+
+  if (!(root->left) || !(root->right))
+    asprintf(&newick, "%s:%f", root->label, root->length);
+  else
+  {
+    char * subtree1 = rtree_export_newick_recursive(root->left);
+    char * subtree2 = rtree_export_newick_recursive(root->right);
+
+    asprintf(&newick, "(%s,%s)%s:%f;", subtree1,
+                                       subtree2,
+                                       root->label ? root->label : "",
+                                       root->length);
+    free(subtree1);
+    free(subtree2);
+  }
+
+  return newick;
+}
+
+static void rtree_traverse_recursive(rtree_t * node,
+                                     int (*cbtrav)(rtree_t *),
+                                     int * index,
+                                     rtree_t ** outbuffer)
+{
+  if (!node->left)
+  {
+    if (cbtrav(node))
+    {
+      outbuffer[*index] = node;
+      *index = *index + 1;
+    }
+    return;
+  }
+  if (!cbtrav(node))
+    return;
+  rtree_traverse_recursive(node->left, cbtrav, index, outbuffer);
+  rtree_traverse_recursive(node->right, cbtrav, index, outbuffer);
+
+  outbuffer[*index] = node;
+  *index = *index + 1;
+}
+
+int rtree_traverse(rtree_t * root,
+                   int (*cbtrav)(rtree_t *),
+                   rtree_t ** outbuffer)
+{
+  int index = 0;
+
+  if (!root->left) return -1;
+
+  /* we will traverse an unrooted tree in the following way
+      
+           root
+            /\
+           /  \
+        left   right
+
+     at each node the callback function is called to decide whether we
+     are going to traversing the subtree rooted at the specific node */
+
+  rtree_traverse_recursive(root, cbtrav, &index, outbuffer);
+  return index;
+}
+
+static void rtree_query_tipnodes_recursive(rtree_t * node,
+                                           rtree_t ** node_list,
+                                           int * index)
+{
+  if (!node) return;
+
+  if (!node->left)
+  {
+    node_list[*index] = node;
+    *index = *index + 1;
+    return;
+  }
+
+  rtree_query_tipnodes_recursive(node->left,  node_list, index);
+  rtree_query_tipnodes_recursive(node->right, node_list, index);
+}
+
+int rtree_query_tipnodes(rtree_t * root,
+                         rtree_t ** node_list)
+{
+  int index = 0;
+
+  if (!root) return 0;
+  if (!root->left)
+  {
+    node_list[index++] = root;
+    return index;
+  }
+
+  rtree_query_tipnodes_recursive(root->left,  node_list, &index);
+  rtree_query_tipnodes_recursive(root->right, node_list, &index);
+
+  return index;
+}
+
+static void rtree_query_innernodes_recursive(rtree_t * root,
+                                             rtree_t ** node_list,
+                                             int * index)
+{
+  if (!root) return;
+  if (!root->left) return;
+
+  /* postorder traversal */
+
+  rtree_query_innernodes_recursive(root->left,  node_list, index);
+  rtree_query_innernodes_recursive(root->right, node_list, index);
+
+  node_list[*index] = root;
+  *index = *index + 1;
+  return;
+}
+
+int rtree_query_innernodes(rtree_t * root,
+                           rtree_t ** node_list)
+{
+  int index = 0;
+
+  if (!root) return 0;
+  if (!root->left) return 0;
+
+  rtree_query_innernodes_recursive(root->left,  node_list, &index);
+  rtree_query_innernodes_recursive(root->right, node_list, &index);
+
+  node_list[index++] = root;
+
+  return index;
 }

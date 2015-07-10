@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2015 Tomas Flouri
+    Copyright (C) 2015 Tomas Flouri, Sarah Luttertop
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,9 @@ static char * progname;
 static char progheader[80];
 static char * cmdline;
 
+/* global error message buffer */
+char errmsg[200] = {0};
+
 /* number of mandatory options for the user to input */
 static const char mandatory_options_count = 2;
 static const char * mandatory_options_list = " --tree_file --output_file";
@@ -32,6 +35,7 @@ static const char * mandatory_options_list = " --tree_file --output_file";
 /* options */
 char * opt_treefile;
 char * opt_outfile;
+char * opt_outgroup;
 int opt_quiet;
 long opt_help;
 long opt_version;
@@ -50,6 +54,7 @@ static struct option long_options[] =
   {"output_file",        required_argument, 0, 0 },  /*  5 */
   {"ptp_multi",          no_argument,       0, 0 },  /*  6 */
   {"ptp_single",         no_argument,       0, 0 },  /*  7 */
+  {"outgroup",           required_argument, 0, 0 },  /*  8 */
   { 0, 0, 0, 0 }
 };
 
@@ -68,6 +73,7 @@ void args_init(int argc, char ** argv)
   opt_treeshow = 0;
   opt_treefile = NULL;
   opt_outfile = NULL;
+  opt_outgroup = NULL;
   opt_quiet = 0;
   opt_ptpmulti = 0;
   opt_ptpsingle = 0;
@@ -109,6 +115,9 @@ void args_init(int argc, char ** argv)
         opt_ptpsingle = 1;
         break;
 
+      case 8:
+        opt_outgroup = optarg;
+        break;
 
       default:
         fatal("Internal error in option parsing");
@@ -165,6 +174,7 @@ void cmd_help()
           "  --tree_show                    display an ASCII version of the tree.\n"
           "  --ptp_multi                    PTP style with one lambda per coalescent.\n"
           "  --ptp_single                   PTP style with single lambda for all coalescent.\n"
+          "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
           "  --quiet                        only output warnings and fatal errors to stderr.\n"
           "Input and output options:\n"
           "  --tree_file FILENAME           tree file in newick format.\n"
@@ -180,23 +190,31 @@ void cmd_ptpmulti(bool multiple_lambda)
   if (!opt_quiet)
     fprintf(stdout, "Parsing tree file...\n");
 
-  rtree_t * rtree = yy_parse_rtree(opt_treefile);
+  rtree_t * rtree = rtree_parse_newick(opt_treefile);
 
   if (!rtree)
-    fatal("Tree is probably not binary.\n");
+  {
+    int tip_count;
+    utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
+    if (!utree)
+      fatal("Tree is neither unrooted nor rooted. Go fix your tree.");
+    utree_show_ascii(utree);
+    printf("Unrooted!\n");
+    exit(0);
+  }
 
 
   /* TODO: Sarah's heuristic function should be called here */
   ptp_multi_heuristic(rtree, multiple_lambda);
 
   if (opt_treeshow)
-    show_ascii_rtree(rtree);
+    rtree_show_ascii(rtree);
 
   if (!opt_quiet)
     fprintf(stdout, "Writing tree file...\n");
 
   /* export tree structure to newick string */
-  char * newick = export_newick(rtree);
+  char * newick = rtree_export_newick(rtree);
 
   /* Write newick to file */
   out = fopen(opt_outfile, "w");
@@ -205,9 +223,10 @@ void cmd_ptpmulti(bool multiple_lambda)
 
   fprintf(out, "%s;", newick);
   fclose(out);
+  free(newick);
 
   /* deallocate tree structure */
-  yy_dealloc_rtree(rtree);
+  rtree_destroy(rtree);
 
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");

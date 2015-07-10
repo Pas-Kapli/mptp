@@ -36,7 +36,7 @@ PROG=delimit
 
 all: $(PROG)
 
-OBJS=util.o delimit.o newick.o lex.o arch.o rtree.o ptp_multi.o
+OBJS=util.o delimit.o parse_rtree.o parse_utree.o lex_rtree.o lex_utree.o arch.o rtree.o utree.o ptp_multi.o
 
 $(PROG): $(OBJS)
 	$(CC) -Wall $(LINKFLAGS) $+ -o $@ $(LIBS)
@@ -44,8 +44,8 @@ $(PROG): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-%.c: %.y
-	$(BISON) -d -o $@ $<
+parse_%.c: parse_%.y
+	$(BISON) -p $*_ -d -o $@ $<
 
 %.c: %.l
 	$(FLEX) -o $@ $<

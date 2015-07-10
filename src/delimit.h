@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2015 Tomas Flouri
+    Copyright (C) 2015 Tomas Flouri, Sarah Luttertop
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -53,13 +53,23 @@ typedef unsigned int UINT32;
 typedef unsigned short WORD;
 typedef unsigned char BYTE;
 
-typedef struct rtree_noderec
+typedef struct utree_s
 {
   char * label;
   double length;
-  struct rtree_noderec * left;
-  struct rtree_noderec * right;
-  struct rtree_noderec * parent;
+  struct utree_s * next;
+  struct utree_s * back;
+
+  void * data;
+} utree_t;
+
+typedef struct rtree_s
+{
+  char * label;
+  double length;
+  struct rtree_s * left;
+  struct rtree_s * right;
+  struct rtree_s * parent;
   int leaves;
 
   void * data;
@@ -99,11 +109,14 @@ typedef struct node_information_ptpmulti
 extern int opt_quiet;
 extern char * opt_treefile;
 extern char * opt_outfile;
+extern char * opt_outgroup;
 extern long opt_help;
 extern long opt_version;
 extern long opt_treeshow;
 
 /* common data */
+
+extern char errmsg[200];
 
 extern long mmx_present;
 extern long sse_present;
@@ -139,16 +152,54 @@ void fillheader();
 void show_header();
 void cmd_divtimes();
 
-/* functions in tree.c */
+/* functions in parse_rtree.y */
 
-rtree_t * yy_create_rtree();
-void yy_dealloc_rtree(rtree_t * tree);
-void show_ascii_rtree(rtree_t * tree);
-char * export_newick(rtree_t * node);
+rtree_t * rtree_parse_newick(const char * filename);
 
-/* functions in newick.y */
+void rtree_destroy(rtree_t * root);
 
-rtree_t * yy_parse_rtree(const char * filename);
+/* functions in parse_utree.y */
+
+utree_t * utree_parse_newick(const char * filename,
+                             int * tip_count);
+
+void utree_destroy(utree_t * root);
+
+/* functions in utree.c */
+
+void utree_show_ascii(utree_t * tree);
+
+char * utree_export_newick(utree_t * root);
+
+int utree_traverse(utree_t * root,
+                   int (*cbtrav)(utree_t *),
+                   utree_t ** outbuffer);
+
+int utree_query_tipnodes(utree_t * root,
+                         utree_t ** node_list);
+
+int utree_query_innernodes(utree_t * root,
+                           utree_t ** node_list);
+
+/* functions in rtree.c */
+
+void rtree_show_ascii(rtree_t * tree);
+
+char * rtree_export_newick(rtree_t * root);
+
+int rtree_traverse(rtree_t * root,
+                   int (*cbtrav)(rtree_t *),
+                   rtree_t ** outbuffer);
+
+int rtree_query_tipnodes(rtree_t * root,
+                         rtree_t ** node_list);
+
+int rtree_query_innernodes(rtree_t * root,
+                           rtree_t ** node_list);
+
+/* functions in parse_rtree.y */
+
+rtree_t * rtree_parse_newick(const char * filename);
 
 /* functions in arch.c */
 
