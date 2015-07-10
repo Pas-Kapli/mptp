@@ -267,3 +267,17 @@ int rtree_query_innernodes(rtree_t * root,
 
   return index;
 }
+
+void rtree_reset_leaves(rtree_t * root)
+{
+  if (!root->left)
+  {
+    root->leaves = 1;
+    return;
+  }
+  
+  rtree_reset_leaves(root->left);
+  rtree_reset_leaves(root->right);
+
+  root->leaves = root->left->leaves + root->right->leaves;
+}

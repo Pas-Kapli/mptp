@@ -275,3 +275,67 @@ int utree_query_innernodes(utree_t * root,
 
   return index;
 }
+
+static rtree_t * utree_rtree(utree_t * unode)
+{
+  rtree_t * rnode = (rtree_t *)xmalloc(sizeof(rtree_t)); 
+
+  if (unode->label)
+    rnode->label = strdup(unode->label);
+  else
+    rnode->label = NULL;
+  rnode->length = unode->length;
+
+  if (!unode->next) 
+  {
+    rnode->left = NULL;
+    rnode->right = NULL;
+    return rnode;
+  }
+
+  rnode->left = utree_rtree(unode->next->back);
+  rnode->right = utree_rtree(unode->next->next->back);
+
+  rnode->left->parent = rnode;
+  rnode->right->parent = rnode;
+
+  return rnode;
+}
+
+rtree_t * utree_convert_rtree(utree_t * root, int tip_count)
+{
+  int i;
+
+  /* check if outgroup was given */
+  if (!opt_outgroup)
+    fatal("Default outgroup (longest branch) is not yet implemented.");
+
+  /* query tip nodes */
+  utree_t ** node_list = (utree_t **)xmalloc(tip_count * sizeof(utree_t *));
+  utree_query_tipnodes(root, node_list);
+
+  /* check whether there exists a tip with the outgroup label */
+  for (i = 0; i < tip_count; ++i)
+    if (!strcmp(node_list[i]->label, opt_outgroup)) break;
+
+  if (i == tip_count)
+    fatal("Outgroup not among tips");
+
+  rtree_t * rnode = (rtree_t *)xmalloc(sizeof(rtree_t));
+  rnode->left = utree_rtree(node_list[i]);
+  rnode->right = utree_rtree(node_list[i]->back);
+  rnode->parent = NULL;
+
+  rnode->left->parent = rnode;
+  rnode->right->parent = rnode;
+  rnode->left->length /= 2;
+  rnode->right->length /= 2;
+  rnode->label = NULL;
+  rnode->length = 0;
+
+  rtree_reset_leaves(rnode);
+
+  free(node_list);
+
+  return rnode;
+}

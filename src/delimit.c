@@ -198,12 +198,16 @@ void cmd_ptpmulti(bool multiple_lambda)
     utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
     if (!utree)
       fatal("Tree is neither unrooted nor rooted. Go fix your tree.");
-    utree_show_ascii(utree);
-    printf("Unrooted!\n");
-    exit(0);
+
+    fprintf(stdout, "Loaded unrooted tree...\n");
+    fprintf(stdout, "Converting to rooted tree...\n");
+
+    rtree = utree_convert_rtree(utree, tip_count);
+    utree_destroy(utree);
   }
-
-
+  else
+    fprintf(stdout, "Loaded rooted tree...\n");
+  
   /* TODO: Sarah's heuristic function should be called here */
   ptp_multi_heuristic(rtree, multiple_lambda);
 

@@ -181,6 +181,8 @@ int utree_query_tipnodes(utree_t * root,
 int utree_query_innernodes(utree_t * root,
                            utree_t ** node_list);
 
+rtree_t * utree_convert_rtree(utree_t * root, int tip_count);
+
 /* functions in rtree.c */
 
 void rtree_show_ascii(rtree_t * tree);
@@ -196,6 +198,8 @@ int rtree_query_tipnodes(rtree_t * root,
 
 int rtree_query_innernodes(rtree_t * root,
                            rtree_t ** node_list);
+
+void rtree_reset_leaves(rtree_t * root);
 
 /* functions in parse_rtree.y */
 
