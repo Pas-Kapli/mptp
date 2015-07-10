@@ -44,14 +44,14 @@ void print_spec_entry(spec_entry * entry)
 
 void print_debug_information(rtree_t * tree)
 {
-  /*if (tree->left)
+  if (tree->left)
   {
     print_debug_information(tree->left);
   }
   if (tree->right)
   {
     print_debug_information(tree->right);
-  }*/
+  }
   node_information* data = (node_information*) (tree->data);
   printf("num_edges_subtree: %d, ", data->num_edges_subtree);
   printf("sum_edges_subtree: %f, ", data->sum_edges_subtree);
@@ -60,7 +60,7 @@ void print_debug_information(rtree_t * tree)
   printf("sum_known_speciation_edges: %f\n", data->sum_known_speciation_edges);
   printf("spec_array: \n");
   int i = 0;
-  for (i = 0; i < data->num_edges_subtree; i+=2) {
+  for (i = 0; i <= data->num_edges_subtree; i+=2) {
     printf("%d: ", i);
     print_spec_entry(&data->spec_array[i]);
   }
@@ -178,37 +178,45 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda)
     multi_traversal(tree->right, multiple_lambda);
   }
 
+  node_information* data = (node_information*) (tree->data);
+  spec_entry* spec_array_act = data->spec_array;
+
+  if (!tree->left && !tree->right) // leaf vertex
+  {
+    spec_array_act[0].coalescent_value = 0;
+    double combined_spec_sum = data->sum_known_speciation_edges;
+    int combined_spec_num = data->num_known_speciation_edges;
+    double speciation_value = compute_loglikelihood(combined_spec_num, combined_spec_sum);
+    spec_array_act[0].speciation_value = speciation_value;
+    spec_array_act[0].sum_speciation_edges_subtree = 0;
+    spec_array_act[0].score_multi = speciation_value;
+    spec_array_act[0].score_single = speciation_value;
+  }
+
   if (tree->left && tree->right)
   {
-    node_information* data = (node_information*) (tree->data);
     node_information* data_left = (node_information*) (tree->left->data);
     node_information* data_right = (node_information*) (tree->right->data);
-    spec_entry* spec_array_act = data->spec_array;
     spec_entry* spec_array_left =
       ((node_information*) (tree->left->data))->spec_array;
     spec_entry* spec_array_right =
       ((node_information*) (tree->right->data))->spec_array;
 
     spec_array_act[0].coalescent_value = data->coalescent;
-    spec_array_act[0].score_multi = data->coalescent;
-    spec_array_act[0].score_single = data->coalescent;
-    spec_array_act[0].speciation_value = 0;
+    double combined_spec_sum = data->sum_known_speciation_edges;
+    int combined_spec_num = data->num_known_speciation_edges;
     spec_array_act[0].sum_speciation_edges_subtree = 0;
+    double speciation_value = compute_loglikelihood(combined_spec_num, combined_spec_sum);
+    spec_array_act[0].speciation_value = speciation_value;
+    spec_array_act[0].score_multi = data->coalescent + speciation_value;
+    spec_array_act[0].score_single = data->coalescent + speciation_value;
 
     int i;
     for (i = 0; i <= data_left->num_edges_subtree; i+=2)
     {
-      if (spec_array_left[i].score_multi == -999999999)
-      {
-        break;
-      }
       int j;
       for (j = 0; j <= data_right->num_edges_subtree; j+=2)
       {
-        if (spec_array_right[j].score_multi == -999999999)
-        {
-          break;
-        }
         double combined_spec_sum = data->sum_known_speciation_edges
           + spec_array_left[i].sum_speciation_edges_subtree
           + spec_array_right[j].sum_speciation_edges_subtree;
@@ -303,68 +311,25 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda)
   init_tree_data(tree);
   init_additional_tree_data(tree);
   multi_traversal(tree, multiple_lambda);
-
-  print_debug_information(tree);
+  //print_debug_information(tree);
 
   double max = 0;
   node_information* data = (node_information*) (tree->data);
   spec_entry* spec_array = data->spec_array;
   int i;
   int pos = 0;
-  //printf("Debug: Whole score array\n");
   for (i = 0; i < data->num_edges_subtree; i++)
   {
-    //printf("%.6f ", spec_array[i].score);
     if (max < spec_array[i].score_single)
     {
       max = spec_array[i].score_single;
       pos = i;
     }
   }
-  //printf("\n");
 
   printf("Null logl: %.6f\n", data->coalescent);
   printf("Best score found single: %.6f\n", spec_array[pos].score_single);
   printf("Best score found multi: %.6f\n", spec_array[pos].score_multi);
-
-  /*printf("Debug position: %d\n", pos);
-
-  printf("Debug sum_speciation_edges_subtree: %.6f\n", spec_array[pos].sum_speciation_edges_subtree);
-  printf("Debug sum all edges: %.6f\n", data->sum_edges_subtree);
-  printf("Debug sum_coalescent_edges_subtree: %.6f\n", data->sum_edges_subtree - spec_array[pos].sum_speciation_edges_subtree);
-  printf("Debug coalescent value: %.6f\n", spec_array[pos].coalescent_value);
-  printf("Debug speciation value: %.6f\n", spec_array[pos].speciation_value);
-  printf("Debug sum known speciation edges: %.6f\n", data->sum_known_speciation_edges);
-  printf("Debug num known speciation edges: %d\n", data->num_known_speciation_edges);
-
-  spec_entry* spec_array_left = ((node_information*) (tree->left->data))->spec_array;
-  spec_entry* spec_array_right = ((node_information*) (tree->right->data))->spec_array;
-  i = spec_array[pos].taken_left_index;
-  int j = spec_array[pos].taken_right_index;
-
-  double combined_spec_sum = data->sum_known_speciation_edges
-    + spec_array_left[i].sum_speciation_edges_subtree
-    + spec_array_right[j].sum_speciation_edges_subtree;
-  int combined_spec_num = data->num_known_speciation_edges + i + j;
-
-  printf("Debug taken left index: %d\n", spec_array[pos].taken_left_index);
-  printf("Debug taken right index: %d\n", spec_array[pos].taken_right_index);
-
-  printf("Debug combined spec sum: %.6f\n", combined_spec_sum);
-  printf("Debug combined spec num: %d\n", combined_spec_num);
-
-  printf("Strange score right: %.6f\n", spec_array_right[j].score);
-  printf("Strange sum_speciation_edges_subtree right: %.6f\n", spec_array_right[j].sum_speciation_edges_subtree);
-  printf("Strange speciation value right: %.6f\n", spec_array_right[j].speciation_value);
-  printf("Strange coalescent value right: %.6f\n", spec_array_right[j].coalescent_value);
-
-  printf("Debug: Whole score array RIGHT\n");
-  for (i = 0; i < ((node_information*) (tree->right->data))->num_edges_subtree; i++)
-  {
-    printf("%.6f ", spec_array_right[i].score);
-  }
-  printf("\n");*/
-
 
   backtrack_species_assignment(tree, pos);
 }
