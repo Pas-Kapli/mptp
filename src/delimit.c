@@ -37,6 +37,7 @@ long opt_help;
 long opt_version;
 long opt_treeshow;
 long opt_ptpmulti;
+long opt_ptpsingle;
 
 
 static struct option long_options[] =
@@ -48,6 +49,7 @@ static struct option long_options[] =
   {"tree_show",          no_argument,       0, 0 },  /*  4 */
   {"output_file",        required_argument, 0, 0 },  /*  5 */
   {"ptp_multi",          no_argument,       0, 0 },  /*  6 */
+  {"ptp_single",         no_argument,       0, 0 },  /*  7 */
   { 0, 0, 0, 0 }
 };
 
@@ -68,6 +70,7 @@ void args_init(int argc, char ** argv)
   opt_outfile = NULL;
   opt_quiet = 0;
   opt_ptpmulti = 0;
+  opt_ptpsingle = 0;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -101,7 +104,11 @@ void args_init(int argc, char ** argv)
       case 6:
         opt_ptpmulti = 1;
         break;
-        
+
+      case 7:
+        opt_ptpsingle = 1;
+        break;
+
 
       default:
         fatal("Internal error in option parsing");
@@ -126,13 +133,15 @@ void args_init(int argc, char ** argv)
     commands++;
   if (opt_ptpmulti)
     commands++;
+  if (opt_ptpsingle)
+    commands++;
 
   /* if more than one independent command, fail */
   if (commands > 1)
     fatal("More than one command specified");
-  
+
   /* if no command specified, turn on --help */
-  if (!commands) 
+  if (!commands)
   {
     opt_help = 1;
     return;
@@ -155,6 +164,7 @@ void cmd_help()
           "  --version                      display version information.\n"
           "  --tree_show                    display an ASCII version of the tree.\n"
           "  --ptp_multi                    PTP style with one lambda per coalescent.\n"
+          "  --ptp_single                   PTP style with single lambda for all coalescent.\n"
           "  --quiet                        only output warnings and fatal errors to stderr.\n"
           "Input and output options:\n"
           "  --tree_file FILENAME           tree file in newick format.\n"
@@ -162,7 +172,7 @@ void cmd_help()
          );
 }
 
-void cmd_ptpmulti()
+void cmd_ptpmulti(bool multiple_lambda)
 {
   FILE * out;
 
@@ -177,7 +187,7 @@ void cmd_ptpmulti()
 
 
   /* TODO: Sarah's heuristic function should be called here */
-  ptp_multi_heuristic(rtree);
+  ptp_multi_heuristic(rtree, multiple_lambda);
 
   if (opt_treeshow)
     show_ascii_rtree(rtree);
@@ -253,7 +263,11 @@ int main (int argc, char * argv[])
   }
   else if (opt_ptpmulti)
   {
-    cmd_ptpmulti();
+    cmd_ptpmulti(true);
+  }
+  else if (opt_ptpsingle)
+  {
+    cmd_ptpmulti(false);
   }
 
   free(cmdline);

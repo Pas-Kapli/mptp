@@ -34,6 +34,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 /* constants */
 
@@ -67,8 +68,10 @@ typedef struct rtree_noderec
 typedef struct spec_array_entry
 {
   double sum_speciation_edges_subtree;
-  double coalescent_sum_subtree;
-  double score;
+  double coalescent_value;
+  double speciation_value;
+  double score_multi;
+  double score_single;
   int taken_left_index;
   int taken_right_index;
 } spec_entry;
@@ -154,4 +157,4 @@ unsigned long arch_get_memtotal();
 
 /* functions in ptp_multi.c */
 
-void ptp_multi_heuristic(rtree_t * rtree);
+void ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda);
