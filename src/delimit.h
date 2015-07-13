@@ -57,6 +57,7 @@ typedef struct utree_s
 {
   char * label;
   double length;
+  int height;
   struct utree_s * next;
   struct utree_s * back;
 
@@ -204,6 +205,12 @@ void rtree_reset_leaves(rtree_t * root);
 /* functions in parse_rtree.y */
 
 rtree_t * rtree_parse_newick(const char * filename);
+
+/* functions in lca_utree.c */
+
+void lca_init(utree_t * root);
+utree_t * lca_compute(utree_t * tip1, utree_t * tip2);
+void lca_destroy();
 
 /* functions in arch.c */
 

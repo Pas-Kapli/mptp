@@ -9,6 +9,54 @@ Pons et al. (2006) and Fujisawa et al. (2013). The new tool should:
 * have an open source code with an appropriate open source license.
 * 64-bit multi-threaded design that handles very large datasets.
 
+## Compilation instructions
+
+Currently, the code can be compiled using the included Makefile:
+
+`make`
+
+## Command-line options
+
+General options:
+
+* `--help`
+* `-version`
+* `--tree_show`
+* `--ptp_multi`
+* `--ptp_single`
+* `--outgroup`
+* `--quiet`
+
+Input and output options:
+
+* `--tree_file`
+* `--output_file`
+
+## Usage example
+
+`./delimit --ptp_multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
+
+## License and third party licenses
+
+The code is currently licensed under the GNU Affero General Public License version 3.
+
+## Code
+
+    File         | Description
+-----------------|----------------
+**delimit.c**    | Main file handling command-line parameters and executing corresponding parts.
+**ptp_multi.c**  | Single- and multi-rate heuristics for solving the PTP assumption.
+**Makefile**     | Makefile.
+**lex_rtree.l**  | Lexical analyzer parsing newick rooted trees.
+**lex_utree.l**  | Lexical analyzer parsing newick unrooted trees.
+**util.c**       | Various common utility functions.
+**arch.c**       | Architecture specific code (Mac/Linux).
+**rtree.c**      | Rooted tree manipulation functions.
+**utree.c**      | Unrooted tree manipulation functions.
+**parse_rtree.y**| Functions for parsing rooted trees in newick format.
+**parse_utree.y**| Functions for parsing unrooted trees in newick format.
+**lca_utree.c**  | Naive LCA computation in unrooted trees.
+
 ## The team
 
 * Paschalia Kapli

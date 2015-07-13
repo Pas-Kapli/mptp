@@ -121,6 +121,12 @@ input: OPAR subtree COMMA subtree COMMA subtree CPAR optional_label optional_len
   tree->next->length       = $4->length;
   tree->next->next->length = $6->length;
 
+  tree->height = ($2->height > $4->height) ? 
+                 (($2->height > $6->height) ? $2->height + 1 : $6->height + 1) :
+                 (($4->height > $6->height) ? $4->height + 1 : $6->height + 1);
+  tree->next->height       = tree->height;
+  tree->next->next->height = tree->height;
+
   free($9);
 };
 
@@ -143,12 +149,17 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->label              = $6;
   $$->next->label        = $6;
   $$->next->next->label  = $6;
+  $$->length             = $7 ? atof($7) : 0;
+  $$->height             = ($2->height > $4->height) ? 
+                                $2->height + 1 : $4->height + 1;
+  $$->next->height       = $$->height;
+  $$->next->next->height = $$->height;
 
-  $$->length = $7 ? atof($7) : 0;
   free($7);
 
   $$->next->length       = $2->length;
   $$->next->next->length = $4->length;
+
 }
        | label optional_length
 {
@@ -157,6 +168,7 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->label  = $1;
   $$->length = $2 ? atof($2) : 0;
   $$->next   = NULL;
+  $$->height = 0;
   tip_cnt++;
   free($2);
 };

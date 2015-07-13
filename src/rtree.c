@@ -103,6 +103,7 @@ void rtree_show_ascii(rtree_t * tree)
 
   print_node_info(tree);
   print_tree_recurse(tree->left,  1, active_node_order);
+  active_node_order[0] = 2;
   print_tree_recurse(tree->right, 1, active_node_order);
   free(active_node_order);
 }

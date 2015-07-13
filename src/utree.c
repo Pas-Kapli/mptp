@@ -302,9 +302,70 @@ static rtree_t * utree_rtree(utree_t * unode)
   return rnode;
 }
 
-rtree_t * utree_convert_rtree(utree_t * root, int tip_count)
+utree_t * find_outgroup_node(utree_t ** node_list, int tip_count)
 {
   int i;
+
+  /* check whether there exists a tip with the outgroup label */
+  for (i = 0; i < tip_count; ++i)
+    if (!strcmp(node_list[i]->label, opt_outgroup)) break;
+
+  if (i == tip_count)
+    fatal("Outgroup not among tips");
+
+  fprintf(stdout, "Rooting with outgroup %s\n", node_list[i]->label);
+
+  return node_list[i];
+}
+
+utree_t * find_outgroup_mrca(utree_t ** node_list, utree_t * root, int tip_count)
+{
+  int i,j,k,count;
+  utree_t * outgroup;
+
+  size_t taxon1_len = strcspn(opt_outgroup, ",");
+
+  char * taxon1 = strndup(opt_outgroup, taxon1_len);
+  char * taxon2 = strdup(opt_outgroup+taxon1_len+1);
+
+  fprintf(stdout, "Rooting with outgroups %s and %s\n", taxon1, taxon2);
+
+  j = k = tip_count;
+  for (count = 0, i = 0; i < tip_count; ++i)
+  {
+    if (!strcmp(node_list[i]->label, taxon1))
+    {
+      count++;
+      j = i;
+    }
+    if (!strcmp(node_list[i]->label, taxon2))
+    {
+      k = i;
+      count++;
+    }
+    if (count == 2) break;
+  }
+
+  if (j == tip_count)
+    fatal("Outgroup %s not among tips", taxon1);
+
+  if (k == tip_count)
+    fatal("Outgroup %s not among tips", taxon2);
+
+  free(taxon1);
+  free(taxon2);
+
+  /* find LCA */
+  lca_init(root);
+  outgroup = lca_compute(node_list[j], node_list[k]);
+  lca_destroy();
+
+  return outgroup;
+}
+
+rtree_t * utree_convert_rtree(utree_t * root, int tip_count)
+{
+  utree_t * outgroup;
 
   /* check if outgroup was given */
   if (!opt_outgroup)
@@ -314,16 +375,15 @@ rtree_t * utree_convert_rtree(utree_t * root, int tip_count)
   utree_t ** node_list = (utree_t **)xmalloc(tip_count * sizeof(utree_t *));
   utree_query_tipnodes(root, node_list);
 
-  /* check whether there exists a tip with the outgroup label */
-  for (i = 0; i < tip_count; ++i)
-    if (!strcmp(node_list[i]->label, opt_outgroup)) break;
-
-  if (i == tip_count)
-    fatal("Outgroup not among tips");
+  /* find outgroup */
+  if (!strchr(opt_outgroup, ','))
+    outgroup = find_outgroup_node(node_list, tip_count);
+  else
+    outgroup = find_outgroup_mrca(node_list, root, tip_count);
 
   rtree_t * rnode = (rtree_t *)xmalloc(sizeof(rtree_t));
-  rnode->left = utree_rtree(node_list[i]);
-  rnode->right = utree_rtree(node_list[i]->back);
+  rnode->left = utree_rtree(outgroup);
+  rnode->right = utree_rtree(outgroup->back);
   rnode->parent = NULL;
 
   rnode->left->parent = rnode;
