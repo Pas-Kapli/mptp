@@ -302,7 +302,29 @@ static rtree_t * utree_rtree(utree_t * unode)
   return rnode;
 }
 
-utree_t * find_outgroup_node(utree_t ** node_list, int tip_count)
+static utree_t * find_longest_branchtip(utree_t ** node_list, int tip_count)
+{
+  int i;
+  
+  double branch_length = 0;
+  int index = 0;
+
+  /* check whether there exists a tip with the outgroup label */
+  for (i = 0; i < tip_count; ++i)
+    if (node_list[i]->length > branch_length)
+    {
+      index = i;
+      branch_length = node_list[i]->length;
+    }
+
+  fprintf(stdout, 
+          "Selected %s as outgroup based on longest tip-branch criterion\n",
+          node_list[index]->label);
+
+  return node_list[index];
+}
+
+static utree_t * find_outgroup_node(utree_t ** node_list, int tip_count)
 {
   int i;
 
@@ -318,7 +340,9 @@ utree_t * find_outgroup_node(utree_t ** node_list, int tip_count)
   return node_list[i];
 }
 
-utree_t * find_outgroup_mrca(utree_t ** node_list, utree_t * root, int tip_count)
+static utree_t * find_outgroup_mrca(utree_t ** node_list,
+                                    utree_t * root,
+                                    int tip_count)
 {
   int i,j,k,count;
   utree_t * outgroup;
@@ -367,16 +391,14 @@ rtree_t * utree_convert_rtree(utree_t * root, int tip_count)
 {
   utree_t * outgroup;
 
-  /* check if outgroup was given */
-  if (!opt_outgroup)
-    fatal("Default outgroup (longest branch) is not yet implemented.");
-
   /* query tip nodes */
   utree_t ** node_list = (utree_t **)xmalloc(tip_count * sizeof(utree_t *));
   utree_query_tipnodes(root, node_list);
 
   /* find outgroup */
-  if (!strchr(opt_outgroup, ','))
+  if (!opt_outgroup)
+    outgroup = find_longest_branchtip(node_list, tip_count);
+  else if (!strchr(opt_outgroup, ','))
     outgroup = find_outgroup_node(node_list, tip_count);
   else
     outgroup = find_outgroup_mrca(node_list, root, tip_count);
