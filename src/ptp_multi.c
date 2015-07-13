@@ -110,6 +110,20 @@ void init_tree_data(rtree_t * tree)
   tree->data = info;
 }
 
+void free_tree_data(rtree_t * tree)
+{
+  if (tree->left)
+  {
+    free_tree_data(tree->left);
+  }
+  if (tree->right)
+  {
+    free_tree_data(tree->right);
+  }
+  free(((node_information*) (tree->data))->spec_array);
+  free((node_information*) (tree->data));
+}
+
 void init_additional_tree_data(rtree_t * tree)
 {
   // pre-order traversal
@@ -315,9 +329,11 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda)
     }
   }
 
-  printf("Null logl: %.6f\n", data->coalescent);
+  //double speciation_rate = spec_array[pos].sum_speciation_edges_subtree/pos;
+  //printf("Speciation rate: %.6f\n", speciation_rate);
   printf("Best score found single: %.6f\n", spec_array[pos].score_single);
   printf("Best score found multi: %.6f\n", spec_array[pos].score_multi);
 
   backtrack_species_assignment(tree, pos);
+  free_tree_data(tree);
 }
