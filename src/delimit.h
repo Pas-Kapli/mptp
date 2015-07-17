@@ -97,8 +97,13 @@ typedef struct node_information_ptpmulti
   // additional data
   int num_known_speciation_edges;
   double sum_known_speciation_edges;
-
 } node_information;
+
+typedef struct node_information_score
+{
+  bool marked; // is the node a most recent common ancestor (mrca) node or not?
+  int current_species; // for finding the "real" mrca
+} score_information;
 
 /* macros */
 
@@ -220,3 +225,7 @@ unsigned long arch_get_memtotal();
 /* functions in ptp_multi.c */
 
 void ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda);
+
+/* functions in score.c */
+
+void compare_delimitation_tree(char * scorefile, rtree_t * tree);

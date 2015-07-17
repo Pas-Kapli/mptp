@@ -36,6 +36,7 @@ static const char * mandatory_options_list = " --tree_file --output_file";
 char * opt_treefile;
 char * opt_outfile;
 char * opt_outgroup;
+char * opt_scorefile;
 int opt_quiet;
 long opt_help;
 long opt_version;
@@ -55,6 +56,7 @@ static struct option long_options[] =
   {"ptp_multi",          no_argument,       0, 0 },  /*  6 */
   {"ptp_single",         no_argument,       0, 0 },  /*  7 */
   {"outgroup",           required_argument, 0, 0 },  /*  8 */
+  {"score",              required_argument, 0, 0 },  /*  9 */
   { 0, 0, 0, 0 }
 };
 
@@ -77,6 +79,7 @@ void args_init(int argc, char ** argv)
   opt_quiet = 0;
   opt_ptpmulti = 0;
   opt_ptpsingle = 0;
+  opt_scorefile = NULL;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -119,6 +122,11 @@ void args_init(int argc, char ** argv)
         opt_outgroup = optarg;
         break;
 
+      case 9:
+        free(opt_scorefile);
+        opt_scorefile = optarg;
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -143,6 +151,8 @@ void args_init(int argc, char ** argv)
   if (opt_ptpmulti)
     commands++;
   if (opt_ptpsingle)
+    commands++;
+  if (opt_scorefile)
     commands++;
 
   /* if more than one independent command, fail */
@@ -174,6 +184,7 @@ void cmd_help()
           "  --tree_show                    display an ASCII version of the tree.\n"
           "  --ptp_multi                    PTP style with one lambda per coalescent.\n"
           "  --ptp_single                   PTP style with single lambda for all coalescent.\n"
+          "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
           "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
           "  --quiet                        only output warnings and fatal errors to stderr.\n"
           "Input and output options:\n"
@@ -242,6 +253,65 @@ void cmd_ptpmulti(bool multiple_lambda)
     fprintf(stdout, "Done...\n");
 }
 
+void cmd_score()
+{
+  FILE * out;
+
+  /* parse tree */
+  if (!opt_quiet)
+    fprintf(stdout, "Parsing tree file...\n");
+
+  rtree_t * rtree = rtree_parse_newick(opt_treefile);
+
+  if (!rtree)
+  {
+    int tip_count;
+    utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
+    if (!utree)
+      fatal("Tree is neither unrooted nor rooted. Go fix your tree.");
+
+    if (!opt_quiet)
+    {
+      fprintf(stdout, "Loaded unrooted tree...\n");
+      fprintf(stdout, "Converting to rooted tree...\n");
+    }
+
+    rtree = utree_convert_rtree(utree, tip_count);
+    utree_destroy(utree);
+  }
+  else
+  {
+    if (!opt_quiet)
+      fprintf(stdout, "Loaded rooted tree...\n");
+  }
+
+  /* TODO: Sarah's score function should be called here */
+  score_delimitation_tree(opt_scorefile, rtree);
+
+  if (opt_treeshow)
+    rtree_show_ascii(rtree);
+
+  if (!opt_quiet)
+    fprintf(stdout, "Writing tree file...\n");
+
+  /* export tree structure to newick string */
+  char * newick = rtree_export_newick(rtree);
+
+  /* Write newick to file */
+  out = fopen(opt_outfile, "w");
+  if (!out)
+    fatal("Cannot write to file %s", opt_outfile);
+
+  fprintf(out, "%s;", newick);
+  fclose(out);
+  free(newick);
+
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
+
+  if (!opt_quiet)
+    fprintf(stdout, "Done...\n");
+}
 
 void getentirecommandline(int argc, char * argv[])
 {
@@ -297,6 +367,10 @@ int main (int argc, char * argv[])
   else if (opt_ptpsingle)
   {
     cmd_ptpmulti(false);
+  }
+  else if (opt_scorefile)
+  {
+    cmd_score();
   }
 
   free(cmdline);
