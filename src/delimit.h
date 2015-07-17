@@ -102,7 +102,8 @@ typedef struct node_information_ptpmulti
 typedef struct node_information_score
 {
   bool marked; // is the node a most recent common ancestor (mrca) node or not?
-  int current_species; // for finding the "real" mrca
+  int current_species_real; // for finding the "real" mrca
+  int current_species_input; // for finding the alternative mrca
 } score_information;
 
 /* macros */
