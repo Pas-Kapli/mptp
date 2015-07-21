@@ -66,7 +66,7 @@ The code is currently licensed under the GNU Affero General Public License versi
 # References
 
 * Zhang J., Kapli P., Pavlidis P., Stamatakis A. (2013)
-**A general species delimitation method with applications to phylogenetic placements**
+**A general species delimitation method with applications to phylogenetic placements.**
 *Bioinformatics*, 29(22):2869-2876.
 doi:[10.1093/bioinformatics/btt499](http://dx.doi.org/10.1093/bioinformatics/btt499)
 
@@ -76,6 +76,6 @@ doi:[10.1093/bioinformatics/btt499](http://dx.doi.org/10.1093/bioinformatics/btt
 doi:[10.1093/sysbio/syt033](http://dx.doi.org/10.1093/sysbio/syt033)
 
 * Pons J., Barraclough T., Gomez-Zurita J., Cardoso A., Duran AP, Hazell S., Kamoun S., Sumlin WD, Vogler AP. (2006)
-**Sequence-Based Species Delimitation for the DNA Taxonomy of Undescribed Insects**
+**Sequence-Based Species Delimitation for the DNA Taxonomy of Undescribed Insects.**
 *Systematic Biology*, 55(4):595-609.
 doi:[10.1080/10635150600852011](http://dx.doi.org/10.1080/10635150600852011)

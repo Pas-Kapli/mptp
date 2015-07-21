@@ -231,7 +231,7 @@ void cmd_ptpmulti(bool multiple_lambda)
   if (!out)
     fatal("Cannot write to file %s", opt_outfile);
 
-  fprintf(out, "%s;", newick);
+  fprintf(out, "%s", newick);
   fclose(out);
   free(newick);
 
