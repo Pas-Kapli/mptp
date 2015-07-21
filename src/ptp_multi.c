@@ -329,8 +329,6 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda)
     }
   }
 
-  //double speciation_rate = spec_array[pos].sum_speciation_edges_subtree/pos;
-  //printf("Speciation rate: %.6f\n", speciation_rate);
   printf("Best score found single: %.6f\n", spec_array[pos].score_single);
   printf("Best score found multi: %.6f\n", spec_array[pos].score_multi);
 
