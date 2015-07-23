@@ -20,7 +20,7 @@ Currently, the code can be compiled using the included Makefile:
 General options:
 
 * `--help`
-* `-version`
+* `--version`
 * `--tree_show`
 * `--ptp_multi`
 * `--ptp_single`
@@ -60,7 +60,7 @@ The code is currently licensed under the GNU Affero General Public License versi
 ## The team
 
 * Paschalia Kapli
-* Sarah Luttertop
+* Sarah Lutteropp
 * Tom&aacute;&scaron; Flouri
 
 # References
