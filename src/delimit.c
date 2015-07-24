@@ -196,7 +196,7 @@ void cmd_help()
           "  --ptp_multi                    PTP style with one lambda per coalescent.\n"
           "  --ptp_single                   PTP style with single lambda for all coalescent.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
-          "  --pvalue                       Specify a P-value (default: 0.05)"
+          "  --pvalue                       Specify a P-value (default: 0.001)"
           "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
           "  --quiet                        only output warnings and fatal errors to stderr.\n"
           "Input and output options:\n"
