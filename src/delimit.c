@@ -82,7 +82,7 @@ void args_init(int argc, char ** argv)
   opt_ptpmulti = 0;
   opt_ptpsingle = 0;
   opt_scorefile = NULL;
-  opt_pvalue = 0.05;
+  opt_pvalue = 0.001;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {

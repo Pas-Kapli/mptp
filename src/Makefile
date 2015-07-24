@@ -17,7 +17,7 @@
 # Heidelberg Institute for Theoretical Studies,
 # Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 
-#BIN = ../bin
+BIN = ../bin
 
 # Profiling
 #PROFILING=-g -pg
@@ -29,7 +29,7 @@ WARN=-Wall -Wsign-compare
 CC = gcc
 CFLAGS = -g -O3 $(WARN) -D_GNU_SOURCE
 LINKFLAGS=$(PROFILING)
-LIBS=-lm
+LIBS=-lm -lgsl -lgslcblas
 
 BISON = bison
 FLEX = flex

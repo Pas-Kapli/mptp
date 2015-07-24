@@ -20,6 +20,7 @@
 */
 
 #include "delimit.h"
+#include <gsl/gsl_cdf.h>
 
 double compute_loglikelihood(int num, double sum)
 {
@@ -319,12 +320,18 @@ bool likelihood_ratio_test(rtree_t * tree, double likelihood_alternative_model,
 {
   node_information* data = (node_information*) (tree->data);
   double likelihood_null_model = data->coalescent;
-  /*double lr = 2 * (likelihood_alternative_model - likelihood_null_model);
-  (*computed_p_value) = 1 - gsl_cdf_chisq_P(lr, degrees_of_freedom);*/
+  double lr = 2 * (likelihood_alternative_model - likelihood_null_model);
+  (*computed_p_value) = 1 - gsl_cdf_chisq_P(lr, degrees_of_freedom);
     // should return
     //  1/(2**(df/2) * gamma(df/2)) * integral(t**(df/2-1) * exp(-t/2), t=0..x)
     // see http://docs.scipy.org/doc/scipy/reference/generated/scipy.special.chdtr.html#scipy.special.chdtr
-  return true;
+
+  bool good_delimitation = true;
+  if ((*computed_p_value) > p_value)
+  {
+    good_delimitation = false;
+  }
+  return good_delimitation;
 }
 
 void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value)
@@ -353,7 +360,7 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value)
   printf("Best score found multi: %.6f\n", spec_array[pos].score_multi);
 
   bool good_delimitation = true;
-  double computed_p_value = 0;
+  double computed_p_value = -1;
   if (multiple_lambda)
   {
     good_delimitation = likelihood_ratio_test(tree, spec_array[pos].score_multi,
@@ -366,7 +373,7 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value)
       p_value, 1, &computed_p_value);
   }
 
-  //printf("Computed P-value: %.6f\n", computed_p_value);
+  printf("Computed P-value: %.6f\n", computed_p_value);
 
   if (good_delimitation)
   {
