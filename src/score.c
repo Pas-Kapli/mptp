@@ -76,7 +76,8 @@ void identify_alternative_taxa(char * scorefile, int num_leaves,
         collecting = true;
         current_species_idx++;
       }
-      else if (collecting && (strcmp(line,"\n")==0 || strstr(line, "Writing tree file") != NULL))
+      else if (collecting && (strcmp(line,"\n")==0
+        || strstr(line, "Writing tree file") != NULL))
       {
         //printf("A species has ended.\n");
         collecting = false;

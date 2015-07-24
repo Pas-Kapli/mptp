@@ -199,7 +199,8 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda)
   spec_array_act[0].coalescent_value = data->coalescent;
   double combined_spec_sum = data->sum_known_speciation_edges;
   int combined_spec_num = data->num_known_speciation_edges;
-  double speciation_value = compute_loglikelihood(combined_spec_num, combined_spec_sum);
+  double speciation_value =
+    compute_loglikelihood(combined_spec_num, combined_spec_sum);
   spec_array_act[0].speciation_value = speciation_value;
   spec_array_act[0].sum_speciation_edges_subtree = 0;
   spec_array_act[0].score_multi = data->coalescent + speciation_value;
@@ -240,10 +241,11 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda)
         double coalescent_value_multi = spec_array_left[i].coalescent_value
             + spec_array_right[j].coalescent_value;
 
-        double coalescent_value_single = compute_loglikelihood(num_coalescent_edges,
-            sum_coalescent_edges);
+        double coalescent_value_single =
+          compute_loglikelihood(num_coalescent_edges, sum_coalescent_edges);
 
-        double speciation_value = compute_loglikelihood(combined_spec_num, combined_spec_sum);
+        double speciation_value =
+          compute_loglikelihood(combined_spec_num, combined_spec_sum);
 
         double score_multi = coalescent_value_multi + speciation_value;
         double score_single = coalescent_value_single + speciation_value;
@@ -369,8 +371,8 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value)
   }
   else
   {
-    good_delimitation = likelihood_ratio_test(tree, spec_array[pos].score_single,
-      p_value, 1, &computed_p_value);
+    good_delimitation = likelihood_ratio_test(tree,
+      spec_array[pos].score_single, p_value, 1, &computed_p_value);
   }
 
   printf("Computed P-value: %.6f\n", computed_p_value);
