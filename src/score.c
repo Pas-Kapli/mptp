@@ -34,6 +34,8 @@ void init_tree_data_score(rtree_t * tree)
   }
   score_information * info = malloc(sizeof(score_information));
   info->marked = false;
+  info->is_real_mrca = false;
+  info->is_input_mrca = false;
   info->current_species_real = -1;
   info->current_species_input = -1;
   tree->data = info;
@@ -142,11 +144,13 @@ void retrieve_mrca_nodes(rtree_t * tree, int * num_species_real,
       if (data_left->current_species_real != -1)
       {
         data_left->marked = true;
+        data_left->is_real_mrca = true;
         (*num_species_real)++;
       }
       if (data_right->current_species_real != -1)
       {
         data_right->marked = true;
+        data_right->is_real_mrca = true;
         (*num_species_real)++;
       }
     }
@@ -160,11 +164,13 @@ void retrieve_mrca_nodes(rtree_t * tree, int * num_species_real,
       if (data_left->current_species_input != -1)
       {
         data_left->marked = true;
+        data_left->is_input_mrca = true;
         (*num_species_input)++;
       }
       if (data_right->current_species_input != -1)
       {
         data_right->marked = true;
+        data_right->is_input_mrca = true;
         (*num_species_input)++;
       }
     }
@@ -196,7 +202,8 @@ int walk_to_root(rtree_t * starting_node, rtree_t * root)
   return penalty;
 }
 
-void compute_score(rtree_t * current_node, rtree_t * root, int * score_ptr)
+void compute_tree_penalty_score(rtree_t * current_node, rtree_t * root,
+  int * score_ptr)
 {
   // Go from each marked node up towards the root, if another marked node is
   // encountered, add up the number of steps taken to get there to the penalty.
@@ -204,11 +211,11 @@ void compute_score(rtree_t * current_node, rtree_t * root, int * score_ptr)
 
   if (current_node->left)
   {
-    compute_score(current_node->left, root, score_ptr);
+    compute_tree_penalty_score(current_node->left, root, score_ptr);
   }
   if (current_node->right)
   {
-    compute_score(current_node->right, root, score_ptr);
+    compute_tree_penalty_score(current_node->right, root, score_ptr);
   }
 
   if (((score_information*)current_node->data)->marked)
@@ -220,7 +227,28 @@ void compute_score(rtree_t * current_node, rtree_t * root, int * score_ptr)
 void collect_mrca_nodes_recursive(rtree_t * tree, rtree_t ** mrca_real_list,
   rtree_t ** mrca_input_list, int * index_real, int * index_input)
 {
-  // TODO: Implement this method.
+  if (tree->left)
+  {
+    collect_mrca_nodes_recursive(tree->left, mrca_real_list, mrca_input_list,
+      index_real, index_input);
+  }
+  if (tree->right)
+  {
+    collect_mrca_nodes_recursive(tree->right, mrca_real_list, mrca_input_list,
+      index_real, index_input);
+  }
+
+  score_information * data_current = (score_information*) tree->data;
+  if (data_current->is_real_mrca)
+  {
+    mrca_real_list[(*index_real)] = tree;
+    (*index_real)++;
+  }
+  if (data_current->is_input_mrca)
+  {
+    mrca_input_list[(*index_input)] = tree;
+    (*index_input)++;
+  }
 }
 
 void collect_mrca_nodes(rtree_t * tree, rtree_t ** mrca_real_list,
@@ -230,6 +258,97 @@ void collect_mrca_nodes(rtree_t * tree, rtree_t ** mrca_real_list,
   int index_input = 0;
   collect_mrca_nodes_recursive(tree, mrca_real_list, mrca_input_list,
     &index_real, &index_input);
+}
+
+double compute_entropy(rtree_t ** mrca_list, int num_species, int num_taxa)
+{
+  double entropy = 0;
+  int i;
+  for (i = 0; i < num_species; i++)
+  {
+    double percentage = (double) mrca_list[i]->leaves / (double) num_taxa;
+    entropy += percentage * log(percentage);
+  }
+  entropy *= -1;
+  return entropy;
+}
+
+int count_common_taxa(rtree_t * mrca_one, rtree_t * mrca_two)
+{
+  // get leaves
+  rtree_t ** leaves_one_list = calloc(mrca_one->leaves, sizeof(rtree_t));
+  rtree_t ** leaves_two_list = calloc(mrca_two->leaves, sizeof(rtree_t));
+  rtree_query_tipnodes(mrca_one, leaves_one_list);
+  rtree_query_tipnodes(mrca_two, leaves_two_list);
+
+  int num_common_taxa = 0;
+  // TODO: Make this search more efficient.
+  int i;
+  int j;
+  for (i = 0; i < mrca_one->leaves; i++)
+  {
+    for (j = 0; j < mrca_two->leaves; j++)
+    {
+      if (leaves_one_list[i] == leaves_two_list[j])
+      {
+        num_common_taxa++;
+      }
+    }
+  }
+  num_common_taxa /= 2;
+
+  free(leaves_one_list);
+  free(leaves_two_list);
+  return num_common_taxa;
+}
+
+double compute_nmi_score(rtree_t ** mrca_real_list, int num_species_real,
+  rtree_t ** mrca_input_list, int num_species_input, int num_taxa)
+{
+  double entropy_real = compute_entropy(mrca_real_list, num_species_real,
+    num_taxa);
+  double entropy_input = compute_entropy(mrca_input_list, num_species_input,
+    num_taxa);
+  double max_entropy = entropy_real;
+  if (entropy_input > entropy_real)
+  {
+    max_entropy = entropy_input;
+  }
+
+  // compute mutual information
+  double mutual_information = 0;
+  int i;
+  int j;
+  for (i = 0; i < num_species_real; i++)
+  {
+    for (j = 0; j < num_species_input; j++)
+    {
+      rtree_t * mrca_real = mrca_real_list[i];
+      rtree_t * mrca_input = mrca_input_list[j];
+      double num_taxa_real = (double) mrca_real->leaves;
+      double num_taxa_input = (double) mrca_input->leaves;
+      double num_common_taxa = (double) count_common_taxa(mrca_real, mrca_input);
+
+      /*printf("num_taxa: %d\n", num_taxa);
+      printf("num_taxa_real: %d\n", num_taxa_real);
+      printf("num_taxa_input: %d\n", num_taxa_input);
+      printf("num_common_taxa: %d\n", num_common_taxa);*/
+
+      if (num_common_taxa != 0)
+      {
+        mutual_information += (num_common_taxa / num_taxa)
+          * log((num_common_taxa / num_taxa)
+                 / (num_taxa_real * num_taxa_input / (num_taxa * num_taxa)));
+      }
+    }
+  }
+
+  printf("Mutual information: %.6f\n", mutual_information);
+  printf("Entropy real: %.6f\n", entropy_real);
+  printf("Entropy input: %.6f\n", entropy_input);
+  printf("Maximum Entropy: %.6f\n", max_entropy);
+
+  return 1 - (mutual_information / max_entropy);
 }
 
 void score_delimitation_tree(char * scorefile, rtree_t * tree)
@@ -253,7 +372,13 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
   collect_mrca_nodes(tree, mrca_real_list, mrca_input_list);
 
   int score = 0;
-  compute_score(tree, tree, &score);
+  compute_tree_penalty_score(tree, tree, &score);
   printf("Tree penalty score: %d\n", score);
+  double nmi_score = compute_nmi_score(mrca_real_list, num_species_real,
+    mrca_input_list, num_species_input, tree->leaves);
+  printf("NMI score: %6.f\n", nmi_score);
   free_tree_data_score(tree);
+  free(leaves_list);
+  free(mrca_real_list);
+  free(mrca_input_list);
 }
