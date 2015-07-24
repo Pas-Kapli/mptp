@@ -15,6 +15,9 @@ Currently, the code can be compiled using the included Makefile:
 
 `make`
 
+You will need to have the GNU Scientific Library installed, this can be done
+on Ubuntu via `sudo apt-get install libgsl0-dev`
+
 ## Command-line options
 
 General options:
