@@ -308,7 +308,26 @@ void backtrack_species_assignment(rtree_t * tree, int pos)
   }
 }
 
-void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda)
+void print_null_model(rtree_t * tree)
+{
+  printf("Species 1:\n");
+  print_subtree_leaves(tree);
+}
+
+bool likelihood_ratio_test(rtree_t * tree, double likelihood_alternative_model,
+  double p_value, int degrees_of_freedom, double * computed_p_value)
+{
+  node_information* data = (node_information*) (tree->data);
+  double likelihood_null_model = data->coalescent;
+  /*double lr = 2 * (likelihood_alternative_model - likelihood_null_model);
+  (*computed_p_value) = 1 - gsl_cdf_chisq_P(lr, degrees_of_freedom);*/
+    // should return
+    //  1/(2**(df/2) * gamma(df/2)) * integral(t**(df/2-1) * exp(-t/2), t=0..x)
+    // see http://docs.scipy.org/doc/scipy/reference/generated/scipy.special.chdtr.html#scipy.special.chdtr
+  return true;
+}
+
+void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value)
 {
   init_tree_data(tree);
   init_additional_tree_data(tree);
@@ -329,9 +348,35 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda)
     }
   }
 
+  printf("Score Null Model: %.6f\n", data->coalescent);
   printf("Best score found single: %.6f\n", spec_array[pos].score_single);
   printf("Best score found multi: %.6f\n", spec_array[pos].score_multi);
 
-  backtrack_species_assignment(tree, pos);
+  bool good_delimitation = true;
+  double computed_p_value = 0;
+  if (multiple_lambda)
+  {
+    good_delimitation = likelihood_ratio_test(tree, spec_array[pos].score_multi,
+      p_value, 1, &computed_p_value);
+    // TODO: Find out whether here is really just 1 degree of freedom or not
+  }
+  else
+  {
+    good_delimitation = likelihood_ratio_test(tree, spec_array[pos].score_single,
+      p_value, 1, &computed_p_value);
+  }
+
+  //printf("Computed P-value: %.6f\n", computed_p_value);
+
+  if (good_delimitation)
+  {
+    backtrack_species_assignment(tree, pos);
+  }
+  else
+  {
+    printf("The Null Model is the preferred one.\n");
+    print_null_model(tree);
+  }
+
   free_tree_data(tree);
 }

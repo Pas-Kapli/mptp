@@ -43,6 +43,7 @@ long opt_version;
 long opt_treeshow;
 long opt_ptpmulti;
 long opt_ptpsingle;
+double opt_pvalue;
 
 
 static struct option long_options[] =
@@ -57,6 +58,7 @@ static struct option long_options[] =
   {"ptp_single",         no_argument,       0, 0 },  /*  7 */
   {"outgroup",           required_argument, 0, 0 },  /*  8 */
   {"score",              required_argument, 0, 0 },  /*  9 */
+  {"pvalue",             required_argument, 0, 0 },  /* 10 */
   { 0, 0, 0, 0 }
 };
 
@@ -80,9 +82,11 @@ void args_init(int argc, char ** argv)
   opt_ptpmulti = 0;
   opt_ptpsingle = 0;
   opt_scorefile = NULL;
+  opt_pvalue = 0.05;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
+    char * end;
     switch (option_index)
     {
       case 0:
@@ -125,6 +129,13 @@ void args_init(int argc, char ** argv)
       case 9:
         free(opt_scorefile);
         opt_scorefile = optarg;
+        break;
+
+      case 10:
+        opt_pvalue = strtod(optarg, &end);
+        if (end == optarg) {
+          fatal(" is not a valid number.\n");
+        }
         break;
 
       default:
@@ -185,6 +196,7 @@ void cmd_help()
           "  --ptp_multi                    PTP style with one lambda per coalescent.\n"
           "  --ptp_single                   PTP style with single lambda for all coalescent.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
+          "  --pvalue                       Specify a P-value (default: 0.05)"
           "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
           "  --quiet                        only output warnings and fatal errors to stderr.\n"
           "Input and output options:\n"
@@ -224,9 +236,9 @@ void cmd_ptpmulti(bool multiple_lambda)
     if (!opt_quiet)
       fprintf(stdout, "Loaded rooted tree...\n");
   }
-  
+
   /* TODO: Sarah's heuristic function should be called here */
-  ptp_multi_heuristic(rtree, multiple_lambda);
+  ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);

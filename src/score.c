@@ -113,17 +113,18 @@ void identify_alternative_taxa(char * scorefile, int num_leaves,
   }
 }
 
-void retrieve_mrca_nodes(rtree_t * tree)
+void retrieve_mrca_nodes(rtree_t * tree, int * num_species_real,
+  int * num_species_input)
 {
   // Do a post-order traversal for finding common ancestor nodes.
   // As long as the current letters are the same, it is the same species.
   if (tree->left)
   {
-    retrieve_mrca_nodes(tree->left);
+    retrieve_mrca_nodes(tree->left, num_species_real, num_species_input);
   }
   if (tree->right)
   {
-    retrieve_mrca_nodes(tree->right);
+    retrieve_mrca_nodes(tree->right, num_species_real, num_species_input);
   }
   if (tree->left && tree->right) // inner node
   {
@@ -140,10 +141,12 @@ void retrieve_mrca_nodes(rtree_t * tree)
       if (data_left->current_species_real != -1)
       {
         data_left->marked = true;
+        (*num_species_real)++;
       }
       if (data_right->current_species_real != -1)
       {
         data_right->marked = true;
+        (*num_species_real)++;
       }
     }
 
@@ -156,10 +159,12 @@ void retrieve_mrca_nodes(rtree_t * tree)
       if (data_left->current_species_input != -1)
       {
         data_left->marked = true;
+        (*num_species_input)++;
       }
       if (data_right->current_species_input != -1)
       {
         data_right->marked = true;
+        (*num_species_input)++;
       }
     }
   }
@@ -211,6 +216,21 @@ void compute_score(rtree_t * current_node, rtree_t * root, int * score_ptr)
   }
 }
 
+void collect_mrca_nodes_recursive(rtree_t * tree, rtree_t ** mrca_real_list,
+  rtree_t ** mrca_input_list, int * index_real, int * index_input)
+{
+  // TODO: Implement this method.
+}
+
+void collect_mrca_nodes(rtree_t * tree, rtree_t ** mrca_real_list,
+  rtree_t ** mrca_input_list)
+{
+  int index_real = 0;
+  int index_input = 0;
+  collect_mrca_nodes_recursive(tree, mrca_real_list, mrca_input_list,
+    &index_real, &index_input);
+}
+
 void score_delimitation_tree(char * scorefile, rtree_t * tree)
 {
   rtree_t ** leaves_list = calloc(tree->leaves, sizeof(rtree_t));
@@ -221,11 +241,18 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
   identify_alternative_taxa(scorefile, tree->leaves, leaves_list);
 
   // Mark mrca nodes
-  retrieve_mrca_nodes(tree);
+  int num_species_real = 0;
+  int num_species_input = 0;
+  retrieve_mrca_nodes(tree, &num_species_real, &num_species_input);
+  printf("Number of real species: %d\n", num_species_real);
+  printf("Number of species in input file: %d\n", num_species_input);
+
+  rtree_t ** mrca_real_list = calloc(num_species_real, sizeof(rtree_t));
+  rtree_t ** mrca_input_list = calloc(num_species_input, sizeof(rtree_t));
+  collect_mrca_nodes(tree, mrca_real_list, mrca_input_list);
 
   int score = 0;
   compute_score(tree, tree, &score);
   printf("Tree penalty score: %d\n", score);
   free_tree_data_score(tree);
 }
-
