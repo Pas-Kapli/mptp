@@ -351,6 +351,34 @@ double compute_nmi_score(rtree_t ** mrca_real_list, int num_species_real,
   return 1 - (mutual_information / max_entropy);
 }
 
+void compute_score(rtree_t * tree, rtree_t ** mrca_list, int num_species,
+  double * score_single, double * score_multi)
+{
+  node_information * data_root = (node_information*) (tree->data);
+  double speciation = 0;
+  double coalescent_single = 0;
+  double coalescent_multi = 0;
+  int num_edges_coalescent = 0;
+  double sum_edges_coalescent = 0;
+  int i;
+  for (i = 0; i < num_species; i++)
+  {
+    node_information * data_current = (node_information*) (mrca_list[i]->data);
+    coalescent_multi += data_current->coalescent;
+    //printf("  Coalescent multi is now adding: %.6f\n", data_current->coalescent);
+    num_edges_coalescent += data_current->num_edges_subtree;
+    sum_edges_coalescent += data_current->sum_edges_subtree;
+  }
+  speciation = compute_loglikelihood(
+    data_root->num_edges_subtree - num_edges_coalescent,
+    data_root->sum_edges_subtree - sum_edges_coalescent);
+  coalescent_single = compute_loglikelihood(num_edges_coalescent,
+    sum_edges_coalescent);
+
+  (*score_single) = coalescent_single + speciation;
+  (*score_multi) = coalescent_multi + speciation;
+}
+
 void score_delimitation_tree(char * scorefile, rtree_t * tree)
 {
   rtree_t ** leaves_list = calloc(tree->leaves, sizeof(rtree_t));
@@ -371,13 +399,30 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
   rtree_t ** mrca_input_list = calloc(num_species_input, sizeof(rtree_t));
   collect_mrca_nodes(tree, mrca_real_list, mrca_input_list);
 
-  int score = 0;
-  compute_tree_penalty_score(tree, tree, &score);
-  printf("Tree penalty score: %d\n", score);
+  int tree_penalty_score = 0;
+  compute_tree_penalty_score(tree, tree, &tree_penalty_score);
+  printf("Tree penalty score: %d\n", tree_penalty_score);
   double nmi_score = compute_nmi_score(mrca_real_list, num_species_real,
     mrca_input_list, num_species_input, tree->leaves);
   printf("NMI score: %6.f\n", nmi_score);
+
   free_tree_data_score(tree);
+
+  init_tree_data(tree);
+  double score_single_input = 0;
+  double score_multi_input = 0;
+  double score_single_real = 0;
+  double score_multi_real = 0;
+  compute_score(tree, mrca_input_list, num_species_input,
+    &score_single_input, &score_multi_input);
+  compute_score(tree, mrca_real_list, num_species_real,
+    &score_single_real, &score_multi_real);
+  printf("Score input single: %.6f\n", score_single_input);
+  printf("Score input multi: %.6f\n", score_multi_input);
+  printf("Score real single: %.6f\n", score_single_real);
+  printf("Score real multi: %.6f\n", score_multi_real);
+  free_tree_data(tree);
+
   free(leaves_list);
   free(mrca_real_list);
   free(mrca_input_list);

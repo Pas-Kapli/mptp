@@ -24,7 +24,7 @@
 
 double compute_loglikelihood(int num, double sum)
 {
-  if (num == 0) {
+  if (num == 0 || sum == 0) { // TODO: Try to find out if sum == 0 makes sense here
     return 0;
   }
   else
