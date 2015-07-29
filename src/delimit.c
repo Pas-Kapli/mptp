@@ -237,8 +237,7 @@ void cmd_ptpmulti(bool multiple_lambda)
       fprintf(stdout, "Loaded rooted tree...\n");
   }
 
-  /* TODO: Sarah's heuristic function should be called here */
-  ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue);
+  ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);

@@ -92,6 +92,14 @@ void init_tree_data(rtree_t * tree)
   node_information* info = malloc(sizeof(node_information));
   info->num_edges_subtree = subtree_size_edges;
   info->sum_edges_subtree = subtree_sum_edges;
+
+  // Quick fix. TODO: Check whether this makes sense and if so,
+  //                  make spec_array smaller.
+  if (subtree_sum_edges == 0)
+  {
+    info->num_edges_subtree = 0;
+  }
+
   info->spec_array = calloc(subtree_size_edges + 1, sizeof(spec_entry));
 
   int i;
@@ -293,27 +301,36 @@ void print_subtree_leaves(rtree_t * tree)
 
 int current_species_num = 1;
 
-void backtrack_species_assignment(rtree_t * tree, int pos)
+void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet)
 {
   spec_entry* spec_array = ((node_information*) (tree->data))->spec_array;
   if (spec_array[pos].taken_left_index != -1
     && spec_array[pos].taken_right_index != -1)
     // speciation event
   {
-    backtrack_species_assignment(tree->left, spec_array[pos].taken_left_index);
+    backtrack_species_assignment(tree->left, spec_array[pos].taken_left_index,
+      quiet);
     backtrack_species_assignment(tree->right,
-      spec_array[pos].taken_right_index);
+      spec_array[pos].taken_right_index, quiet);
   }
   else  // coalescent event
   {
-    printf("\nSpecies %d:\n", current_species_num++);
-    print_subtree_leaves(tree);
+    if (quiet)
+    {
+      current_species_num++;
+    }
+    else
+    {
+      printf("\nSpecies %d:\n", current_species_num++);
+      print_subtree_leaves(tree);
+    }
   }
 }
 
 void print_null_model(rtree_t * tree)
 {
   printf("Species 1:\n");
+  current_species_num++;
   print_subtree_leaves(tree);
 }
 
@@ -336,7 +353,8 @@ bool likelihood_ratio_test(rtree_t * tree, double likelihood_alternative_model,
   return good_delimitation;
 }
 
-void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value)
+void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
+  bool quiet)
 {
   init_tree_data(tree);
   init_additional_tree_data(tree);
@@ -379,13 +397,17 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value)
 
   if (good_delimitation)
   {
-    backtrack_species_assignment(tree, pos);
+    backtrack_species_assignment(tree, pos, quiet);
   }
   else
   {
     printf("The Null Model is the preferred one.\n");
-    print_null_model(tree);
+    if (!quiet)
+    {
+      print_null_model(tree);
+    }
   }
+  printf("Number of delimited species: %d\n", current_species_num - 1);
 
   free_tree_data(tree);
 }

@@ -227,7 +227,8 @@ unsigned long arch_get_memtotal();
 
 /* functions in ptp_multi.c */
 
-void ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda, double p_value);
+void ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda, double p_value,
+  bool quiet);
 double compute_loglikelihood(int num, double sum);
 void init_tree_data(rtree_t * tree);
 void free_tree_data(rtree_t * tree);
