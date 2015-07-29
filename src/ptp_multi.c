@@ -55,6 +55,8 @@ void print_debug_information(rtree_t * tree)
   }
   node_information* data = (node_information*) (tree->data);
   printf("num_edges_subtree: %d, ", data->num_edges_subtree);
+  printf("num_zero_length_edges_subtree: %d, ",
+    data->num_zero_length_edges_subtree);
   printf("sum_edges_subtree: %f, ", data->sum_edges_subtree);
   printf("coalescent: %f, ", data->coalescent);
   printf("num_known_speciation_edges: %d, ", data->num_known_speciation_edges);
@@ -68,11 +70,14 @@ void print_debug_information(rtree_t * tree)
   printf("\n");
 }
 
+int killed_zero_edges = 0;
+
 void init_tree_data(rtree_t * tree)
 {
   // post-order traversal
   int subtree_size_edges = 0;
   double subtree_sum_edges = 0;
+  int num_zero_length_edges = 0;
   if (tree->left)
   {
     init_tree_data(tree->left);
@@ -80,6 +85,10 @@ void init_tree_data(rtree_t * tree)
     subtree_size_edges += left_data->num_edges_subtree + 1;
     subtree_sum_edges += left_data->sum_edges_subtree;
     subtree_sum_edges += tree->left->length;
+    if (tree->left->length == 0) {
+      num_zero_length_edges++;
+    }
+    num_zero_length_edges += left_data->num_zero_length_edges_subtree;
   }
   if (tree->right)
   {
@@ -88,22 +97,28 @@ void init_tree_data(rtree_t * tree)
     subtree_size_edges += right_data->num_edges_subtree + 1;
     subtree_sum_edges += right_data->sum_edges_subtree;
     subtree_sum_edges += tree->right->length;
+    if (tree->right->length == 0) {
+      num_zero_length_edges++;
+    }
+    num_zero_length_edges += right_data->num_zero_length_edges_subtree;
   }
   node_information* info = malloc(sizeof(node_information));
   info->num_edges_subtree = subtree_size_edges;
   info->sum_edges_subtree = subtree_sum_edges;
+  info->num_zero_length_edges_subtree = num_zero_length_edges;
 
   // Quick fix. TODO: Check whether this makes sense and if so,
   //                  make spec_array smaller.
   if (subtree_sum_edges == 0)
   {
+    killed_zero_edges += info->num_edges_subtree;
     info->num_edges_subtree = 0;
   }
 
   info->spec_array = calloc(subtree_size_edges + 1, sizeof(spec_entry));
 
   int i;
-  for (i = 0; i <= subtree_size_edges; i++)
+  for (i = 0; i <= info->num_edges_subtree; i++)
   {
     info->spec_array[i].taken_left_index = -1;
     info->spec_array[i].taken_right_index = -1;
@@ -115,7 +130,7 @@ void init_tree_data(rtree_t * tree)
   }
 
   info->coalescent =
-    compute_loglikelihood(subtree_size_edges,subtree_sum_edges);
+    compute_loglikelihood(info->num_edges_subtree,subtree_sum_edges);
   tree->data = info;
 }
 
@@ -374,6 +389,11 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
       pos = i;
     }
   }
+
+  printf("Num zero length edges in tree: %d\n",
+    data->num_zero_length_edges_subtree);
+  printf("Num zero length edges killed: %d\n",
+    killed_zero_edges);
 
   printf("Score Null Model: %.6f\n", data->coalescent);
   printf("Best score found single: %.6f\n", spec_array[pos].score_single);

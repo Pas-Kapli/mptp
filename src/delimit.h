@@ -91,6 +91,7 @@ typedef struct node_information_ptpmulti
 {
   int num_edges_subtree;
   double sum_edges_subtree;
+  int num_zero_length_edges_subtree;
   double coalescent;
   spec_entry * spec_array;
 
