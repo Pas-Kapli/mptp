@@ -24,6 +24,7 @@
 
 double compute_loglikelihood(int num, double sum)
 {
+  assert(num >= 0);
   if (num == 0 || sum == 0) { // TODO: Try to find out if sum == 0 makes sense here
     return 0;
   }
@@ -229,7 +230,7 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda)
   spec_array_act[0].score_multi = data->coalescent + speciation_value;
   spec_array_act[0].score_single = data->coalescent + speciation_value;
 
-  if (tree->left && tree->right) // inner node with two children
+  if (tree->left && tree->right && data->num_edges_subtree > 0) // inner node with two children
   {
     node_information* data_left = (node_information*) (tree->left->data);
     node_information* data_right = (node_information*) (tree->right->data);
