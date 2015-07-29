@@ -108,15 +108,15 @@ void init_tree_data(rtree_t * tree)
   info->sum_edges_subtree = subtree_sum_edges;
   info->num_zero_length_edges_subtree = num_zero_length_edges;
 
-  // Quick fix. TODO: Check whether this makes sense and if so,
-  //                  make spec_array smaller.
+  // TODO: Check whether this is the best way to handle those 
+  //   nasty zero-length edges.
   if (subtree_sum_edges == 0)
   {
     killed_zero_edges += info->num_edges_subtree;
     info->num_edges_subtree = 0;
   }
 
-  info->spec_array = calloc(subtree_size_edges + 1, sizeof(spec_entry));
+  info->spec_array = calloc(info->num_edges_subtree + 1, sizeof(spec_entry));
 
   int i;
   for (i = 0; i <= info->num_edges_subtree; i++)
