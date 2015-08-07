@@ -59,7 +59,7 @@ We follow a bottom-up dynamic programming approach, always trying to extend a go
 
 \subsection{Currently observed tree}
 
-For each node $v$, the \emph{currently observed tree} consists of the subtree rooted at $v$, $S(v)$, and the set of edges where we already know that they have to be speciation edges in the case that $S(v)$ contains any speciation edges. (see Fig.~\ref{fig:currently_observed_tree})
+For each node $v$, the \emph{currently observed tree} consists of the subtree rooted at $v$, $S(v)$, and the set of edges where we already know that they have to be speciation edges in the case that a node in $S(v)$ is a speciation event. (see Fig.~\ref{fig:currently_observed_tree})
 
 \begin{figure}[h!]
 	\centering
@@ -78,7 +78,13 @@ If we have $0$ speciation edges in $S(v)$, it simply means that $v$ is handled a
 
 \section{Handling of zero-length Edges}
 
-\ldots
+If the sum of edge-weights in a subtree is zero, its corresponding log-likelihood value would be infinity. Because this worsens the delimitation results a lot, we decide to treat this case differently.
+
+Since a subtree with edge sum zero originates from identical sampled sequences, we shrink the whole subtree to a single node, thus reducing the total number of edges in the tree.
+
+Other zero-length edges that may appear in the tree (e.g., for representing multifurcations) are not treated differently as they do not cause any problems.
+
+(TODO: image with zero length edges)
 
 \bibliographystyle{splncs03}
 \bibliography{delimit}
