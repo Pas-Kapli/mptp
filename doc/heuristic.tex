@@ -18,19 +18,19 @@
 
 \titlerunning{Species delimitation}
 
-\author{Tom\'{a}\v{s} Flouri1\inst{1} \and Paschalia Kapli\inst{1} \and Sarah Lutteropp\inst{1}}
+\author{Tom\'{a}\v{s} Flouri\inst{1} \and Paschalia Kapli\inst{1} \and Sarah Lutteropp\inst{1}}
 \authorrunning{Tom\'{a}\v{s} Flouri et al.} % abbreviated author list
 \institute{Heidelberg Institute of Theoretical Studies}
 
 \maketitle
 
 \begin{abstract}
-An explanation of the single-lambda and multiple-lambda heuristic for PTP.
+An explanation of the single-lambda and multiple-lambda heuristic for PTP.\@
 \end{abstract}
 
 \section{Related Work}
 
-The heuristic is based on a similar idea as the algorithm from Gulek et al.\cite{Gulek:2010:DPA:1838770.1839019} for the tree-like weighted set packing problem.
+We use a similar idea as in the algorithm from Gulek et al.\cite{Gulek:2010:DPA:1838770.1839019} for the tree-like weighted set packing problem.
 
 \ldots
 
@@ -43,13 +43,13 @@ $$logl(E) := |E| * (\log{|E|} - 1 - \log{\sum_{e \in E} w(e)})$$
 
 \paragraph{Multiple Lambda Score}
 
-We want to find a delimitation such that the following sum of loglikelihoods (in the following referred to as \emph{score}) is maximized:
+We want to find a delimitation that maximizes the following sum of loglikelihoods (in the following referred to as \emph{score}):
 
 $$\sum_{i=1}^{k+1}{logl(E_i)}$$
 
 \paragraph{Single Lambda Score}
 
-We want to find a delimitation such that the following sum of loglikelihoods (in the following referred to as \emph{score}, too) is maximized:
+We want to find a delimitation that maximizes the following sum of loglikelihoods (in the following referred to as \emph{score}, too):
 
 $$logl(\cup_{i=1}^k{E_i}) + logl(E_{k+1})$$
 
@@ -59,12 +59,12 @@ We follow a bottom-up dynamic programming approach, always trying to extend a go
 
 \subsection{Currently observed tree}
 
-For each node $v$, the \emph{currently observed tree} (COT) consists of the subtree rooted at $v$, $S(v)$, and the set of edges where we already know that they have to be speciation edges in the case that $S(v)$ contains new species (see Fig.~\ref{fig:currently_observed_tree}). Our aim is to find a delimitation that yields to a high score for the COT. This means that the edges that are contained in the COT will be ignored by the score computation since we do not know their assignment.
+For each node $v$, the \emph{currently observed tree} (COT) consists of the subtree rooted at $v$, $S(v)$, and the set of edges where we already know that they have to be speciation edges in the case that $S(v)$ contains new species (see Fig.~\ref{fig:currently_observed_tree}). Our aim is to find a delimitation that yields to a high score for the COT.\@ This means that the score computation ignores all edges that are not in the COT since we do not know their assignment.
 
 \begin{figure}[h!]
 	\centering
 	\includegraphics[scale=0.4]{images/currently_observed_tree.pdf}
-	\caption{The COT of a node $v$. The edges belonging to $S(v)$ are drawn in thick blue lines and the known speciation edges are drawn in thick purple lines, respectively. Edges that do not belong to the COT of $v$ are drawn in dotted lines.}
+	\caption{The COT of a node $v$. The edges belonging to $S(v)$ are drawn in thick blue lines and the known speciation edges are drawn in thick purple lines. Edges that do not belong to the COT of $v$ are drawn in dotted lines.}
 	\label{fig:currently_observed_tree}
 \end{figure}
 
@@ -73,10 +73,10 @@ For each node $v$, the \emph{currently observed tree} (COT) consists of the subt
 For every node $v$, we store an array that contains the best found score for $0, 2, 4, \ldots$ speciation edges and the delimitation that led to it. A node $v$ can either be a coalescent event or a speciation event.
 
 \paragraph{Coalescent event}
-If a node $v$ is a coalescent event, we have $0$ speciation edges in $S(v)$. For this case, we compute the score of $v$ being a coalescent event and the edges in the COT of $v$ that are not in $S(v)$ being speciation events and store it in $v$. We do not need to look at the solutions for the children of $v$ in this case.
+If a node $v$ is a coalescent event, we have $0$ speciation edges in $S(v)$. For this case, we compute the score of all edges in $S(v)$ being coalescent edges and the known speciation edges being speciation edges and store it in $v$. We do not need to look at the solutions for the children of $v$ in this case.
 
 \paragraph{Speciation event}
-In order to find a solution for a subtree $S(v)$ and $k>0$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitations using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
+In order to find a solution for a subtree $S(v)$ and $k>1$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitations using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
 
 \begin{figure}[h!]
 \centering
@@ -85,11 +85,14 @@ In order to find a solution for a subtree $S(v)$ and $k>0$ speciation edges, we 
 \label{fig:combining}
 \end{figure}
 
+\section{Final Result}
+We obtain the final result by choosing the delimitation that led to the highest score for the root of the tree.
+
 \section{Handling of zero-length Edges}
 
-If the sum of edge-weights in a subtree is zero, its corresponding log-likelihood value would be infinity. Because this worsens the delimitation results a lot, we decide to treat this case differently.
+If the sum of edge-weights in a subtree is zero, its corresponding log-likelihood value would be infinity. Because this worsens the delimitation results a lot, we decided to treat this case differently.
 
-Since a subtree with edge sum zero originates from identical sampled sequences, we shrink the whole subtree to a single node, thus reducing the total number of edges in the tree.
+Since a subtree with edge sum zero originates from identical sampled sequences, we shrink the whole subtree to a single leaf node, reducing the total number of edges in the tree by this operation.
 
 Other zero-length edges that may appear in the tree (e.g., for representing multifurcations) are not treated differently as they do not cause any problems.
 
