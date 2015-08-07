@@ -30,9 +30,7 @@ An explanation of the single-lambda and multiple-lambda heuristic for PTP.\@
 
 \section{Related Work}
 
-We use a similar idea as in the algorithm from Gulek et al.\cite{Gulek:2010:DPA:1838770.1839019} for the tree-like weighted set packing problem.
-
-\ldots
+Like in the algorithm from Gulek et al.\cite{Gulek:2010:DPA:1838770.1839019} for the tree-like weighted set packing problem, we try to build up a solution for the whole tree by combining the solutions for its children subtrees.
 
 \section{Task Description}
 
@@ -53,8 +51,7 @@ We want to find a delimitation that maximizes the following sum of loglikelihood
 
 $$logl(\cup_{i=1}^k{E_i}) + logl(E_{k+1})$$
 
-\section{General Idea}
-
+\section{The Heuristic}
 We follow a bottom-up dynamic programming approach, always trying to extend a good solution for the children subtrees in order to obtain a good solution for the currently observed tree.
 
 \subsection{Currently observed tree}
@@ -70,10 +67,10 @@ For each node $v$, the \emph{currently observed tree} (COT) consists of the subt
 
 \subsection{Combination of solutions}
 
-For every node $v$, we store an array that contains the best found score for $0, 2, 4, \ldots$ speciation edges and the delimitation that led to it. A node $v$ can either be a coalescent event or a speciation event.
+For every node $v$, we store an array that contains the best found score for $0, 2, 4, \ldots, |S(v)|$ speciation edges and the delimitation that led to it. A node $v$ can either be a coalescent event or a speciation event.
 
 \paragraph{Coalescent event}
-If a node $v$ is a coalescent event, we have $0$ speciation edges in $S(v)$. For this case, we compute the score of all edges in $S(v)$ being coalescent edges and the known speciation edges being speciation edges and store it in $v$. We do not need to look at the solutions for the children of $v$ in this case.
+If $v$ is a coalescent event, we have $0$ speciation edges in $S(v)$. For this case, we compute the score of all edges in $S(v)$ being coalescent edges and the known speciation edges in the COT of $v$ being speciation edges and store it in $v$. Since we do not need to look at the solutions for the children of $v$ in this case, we can do this step already in the initialisation.
 
 \paragraph{Speciation event}
 In order to find a solution for a subtree $S(v)$ and $k>1$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitations using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
@@ -85,10 +82,7 @@ In order to find a solution for a subtree $S(v)$ and $k>1$ speciation edges, we 
 \label{fig:combining}
 \end{figure}
 
-\section{Final Result}
-We obtain the final result by choosing the delimitation that led to the highest score for the root of the tree.
-
-\section{Handling of zero-length Edges}
+\subsection{Handling zero-length Edges}
 
 If the sum of edge-weights in a subtree is zero, its corresponding log-likelihood value would be infinity. Because this worsens the delimitation results a lot, we decided to treat this case differently.
 
@@ -96,7 +90,8 @@ Since a subtree with edge sum zero originates from identical sampled sequences, 
 
 Other zero-length edges that may appear in the tree (e.g., for representing multifurcations) are not treated differently as they do not cause any problems.
 
-(TODO: image with zero length edges)
+\subsection{Final Result}
+We obtain the final result by choosing the delimitation that led to the highest score for the root of the tree.
 
 \bibliographystyle{splncs03}
 \bibliography{delimit}
