@@ -36,21 +36,22 @@ The heuristic works similar to the algorithm from Gulek et al.\cite{Gulek:2010:D
 
 \section{Task Description}
 
-Given a rooted fully binary tree with edge weight function $w$, we want to partition its leaves into disjoint sets (called species). The MRCAs of those species induce subtrees $A_1, \ldots, A_{k}$. Every edge that is not assigned to one of these subtrees is then put into the set of speciation edges, $A_{k+1}$.
+Given a rooted fully binary tree with edge weight function $w$, we want to partition its leaves into disjoint sets (called species). The MRCAs of those species induce subtrees with edge sets $E_1, \ldots, E_{k}$. Every edge that is not assigned to one of these subtrees is then put into the set of speciation edges, $E_{k+1}$.
+
+Given a set of edges $E$, we define its log-likelihood $logl(E)$ as
+$$logl(E) := |E| * (\log{|E|} - 1 - \log{\sum_{e \in E} w(e)})$$
 
 \paragraph{Multiple Lambda Score}
 
 We want to find a delimitation such that the following sum of loglikelihoods (in the following referred to as \emph{score}) is maximized:
 
-$$\sum_{i=1}^{k+1}{ \left(|A_i| * \log |A_i| - |A_i| - |A_i| * \log\left( \sum_{e \in A_i}{w(e)} \right) \right)}$$
+$$\sum_{i=1}^{k+1}{logl(E_i)}$$
 
 \paragraph{Single Lambda Score}
 
 We want to find a delimitation such that the following sum of loglikelihoods (in the following referred to as \emph{score}, too) is maximized:
 
-$$\left(\sum_{i=1}^{k}{|A_i|} * \log\left(\sum_{i=1}^{k}{|A_i|}\right) - \sum_{i=1}^{k}{|A_i|} - \sum_{i=1}^{k}{|A_i|} * \log \left( \sum_{e \in A_i \cup \ldots \cup A_k}{w(e)} \right)\right)$$
-
-$$ + \left(|A_{k+1}| * \log |A_{k+1}| - |A_{k+1}| - |A_{k+1}| * \log\left( \sum_{e \in A_{k+1}}{w(e)} \right) \right)$$
+$$logl(\cup_{i=1}^k{E_i}) + logl(E_{k+1})$$
 
 \section{General Idea}
 
