@@ -59,24 +59,24 @@ We follow a bottom-up dynamic programming approach, always trying to extend a go
 
 \subsection{Currently observed tree}
 
-For each node $v$, the \emph{currently observed tree} (COT) consists of the subtree rooted at $v$, $S(v)$, and the set of edges where we already know that they have to be speciation edges in the case that a node in $S(v)$ is a speciation event (see Fig.~\ref{fig:currently_observed_tree}). Our aim is to find a delimitation that yields to a high score for the COT. This means that every edge that is not contained in the COT will be ignored by the score computation since we do not know its assignment.
+For each node $v$, the \emph{currently observed tree} (COT) consists of the subtree rooted at $v$, $S(v)$, and the set of edges where we already know that they have to be speciation edges in the case that $S(v)$ contains new species (see Fig.~\ref{fig:currently_observed_tree}). Our aim is to find a delimitation that yields to a high score for the COT. This means that the edges that are contained in the COT will be ignored by the score computation since we do not know their assignment.
 
 \begin{figure}[h!]
 	\centering
 	\includegraphics[scale=0.4]{images/currently_observed_tree.pdf}
-	\caption{The currently observed tree of $v$, marked with thick blue edges}
+	\caption{The COT of a node $v$. The edges belonging to $S(v)$ are drawn in thick blue lines and the known speciation edges are drawn in thick purple lines, respectively. Edges that do not belong to the COT of $v$ are drawn in dotted lines.}
 	\label{fig:currently_observed_tree}
 \end{figure}
 
 \subsection{Combination of solutions}
 
-For every node, we store an array that contains the best found score for $0, 2, 4, \ldots$ speciation edges and the delimitation that led to it.
+For every node $v$, we store an array that contains the best found score for $0, 2, 4, \ldots$ speciation edges and the delimitation that led to it. A node $v$ can either be a coalescent event or a speciation event.
 
-\paragraph{Zero speciation edges}
-If we have $0$ speciation edges in $S(v)$, it simply means that $v$ is handled as the root of a coalescent group (species). Thus we can directly use the score function to obtain this score and do not need to look at the children's scores.
+\paragraph{Coalescent event}
+If a node $v$ is a coalescent event, we have $0$ speciation edges in $S(v)$. For this case, we compute the score of $v$ being a coalescent event and the edges in the COT of $v$ that are not in $S(v)$ being speciation events and store it in $v$. We do not need to look at the solutions for the children of $v$ in this case.
 
-\paragraph{More than zero speciation edges}
-In order to find a solution for a subtree $S(v)$ and $k>0$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitation using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
+\paragraph{Speciation event}
+In order to find a solution for a subtree $S(v)$ and $k>0$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitations using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
 
 \begin{figure}[h!]
 \centering
