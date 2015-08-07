@@ -59,7 +59,7 @@ We follow a bottom-up dynamic programming approach, always trying to extend a go
 
 \subsection{Currently observed tree}
 
-For each node $v$, the \emph{currently observed tree} consists of the subtree rooted at $v$, $S(v)$, and the set of edges where we already know that they have to be speciation edges in the case that a node in $S(v)$ is a speciation event. (see Fig.~\ref{fig:currently_observed_tree})
+For each node $v$, the \emph{currently observed tree} (COT) consists of the subtree rooted at $v$, $S(v)$, and the set of edges where we already know that they have to be speciation edges in the case that a node in $S(v)$ is a speciation event (see Fig.~\ref{fig:currently_observed_tree}). Our aim is to find a delimitation that yields to a high score for the COT. This means that every edge that is not contained in the COT will be ignored by the score computation since we do not know its assignment.
 
 \begin{figure}[h!]
 	\centering
@@ -72,7 +72,11 @@ For each node $v$, the \emph{currently observed tree} consists of the subtree ro
 
 For every node, we store an array that contains the best found score for $0, 2, 4, \ldots$ speciation edges and the delimitation that led to it.
 
-In order to find a solution for a subtree $S(v)$ and $k$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ and take the one that yields to the highest score (see Fig.~\ref{fig:combining}).
+\paragraph{Zero speciation edges}
+If we have $0$ speciation edges in $S(v)$, it simply means that $v$ is handled as the root of a coalescent group (species). Thus we can directly use the score function to obtain this score and do not need to look at the children's scores.
+
+\paragraph{More than zero speciation edges}
+In order to find a solution for a subtree $S(v)$ and $k>0$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitation using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
 
 \begin{figure}[h!]
 \centering
@@ -80,12 +84,6 @@ In order to find a solution for a subtree $S(v)$ and $k$ speciation edges, we co
 \caption{Combining the best found solutions for the subtrees}
 \label{fig:combining}
 \end{figure}
-
-
-
-If we have $0$ speciation edges in $S(v)$, it simply means that $v$ is handled as the root of a coalescent group (species). Thus we can directly use the score function to obtain this score and do not need to look at the children's scores.
-
-\ldots
 
 \section{Handling of zero-length Edges}
 
