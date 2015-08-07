@@ -30,13 +30,13 @@ An explanation of the single-lambda and multiple-lambda heuristic for PTP.
 
 \section{Related Work}
 
-The heuristic works similar to the algorithm from Gulek et al.\cite{Gulek:2010:DPA:1838770.1839019}.
+The heuristic is based on a similar idea as the algorithm from Gulek et al.\cite{Gulek:2010:DPA:1838770.1839019} for the tree-like weighted set packing problem.
 
 \ldots
 
 \section{Task Description}
 
-Given a rooted fully binary tree with edge weight function $w$, we want to partition its leaves into disjoint sets (called species). The MRCAs of those species induce subtrees with edge sets $E_1, \ldots, E_{k}$. Every edge that is not assigned to one of these subtrees is then put into the set of speciation edges, $E_{k+1}$.
+Given a rooted fully binary tree with non-negative edge weight function $w$, we want to partition its leaves into disjoint sets (called species). The \emph{most recent common ancestors} (MRCA) of those species induce subtrees with edge sets $E_1, \ldots, E_{k}$. Every edge that is not assigned to one of those subtrees is then put into the set of speciation edges, $E_{k+1}$.
 
 Given a set of edges $E$, we define its log-likelihood $logl(E)$ as
 $$logl(E) := |E| * (\log{|E|} - 1 - \log{\sum_{e \in E} w(e)})$$
@@ -68,9 +68,20 @@ For each node $v$, the \emph{currently observed tree} consists of the subtree ro
 	\label{fig:currently_observed_tree}
 \end{figure}
 
-For every node, we store an array that contains the best found score for $0, 2, 4, \ldots$ speciation edges.
+\subsection{Combination of solutions}
 
-In order to determine a good solution for $v$ that contains $k+2$ speciation edges, we combine all solutions for $i$ speciation edges from the left child of $v$ with all solutions for $j$ speciation edges for the right child of $v$ where $i+j=k$ and take the one that yields to the highest score. (TODO: Image)
+For every node, we store an array that contains the best found score for $0, 2, 4, \ldots$ speciation edges and the delimitation that led to it.
+
+In order to find a solution for a subtree $S(v)$ and $k$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ and take the one that yields to the highest score (see Fig.~\ref{fig:combining}).
+
+\begin{figure}[h!]
+\centering
+\includegraphics[scale=0.3]{images/speciation_events.pdf}
+\caption{Combining the best found solutions for the subtrees}
+\label{fig:combining}
+\end{figure}
+
+
 
 If we have $0$ speciation edges in $S(v)$, it simply means that $v$ is handled as the root of a coalescent group (species). Thus we can directly use the score function to obtain this score and do not need to look at the children's scores.
 
