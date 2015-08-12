@@ -439,6 +439,10 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
     {
       print_null_model(tree);
     }
+    else
+    {
+      current_species_num = 2;
+    }
   }
   printf("Number of delimited species: %d\n", current_species_num - 1);
 
