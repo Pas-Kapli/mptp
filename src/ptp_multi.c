@@ -119,10 +119,11 @@ void init_tree_data(rtree_t * tree, double min_br)
 
   // TODO: Check whether this is the best way to handle those 
   //   nasty zero-length edges.
-  if (subtree_sum_edges == 0)
+  if (subtree_sum_edges < min_br)
   {
     killed_zero_edges += info->num_edges_subtree;
     info->num_edges_subtree = 0;
+    info->sum_edges_subtree = 0;
   }
 
   info->spec_array = calloc(info->num_edges_subtree + 1, sizeof(spec_entry));
@@ -399,7 +400,9 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
       pos = i;
     }
   }
-
+  
+  printf("Num big enough edges in tree: %d\n",
+    data->num_edges_subtree);
   printf("Num zero length edges in tree: %d\n",
     data->num_zero_length_edges_subtree);
   printf("Num zero length edges killed: %d\n",
