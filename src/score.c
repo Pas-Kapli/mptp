@@ -381,7 +381,7 @@ void compute_score(rtree_t * tree, rtree_t ** mrca_list, int num_species,
   (*score_multi) = coalescent_multi + speciation;
 }
 
-void score_delimitation_tree(char * scorefile, rtree_t * tree)
+void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br)
 {
   rtree_t ** leaves_list = calloc(tree->leaves, sizeof(rtree_t));
   rtree_query_tipnodes(tree, leaves_list);
@@ -410,7 +410,7 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
 
   free_tree_data_score(tree);
 
-  init_tree_data(tree);
+  init_tree_data(tree, min_br);
   double score_single_input = 0;
   double score_multi_input = 0;
   double score_single_real = 0;

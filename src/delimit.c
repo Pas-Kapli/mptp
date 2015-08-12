@@ -44,6 +44,7 @@ long opt_treeshow;
 long opt_ptpmulti;
 long opt_ptpsingle;
 double opt_pvalue;
+double opt_minbr;
 
 
 static struct option long_options[] =
@@ -59,6 +60,7 @@ static struct option long_options[] =
   {"outgroup",           required_argument, 0, 0 },  /*  8 */
   {"score",              required_argument, 0, 0 },  /*  9 */
   {"pvalue",             required_argument, 0, 0 },  /* 10 */
+  {"min_br",             required_argument, 0, 0 },  /* 11 */
   { 0, 0, 0, 0 }
 };
 
@@ -83,6 +85,7 @@ void args_init(int argc, char ** argv)
   opt_ptpsingle = 0;
   opt_scorefile = NULL;
   opt_pvalue = 0.001;
+  opt_minbr = 0.0001;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -133,6 +136,13 @@ void args_init(int argc, char ** argv)
 
       case 10:
         opt_pvalue = strtod(optarg, &end);
+        if (end == optarg) {
+          fatal(" is not a valid number.\n");
+        }
+        break;
+
+      case 11:
+        opt_minbr = strtod(optarg, &end);
         if (end == optarg) {
           fatal(" is not a valid number.\n");
         }
@@ -197,6 +207,7 @@ void cmd_help()
           "  --ptp_single                   PTP style with single lambda for all coalescent.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
           "  --pvalue                       Specify a P-value (default: 0.001)\n"
+          "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
           "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
           "  --quiet                        only output warnings and fatal errors to stderr.\n"
           "Input and output options:\n"
@@ -237,7 +248,7 @@ void cmd_ptpmulti(bool multiple_lambda)
       fprintf(stdout, "Loaded rooted tree...\n");
   }
 
-  ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet);
+  ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet, opt_minbr);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
@@ -297,7 +308,7 @@ void cmd_score()
   }
 
   /* TODO: Sarah's score function should be called here */
-  score_delimitation_tree(opt_scorefile, rtree);
+  score_delimitation_tree(opt_scorefile, rtree, opt_minbr);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);

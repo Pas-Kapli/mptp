@@ -229,11 +229,11 @@ unsigned long arch_get_memtotal();
 /* functions in ptp_multi.c */
 
 void ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet);
+  bool quiet, double min_br);
 double compute_loglikelihood(int num, double sum);
-void init_tree_data(rtree_t * tree);
+void init_tree_data(rtree_t * tree, double min_br);
 void free_tree_data(rtree_t * tree);
 
 /* functions in score.c */
 
-void score_delimitation_tree(char * scorefile, rtree_t * tree);
+void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br);

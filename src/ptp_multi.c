@@ -73,7 +73,7 @@ void print_debug_information(rtree_t * tree)
 
 int killed_zero_edges = 0;
 
-void init_tree_data(rtree_t * tree)
+void init_tree_data(rtree_t * tree, double min_br)
 {
   // post-order traversal
   int subtree_size_edges = 0;
@@ -81,24 +81,33 @@ void init_tree_data(rtree_t * tree)
   int num_zero_length_edges = 0;
   if (tree->left)
   {
-    init_tree_data(tree->left);
+    init_tree_data(tree->left, min_br);
     node_information* left_data = (node_information*) (tree->left->data);
     subtree_size_edges += left_data->num_edges_subtree + 1;
     subtree_sum_edges += left_data->sum_edges_subtree;
-    subtree_sum_edges += tree->left->length;
-    if (tree->left->length == 0) {
+    if (tree->left->length > min_br)
+    {
+      subtree_sum_edges += tree->left->length;
+    }
+    else
+    {
       num_zero_length_edges++;
     }
     num_zero_length_edges += left_data->num_zero_length_edges_subtree;
   }
   if (tree->right)
   {
-    init_tree_data(tree->right);
+    init_tree_data(tree->right, min_br);
     node_information* right_data = (node_information*) (tree->right->data);
     subtree_size_edges += right_data->num_edges_subtree + 1;
     subtree_sum_edges += right_data->sum_edges_subtree;
     subtree_sum_edges += tree->right->length;
-    if (tree->right->length == 0) {
+    if (tree->right->length > min_br)
+    {
+      subtree_sum_edges += tree->right->length;
+    }
+    else
+    {
       num_zero_length_edges++;
     }
     num_zero_length_edges += right_data->num_zero_length_edges_subtree;
@@ -370,9 +379,9 @@ bool likelihood_ratio_test(rtree_t * tree, double likelihood_alternative_model,
 }
 
 void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
-  bool quiet)
+  bool quiet, double min_br)
 {
-  init_tree_data(tree);
+  init_tree_data(tree, min_br);
   init_additional_tree_data(tree);
   multi_traversal(tree, multiple_lambda);
   //print_debug_information(tree);
