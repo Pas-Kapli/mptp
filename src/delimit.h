@@ -119,12 +119,24 @@ typedef struct node_information_score
 /* options */
 
 extern int opt_quiet;
+extern int opt_precision;
+extern int opt_svg_showlegend;
+extern long opt_svg;
 extern char * opt_treefile;
 extern char * opt_outfile;
 extern char * opt_outgroup;
 extern long opt_help;
 extern long opt_version;
 extern long opt_treeshow;
+extern long opt_svg_width;
+extern long opt_svg_fontsize;
+extern long opt_svg_tipspace;
+extern long opt_svg_marginleft;
+extern long opt_svg_marginright;
+extern long opt_svg_margintop;
+extern long opt_svg_marginbottom;
+extern long opt_svg_inner_radius;
+extern double opt_svg_legend_ratio;
 
 /* common data */
 
@@ -239,3 +251,6 @@ void free_tree_data(rtree_t * tree);
 /* functions in score.c */
 
 void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br);
+
+/* functions in svg.c */
+void cmd_svg(rtree_t * rtree);

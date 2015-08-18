@@ -31,6 +31,8 @@ void rtree_destroy(rtree_t * root)
 
   rtree_destroy(root->left);
   rtree_destroy(root->right);
+  if (root->data)
+    free(root->data);
 
   free(root->label);
   free(root);

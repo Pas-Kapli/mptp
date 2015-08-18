@@ -38,6 +38,8 @@ char * opt_outfile;
 char * opt_outgroup;
 char * opt_scorefile;
 int opt_quiet;
+int opt_precision;
+int opt_svg_showlegend;
 long opt_help;
 long opt_version;
 long opt_treeshow;
@@ -45,6 +47,16 @@ long opt_ptpmulti;
 long opt_ptpsingle;
 double opt_pvalue;
 double opt_minbr;
+long opt_svg;
+long opt_svg_width;
+long opt_svg_fontsize;
+long opt_svg_tipspace;
+long opt_svg_marginleft;
+long opt_svg_marginright;
+long opt_svg_margintop;
+long opt_svg_marginbottom;
+long opt_svg_inner_radius;
+double opt_svg_legend_ratio;
 
 
 static struct option long_options[] =
@@ -61,6 +73,17 @@ static struct option long_options[] =
   {"score",              required_argument, 0, 0 },  /*  9 */
   {"pvalue",             required_argument, 0, 0 },  /* 10 */
   {"min_br",             required_argument, 0, 0 },  /* 11 */
+  {"svg_width",          required_argument, 0, 0 },  /* 12 */
+  {"svg_fontsize",       required_argument, 0, 0 },  /* 13 */
+  {"svg_tipspacing",     required_argument, 0, 0 },  /* 14 */
+  {"svg_legend_ratio",   required_argument, 0, 0 },  /* 15 */
+  {"svg_nolegend",       no_argument,       0, 0 },  /* 16 */
+  {"svg_marginleft",     required_argument, 0, 0 },  /* 17 */
+  {"svg_marginright",    required_argument, 0, 0 },  /* 18 */
+  {"svg_margintop",      required_argument, 0, 0 },  /* 19 */
+  {"svg_marginbottom",   required_argument, 0, 0 },  /* 20 */
+  {"svg_inner_radius",   required_argument, 0, 0 },  /* 21 */
+  {"precision",          required_argument, 0, 0 },  /* 22 */
   { 0, 0, 0, 0 }
 };
 
@@ -86,6 +109,17 @@ void args_init(int argc, char ** argv)
   opt_scorefile = NULL;
   opt_pvalue = 0.001;
   opt_minbr = 0.0001;
+  opt_precision = 7;
+
+  opt_svg_width = 1920;
+  opt_svg_fontsize = 12;
+  opt_svg_tipspace = 20;
+  opt_svg_legend_ratio = 0.1;
+  opt_svg_showlegend = 1;
+  opt_svg_marginleft = 20;
+  opt_svg_marginright = 20;
+  opt_svg_margintop = 20;
+  opt_svg_marginbottom = 20;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -146,6 +180,50 @@ void args_init(int argc, char ** argv)
         if (end == optarg) {
           fatal(" is not a valid number.\n");
         }
+        break;
+
+      case 12:
+        opt_svg_width = atoi(optarg);
+        break;
+
+      case 13:
+        opt_svg_fontsize = atol(optarg);
+        break;
+
+      case 14:
+        opt_svg_tipspace = atol(optarg);
+        break;
+
+      case 15:
+        opt_svg_legend_ratio = atof(optarg);
+        break;
+      
+      case 16:
+        opt_svg_showlegend = 0;
+        break;
+
+      case 17:
+        opt_svg_marginleft = atol(optarg);
+        break;
+
+      case 18:
+        opt_svg_marginright = atol(optarg);
+        break;
+
+      case 19:
+        opt_svg_margintop = atol(optarg);
+        break;
+
+      case 20:
+        opt_svg_marginbottom = atol(optarg);
+        break;
+
+      case 21:
+        opt_svg_inner_radius = atol(optarg);
+        break;
+
+      case 22:
+        opt_precision = atoi(optarg);
         break;
 
       default:
@@ -218,8 +296,6 @@ void cmd_help()
 
 void cmd_ptpmulti(bool multiple_lambda)
 {
-  FILE * out;
-
   /* parse tree */
   if (!opt_quiet)
     fprintf(stdout, "Parsing tree file...\n");
@@ -256,17 +332,7 @@ void cmd_ptpmulti(bool multiple_lambda)
   if (!opt_quiet)
     fprintf(stdout, "Writing tree file...\n");
 
-  /* export tree structure to newick string */
-  char * newick = rtree_export_newick(rtree);
-
-  /* Write newick to file */
-  out = fopen(opt_outfile, "w");
-  if (!out)
-    fatal("Cannot write to file %s", opt_outfile);
-
-  fprintf(out, "%s", newick);
-  fclose(out);
-  free(newick);
+  cmd_svg(rtree);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);

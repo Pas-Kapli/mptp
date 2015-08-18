@@ -75,6 +75,10 @@ void init_tree_data(rtree_t * tree, double min_br)
   int subtree_size_edges = 0;
   double subtree_sum_edges = 0;
 
+  /* initialize everything to coalescent, speciations will then
+     over-write this value */
+  tree->event = EVENT_COALESCENT;
+
   if (tree->left)
   {
     init_tree_data(tree->left, min_br);

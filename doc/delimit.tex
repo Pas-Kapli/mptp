@@ -43,26 +43,33 @@ use the notation $(u,v) \in E$ to denote an edge with end-points $u,v \in V$.
 If $T$ is {\em oriented}, then {\em in-degree} (resp. {\em out-degree}) of a
 node denotes the number of incoming (resp. outgoing edges) of $u$. In the
 opposite case, the {\em degree} of node $u$ denotes the number of edges $u$ is
-an end-point of.  Further, we denote with $T_u$ the subtree of $T$ rooted at
-node $u$.  A {\em rooted binary tree} $T$ is a {\em directed} tree with all
-nodes having in-degree 1 and out-degree 1 ({\em inner} nodes), or in-degree 1
-and out-degree 0 ({\em leaves}). Furthermore, one node has in-degree 0 and
-out-degree 2 ({\em root}).  In the rest of the text we implicitely assume under
-the term tree a binary rooted tree.  We denote the set of leaves of tree $T$ as
-$L(T)$.  The cardinality of a set $X$ is denoted as $|X|$. The mapping $\ell :
-E \mapsto \mathbb{N}$ associated each edge $e \in E$ with a length $\ell(e)$.
-For clarity, we will use the notation $\ell_{u,v}$ to denote the length
-$\ell((u,v))$.  We define the {\em height} $h(u)$ of a node $u$ of $T$ as
+an end-point of. An {\em path} of length $k$ of a graph
+$T=(V,E)$ is a subgraph $(V' \subset V,E' \subset E)$ such that 
+\[ V' = \{v_0,v_1,\ldots, v_k\} \qquad 
+E' =\{(v_0,v_1),(v_1,v_2),\ldots,(v_{k-1},v_k)\}. \] 
+and all $v_i$, $0 \leq i \leq k$ are distinct. We denote the path from node $u$
+to node $v$ as $u \leadsto v$. We call the graph $G=(V',E')$ an {\em induced
+subgraph} of $T=(V,E)$ if $V'\subset V$, $E' \subset E$ and $E'$ contains all
+edges $(u,v) \in E$ for all $u,v\in V'$.  A non-emptu graph is {\em connected}
+if any two of its vertices are linked by a path in $G$. Further, we denote with
+$T_u$ the subtree of $T$ rooted at node $u$.  A {\em rooted binary tree} $T$ is
+a {\em directed} tree with all nodes having in-degree 1 and out-degree 1 ({\em
+inner} nodes), or in-degree 1 and out-degree 0 ({\em leaves}). Furthermore, one
+node has in-degree 0 and out-degree 2 ({\em root}).  In the rest of the text we
+implicitely assume under the term tree a binary rooted tree.  We denote the set
+of leaves of tree $T$ as $L(T)$.  The cardinality of a set $X$ is denoted as
+$|X|$. The mapping $\ell : E \mapsto \mathbb{N}$ associated each edge $e \in E$
+with a length $\ell(e)$.  For clarity, we will use the notation $\ell_{u,v}$ to
+denote the length $\ell((u,v))$.  We define the {\em height} $h(u)$ of a node
+$u$ of $T$ as
 %
-\[ h(u) = \left\{ \begin{array}{ll}
-\max(h(v) + \ell_{u,v}, h(w) + \ell_{u,w}) + 1 & \quad : \quad u \notin L(T)\\
-0                                                & \quad : \quad u    \in L(T)\\
-\end{array}\right. \] 
-The height $h(T)$ of a tree $T$ is the height of its root. Finally, we will
-implicitely use the notation $r$ for specifying the root of a tree, and
-$\ell_{u,v}$ for the length of edge $(u,v)$.  A tree is {\em ultrametric} if
-the sum of lengths of edges in the path from a leaf to a root is equal for all
-leaves in a tree.
+\[ h(u) = \left\{ \begin{array}{ll} \max(h(v) + \ell_{u,v}, h(w) + \ell_{u,w})
++ 1 & \quad : \quad u \notin L(T)\\ 0
+& \quad : \quad u    \in L(T)\\ \end{array}\right. \] The height $h(T)$ of a
+tree $T$ is the height of its root. Finally, we will implicitely use the
+notation $r$ for specifying the root of a tree, and $\ell_{u,v}$ for the length
+of edge $(u,v)$.  A tree is {\em ultrametric} if the sum of lengths of edges in
+the path from a leaf to a root is equal for all leaves in a tree.
 
 \section{Single-threshold GMYC method}
 
@@ -133,6 +140,23 @@ algorithm starts by passing the tree ($T$), number of discretization lines
 postorder and thne computes the best placement for every node $u$.}
 \label{fig:gmyc-single}
 \end{figure}
+
+\section{Poisson Tree Process (PTP)}
+
+Here we begin by formally describing the problem being solved in \cite{PTP}. We
+then report a flaw in the formulation of the problem and give a new, correct
+definition. Finally, we prove that the problem is $\mathsf{NP}$-hard, and
+propose an approximation algorithm.
+
+\subsection{Original problem definition}
+
+The problem described in \cite{PTP} can be formulated in the following way.
+
+Given is a binary tree $T=(V,E)$ with a root $r \in V$. The goal is to select a connected induced subgraph $T'=(V',E')$ of $T$
+that contains $r$, and maximizes the following equation:
+
+$$ - |E'|(1 + \log \frac{|E'|}{\sum_{e \in E'}\ell(e)}) - |E''|(1 + \log \frac{|E''|}{\sum_{e \in E''}\ell(e)})$$
+
 
 \bibliographystyle{splncs03}
 \bibliography{delimit}
