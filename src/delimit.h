@@ -48,6 +48,8 @@
 #endif
 
 /* structures and data types */
+#define EVENT_SPECIATION 0
+#define EVENT_COALESCENT 1
 
 typedef unsigned int UINT32;
 typedef unsigned short WORD;
@@ -72,6 +74,7 @@ typedef struct rtree_s
   struct rtree_s * right;
   struct rtree_s * parent;
   int leaves;
+  int event;
 
   void * data;
 } rtree_t;
@@ -91,7 +94,6 @@ typedef struct node_information_ptpmulti
 {
   int num_edges_subtree;
   double sum_edges_subtree;
-  int num_zero_length_edges_subtree;
   double coalescent;
   spec_entry * spec_array;
 

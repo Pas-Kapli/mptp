@@ -56,8 +56,6 @@ void print_debug_information(rtree_t * tree)
   }
   node_information* data = (node_information*) (tree->data);
   printf("num_edges_subtree: %d, ", data->num_edges_subtree);
-  printf("num_zero_length_edges_subtree: %d, ",
-    data->num_zero_length_edges_subtree);
   printf("sum_edges_subtree: %f, ", data->sum_edges_subtree);
   printf("coalescent: %f, ", data->coalescent);
   printf("num_known_speciation_edges: %d, ", data->num_known_speciation_edges);
@@ -71,60 +69,52 @@ void print_debug_information(rtree_t * tree)
   printf("\n");
 }
 
-int killed_zero_edges = 0;
-
 void init_tree_data(rtree_t * tree, double min_br)
 {
   // post-order traversal
   int subtree_size_edges = 0;
   double subtree_sum_edges = 0;
-  int num_zero_length_edges = 0;
+
   if (tree->left)
   {
     init_tree_data(tree->left, min_br);
     node_information* left_data = (node_information*) (tree->left->data);
-    subtree_size_edges += left_data->num_edges_subtree + 1;
-    subtree_sum_edges += left_data->sum_edges_subtree;
-    if (tree->left->length > min_br)
+
+    if (tree->left->length < min_br)
     {
-      subtree_sum_edges += tree->left->length;
+      subtree_size_edges += left_data->num_edges_subtree;
+      subtree_sum_edges += left_data->sum_edges_subtree;
     }
     else
     {
-      num_zero_length_edges++;
+      subtree_size_edges += left_data->num_edges_subtree + 1;
+      subtree_sum_edges += left_data->sum_edges_subtree;
+      subtree_sum_edges += tree->left->length;
     }
-    num_zero_length_edges += left_data->num_zero_length_edges_subtree;
   }
   if (tree->right)
   {
     init_tree_data(tree->right, min_br);
     node_information* right_data = (node_information*) (tree->right->data);
-    subtree_size_edges += right_data->num_edges_subtree + 1;
-    subtree_sum_edges += right_data->sum_edges_subtree;
-    subtree_sum_edges += tree->right->length;
-    if (tree->right->length > min_br)
+
+    if (tree->right->length < min_br)
     {
-      subtree_sum_edges += tree->right->length;
+      subtree_size_edges += right_data->num_edges_subtree;
+      subtree_sum_edges += right_data->sum_edges_subtree;
     }
     else
     {
-      num_zero_length_edges++;
+      subtree_size_edges += right_data->num_edges_subtree + 1;
+      subtree_sum_edges += right_data->sum_edges_subtree;
+      subtree_sum_edges += tree->right->length;
     }
-    num_zero_length_edges += right_data->num_zero_length_edges_subtree;
   }
   node_information* info = malloc(sizeof(node_information));
+
+  // TODO: Check whether this is the best way to handle those
+  //   nasty zero-length edges.
   info->num_edges_subtree = subtree_size_edges;
   info->sum_edges_subtree = subtree_sum_edges;
-  info->num_zero_length_edges_subtree = num_zero_length_edges;
-
-  // TODO: Check whether this is the best way to handle those 
-  //   nasty zero-length edges.
-  if (subtree_sum_edges < min_br)
-  {
-    killed_zero_edges += info->num_edges_subtree;
-    info->num_edges_subtree = 0;
-    info->sum_edges_subtree = 0;
-  }
 
   info->spec_array = calloc(info->num_edges_subtree + 1, sizeof(spec_entry));
 
@@ -141,7 +131,7 @@ void init_tree_data(rtree_t * tree, double min_br)
   }
 
   info->coalescent =
-    compute_loglikelihood(info->num_edges_subtree,subtree_sum_edges);
+    compute_loglikelihood(info->num_edges_subtree, info->sum_edges_subtree);
   tree->data = info;
 }
 
@@ -159,37 +149,47 @@ void free_tree_data(rtree_t * tree)
   free((node_information*) (tree->data));
 }
 
-void init_additional_tree_data(rtree_t * tree)
+void init_additional_tree_data(rtree_t * tree, double min_br)
 {
   // pre-order traversal
   int num_known_speciation_edges = 0;
   double sum_known_speciation_edges = 0;
   if (tree->parent)
   {
-    num_known_speciation_edges =
-      ((node_information*) (tree->parent->data))->num_known_speciation_edges
-        + 1;
-    sum_known_speciation_edges =
-      ((node_information*) (tree->parent->data))->sum_known_speciation_edges
-        + tree->length;
+    node_information* parent_data = (node_information*) (tree->parent->data);
 
-    if (tree == tree->parent->left)
+    if (tree->length < min_br)
     {
-      if (tree->parent->right)
-      {
-        num_known_speciation_edges++;
-        sum_known_speciation_edges += tree->parent->right->length;
-      }
+      num_known_speciation_edges = parent_data->num_known_speciation_edges;
+      sum_known_speciation_edges = parent_data->sum_known_speciation_edges;
     }
     else
     {
-      if (tree->parent->left)
+      num_known_speciation_edges = parent_data->num_known_speciation_edges + 1;
+      sum_known_speciation_edges =
+        parent_data->sum_known_speciation_edges + tree->length;
+    }
+
+    if (tree == tree->parent->left)
+    {
+        if (tree->parent->right && tree->parent->right->length >= min_br)
+        {
+          num_known_speciation_edges++;
+          sum_known_speciation_edges += tree->parent->right->length;
+        }
+    }
+    else
+    {
+      if (tree->parent->left && tree->parent->left->length >= min_br)
       {
         num_known_speciation_edges++;
         sum_known_speciation_edges += tree->parent->left->length;
       }
     }
   }
+
+  // Why were those two in here???!!!
+  /*
   if (tree->left)
   {
     num_known_speciation_edges++;
@@ -200,6 +200,8 @@ void init_additional_tree_data(rtree_t * tree)
     num_known_speciation_edges++;
     sum_known_speciation_edges += tree->right->length;
   }
+  */
+
   ((node_information*) (tree->data))->num_known_speciation_edges =
     num_known_speciation_edges;
   ((node_information*) (tree->data))->sum_known_speciation_edges =
@@ -207,29 +209,30 @@ void init_additional_tree_data(rtree_t * tree)
 
   if (tree->left)
   {
-    init_additional_tree_data(tree->left);
+    init_additional_tree_data(tree->left, min_br);
   }
   if (tree->right)
   {
-    init_additional_tree_data(tree->right);
+    init_additional_tree_data(tree->right, min_br);
   }
 }
 
-void multi_traversal(rtree_t * tree, bool multiple_lambda)
+void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br)
 {
   // post order traversal
   if (tree->left)
   {
-    multi_traversal(tree->left, multiple_lambda);
+    multi_traversal(tree->left, multiple_lambda, min_br);
   }
   if (tree->right)
   {
-    multi_traversal(tree->right, multiple_lambda);
+    multi_traversal(tree->right, multiple_lambda, min_br);
   }
 
   node_information* data = (node_information*) (tree->data);
   spec_entry* spec_array_act = data->spec_array;
 
+  // zero speciation edges means that the current node is the MRCA of a species
   spec_array_act[0].coalescent_value = data->coalescent;
   double combined_spec_sum = data->sum_known_speciation_edges;
   int combined_spec_num = data->num_known_speciation_edges;
@@ -240,7 +243,9 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda)
   spec_array_act[0].score_multi = data->coalescent + speciation_value;
   spec_array_act[0].score_single = data->coalescent + speciation_value;
 
-  if (tree->left && tree->right && data->num_edges_subtree > 0) // inner node with two children
+  // now we fill the arrays for the current node being a speciation event
+  if (tree->left && tree->right)
+  // inner node with two children
   {
     node_information* data_left = (node_information*) (tree->left->data);
     node_information* data_right = (node_information*) (tree->right->data);
@@ -249,28 +254,54 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda)
     spec_entry* spec_array_right =
       ((node_information*) (tree->right->data))->spec_array;
 
+    int num_valid_child_edges = 2;
+    if (tree->left->length < min_br)
+    {
+      num_valid_child_edges--;
+    }
+    if (tree->right->length < min_br)
+    {
+      num_valid_child_edges--;
+    }
+
     int i;
-    for (i = 0; i <= data_left->num_edges_subtree; i+=2)
+    for (i = 0; i <= data_left->num_edges_subtree; i++)
     {
       int j;
-      for (j = 0; j <= data_right->num_edges_subtree; j+=2)
+      for (j = 0; j <= data_right->num_edges_subtree; j++)
       {
-        double combined_spec_sum = data->sum_known_speciation_edges
+
+        double combined_spec_sum = 0;
+        int combined_spec_num = 0;
+        double sum_speciation_edges_subtree = 0;
+
+        if (tree->left->length >= min_br)
+        {
+          combined_spec_sum += tree->left->length;
+          combined_spec_num++;
+          sum_speciation_edges_subtree += tree->left->length;
+        }
+        if (tree->right->length >= min_br)
+        {
+          combined_spec_sum += tree->right->length;
+          combined_spec_num++;
+          sum_speciation_edges_subtree += tree->right->length;
+        }
+
+        combined_spec_sum += data->sum_known_speciation_edges
           + spec_array_left[i].sum_speciation_edges_subtree
           + spec_array_right[j].sum_speciation_edges_subtree;
-        int combined_spec_num = data->num_known_speciation_edges
+        combined_spec_num += data->num_known_speciation_edges
           + i + j;
 
-        double sum_speciation_edges_subtree =
+        sum_speciation_edges_subtree +=
           spec_array_left[i].sum_speciation_edges_subtree
-          + spec_array_right[j].sum_speciation_edges_subtree
-          + tree->left->length
-          + tree->right->length;
+          + spec_array_right[j].sum_speciation_edges_subtree;
 
         double sum_coalescent_edges = data->sum_edges_subtree
           - sum_speciation_edges_subtree;
         double num_coalescent_edges =
-          data->num_edges_subtree - (i+j+2);
+          data->num_edges_subtree - (i + j + num_valid_child_edges);
 
         double coalescent_value_multi = spec_array_left[i].coalescent_value
             + spec_array_right[j].coalescent_value;
@@ -285,23 +316,25 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda)
         double score_single = coalescent_value_single + speciation_value;
 
         double score = score_multi;
-        double old_score = spec_array_act[i+j+2].score_multi;
+        double old_score = spec_array_act[i+j+num_valid_child_edges].score_multi;
         if (!multiple_lambda)
         {
           score = score_single;
-          old_score = spec_array_act[i+j+2].score_single;
+          old_score = spec_array_act[i+j+num_valid_child_edges].score_single;
         }
 
         if (score > old_score)
         {
-          spec_array_act[i+j+2].score_multi = score_multi;
-          spec_array_act[i+j+2].score_single = score_single;
-          spec_array_act[i+j+2].sum_speciation_edges_subtree =
+          spec_array_act[i+j+num_valid_child_edges].score_multi = score_multi;
+          spec_array_act[i+j+num_valid_child_edges].score_single = score_single;
+          spec_array_act[i+j+num_valid_child_edges].sum_speciation_edges_subtree =
             sum_speciation_edges_subtree;
-          spec_array_act[i+j+2].coalescent_value = coalescent_value_multi;
-          spec_array_act[i+j+2].speciation_value = speciation_value;
-          spec_array_act[i+j+2].taken_left_index = i;
-          spec_array_act[i+j+2].taken_right_index = j;
+          spec_array_act[i+j+num_valid_child_edges].coalescent_value =
+            coalescent_value_multi;
+          spec_array_act[i+j+num_valid_child_edges].speciation_value =
+            speciation_value;
+          spec_array_act[i+j+num_valid_child_edges].taken_left_index = i;
+          spec_array_act[i+j+num_valid_child_edges].taken_right_index = j;
         }
       }
     }
@@ -334,6 +367,7 @@ void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet)
     && spec_array[pos].taken_right_index != -1)
     // speciation event
   {
+    tree->event = EVENT_SPECIATION;
     backtrack_species_assignment(tree->left, spec_array[pos].taken_left_index,
       quiet);
     backtrack_species_assignment(tree->right,
@@ -341,6 +375,7 @@ void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet)
   }
   else  // coalescent event
   {
+    tree->event = EVENT_COALESCENT;
     if (quiet)
     {
       current_species_num++;
@@ -383,8 +418,8 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
   bool quiet, double min_br)
 {
   init_tree_data(tree, min_br);
-  init_additional_tree_data(tree);
-  multi_traversal(tree, multiple_lambda);
+  init_additional_tree_data(tree, min_br);
+  multi_traversal(tree, multiple_lambda, min_br);
   //print_debug_information(tree);
 
   double max = 0;
@@ -392,21 +427,32 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
   spec_entry* spec_array = data->spec_array;
   int i;
   int pos = 0;
-  for (i = 0; i < data->num_edges_subtree; i++)
+
+  if (multiple_lambda)
   {
-    if (max < spec_array[i].score_single)
+    for (i = 0; i < data->num_edges_subtree; i++)
     {
-      max = spec_array[i].score_single;
-      pos = i;
+      if (max < spec_array[i].score_multi)
+      {
+        max = spec_array[i].score_multi;
+        pos = i;
+      }
     }
   }
-  
+  else // single lambda
+  {
+    for (i = 0; i < data->num_edges_subtree; i++)
+    {
+      if (max < spec_array[i].score_single)
+      {
+        max = spec_array[i].score_single;
+        pos = i;
+      }
+    }
+  }
+
   printf("Num big enough edges in tree: %d\n",
     data->num_edges_subtree);
-  printf("Num zero length edges in tree: %d\n",
-    data->num_zero_length_edges_subtree);
-  printf("Num zero length edges killed: %d\n",
-    killed_zero_edges);
 
   printf("Score Null Model: %.6f\n", data->coalescent);
   printf("Best score found single: %.6f\n", spec_array[pos].score_single);
