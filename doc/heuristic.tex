@@ -8,6 +8,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{tikz}
+\usepackage[linesnumbered,ruled]{algorithm2e}
 
 \newcounter{instr}
 \newcommand{\ninstr}{\refstepcounter{instr}\theinstr.}
@@ -67,10 +68,10 @@ For each node $v$, the \emph{currently observed tree} (COT) consists of the subt
 
 \subsection{Combination of solutions}
 
-For every node $v$, we store an array that contains the best found score for $0, 2, 4, \ldots, |S(v)|$ speciation edges and the delimitation that led to it. A node $v$ can either be a coalescent event or a speciation event.
+For every node $v$, we store an array that contains the best found score for $0, 2, 4, \ldots, |S(v)|$ speciation edges and the delimitation (i.e., the set of MRCAs) that led to it. A node $v$ can either be a coalescent event or a speciation event.
 
 \paragraph{Coalescent event}
-If $v$ is a coalescent event, we have $0$ speciation edges in $S(v)$. For this case, we compute the score of all edges in $S(v)$ being coalescent edges and the known speciation edges in the COT of $v$ being speciation edges and store it in $v$. Since we do not need to look at the solutions for the children of $v$ in this case, we can do this step already in the initialisation.
+If $v$ is a coalescent event (i.e., the MRCA of a species), we have $0$ speciation edges in $S(v)$. For this case, we compute the score of all edges in $S(v)$ being coalescent edges and the known speciation edges in the COT of $v$ being speciation edges and store it in $v$. Since we do not need to look at the solutions for the children of $v$ in this case, we can do this step already in the initialisation.
 
 \paragraph{Speciation event}
 In order to find a solution for a subtree $S(v)$ and $k>1$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitations using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
@@ -92,6 +93,21 @@ Other zero-length edges that may appear in the tree (e.g., for representing mult
 
 \subsection{Final Result}
 We obtain the final result by choosing the delimitation that led to the highest score for the root of the tree.
+
+\subsection{Pseudocode}
+\begin{algorithm}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+
+\underline{function delimit} $(T)$\;
+
+\Input{A fully binary rooted tree $T$ with non-negative edge weights $w$}
+\Output{A delimitation with maximal score}
+
+\caption{The multiple-lambda heuristic for the PTP species delimitation problem}
+
+
+\end{algorithm}
 
 \bibliographystyle{splncs03}
 \bibliography{delimit}
