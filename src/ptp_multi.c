@@ -192,20 +192,6 @@ void init_additional_tree_data(rtree_t * tree, double min_br)
     }
   }
 
-  // Why were those two in here???!!!
-  /*
-  if (tree->left)
-  {
-    num_known_speciation_edges++;
-    sum_known_speciation_edges += tree->left->length;
-  }
-  if (tree->right)
-  {
-    num_known_speciation_edges++;
-    sum_known_speciation_edges += tree->right->length;
-  }
-  */
-
   ((node_information*) (tree->data))->num_known_speciation_edges =
     num_known_speciation_edges;
   ((node_information*) (tree->data))->sum_known_speciation_edges =
@@ -364,7 +350,8 @@ void print_subtree_leaves(rtree_t * tree)
 
 int current_species_num = 1;
 
-void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet)
+void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet,
+  double min_br, bool *print_speciation_warning)
 {
   spec_entry* spec_array = ((node_information*) (tree->data))->spec_array;
   if (spec_array[pos].taken_left_index != -1
@@ -372,10 +359,14 @@ void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet)
     // speciation event
   {
     tree->event = EVENT_SPECIATION;
+    if (tree->length < min_br)
+    {
+      (*print_speciation_warning) = true;
+    }
     backtrack_species_assignment(tree->left, spec_array[pos].taken_left_index,
-      quiet);
+      quiet, min_br, print_speciation_warning);
     backtrack_species_assignment(tree->right,
-      spec_array[pos].taken_right_index, quiet);
+      spec_array[pos].taken_right_index, quiet, min_br, print_speciation_warning);
   }
   else  // coalescent event
   {
@@ -480,7 +471,13 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
 
   if (good_delimitation)
   {
-    backtrack_species_assignment(tree, pos, quiet);
+    bool print_speciation_warning = false;
+    backtrack_species_assignment(tree, pos, quiet, min_br,
+      &print_speciation_warning);
+    if (print_speciation_warning)
+    {
+      printf("WARNING: A speciation edge in the result is too small.\n");
+    }
   }
   else
   {
@@ -495,6 +492,10 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
     }
   }
   printf("Number of delimited species: %d\n", current_species_num - 1);
+  if (data->num_edges_subtree == 0)
+  {
+    printf("WARNING: The tree has no edges that are greater or equal min_br. All edges have been ignored. \n");
+  }
 
   free_tree_data(tree);
 }
