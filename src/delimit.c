@@ -57,6 +57,7 @@ long opt_svg_margintop;
 long opt_svg_marginbottom;
 long opt_svg_inner_radius;
 double opt_svg_legend_ratio;
+bool opt_strangefile;
 
 
 static struct option long_options[] =
@@ -84,6 +85,7 @@ static struct option long_options[] =
   {"svg_marginbottom",   required_argument, 0, 0 },  /* 20 */
   {"svg_inner_radius",   required_argument, 0, 0 },  /* 21 */
   {"precision",          required_argument, 0, 0 },  /* 22 */
+  {"strangefile",          required_argument, 0, 0 },  /* 23 */
   { 0, 0, 0, 0 }
 };
 
@@ -121,6 +123,8 @@ void args_init(int argc, char ** argv)
   opt_svg_margintop = 20;
   opt_svg_marginbottom = 20;
   opt_svg_inner_radius = 0;
+
+  opt_strangefile = false;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -198,7 +202,7 @@ void args_init(int argc, char ** argv)
       case 15:
         opt_svg_legend_ratio = atof(optarg);
         break;
-      
+
       case 16:
         opt_svg_showlegend = 0;
         break;
@@ -226,6 +230,10 @@ void args_init(int argc, char ** argv)
       case 22:
         opt_precision = atoi(optarg);
         break;
+
+      case 23:
+          opt_strangefile = true;
+          break;
 
       default:
         fatal("Internal error in option parsing");
@@ -285,6 +293,7 @@ void cmd_help()
           "  --ptp_multi                    PTP style with one lambda per coalescent.\n"
           "  --ptp_single                   PTP style with single lambda for all coalescent.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
+          "  --strangefile                  Use score with a strange delimitation output file from PTP.\n"
           "  --pvalue                       Specify a P-value (default: 0.001)\n"
           "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
           "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
@@ -337,7 +346,9 @@ void cmd_ptpmulti(bool multiple_lambda)
       fprintf(stdout, "Loaded rooted tree...\n");
   }
 
-  ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet, opt_minbr);
+  PRIOR_FUNC ptr_no_logprior = no_logprior;
+  ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet,
+    opt_minbr, ptr_no_logprior);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
@@ -387,7 +398,7 @@ void cmd_score()
   }
 
   /* TODO: Sarah's score function should be called here */
-  score_delimitation_tree(opt_scorefile, rtree, opt_minbr);
+  score_delimitation_tree(opt_scorefile, rtree, opt_minbr, opt_strangefile);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);

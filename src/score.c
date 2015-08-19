@@ -54,6 +54,88 @@ void free_tree_data_score(rtree_t * tree)
   free((score_information*) (tree->data));
 }
 
+void identify_alternative_taxa_strangefile(char * scorefile, int num_leaves,
+    rtree_t ** leaves)
+{
+  FILE * scorefile_in = fopen(scorefile, "r");
+  char * line_taxa = NULL;
+  char * line_species = NULL;
+  size_t len_taxa = 0;
+  size_t len_species = 0;
+  ssize_t read;
+  if (!scorefile_in)
+  {
+    snprintf(errmsg, 200, "Unable to open file (%s)", scorefile);
+  }
+  else
+  {
+    bool collecting = false;
+    int current_species_idx = 0;
+
+    read = getline(&line_taxa, &len_taxa, scorefile_in);
+    read = getline(&line_species, &len_species, scorefile_in);
+
+    char *p = strtok(line_taxa, ":");
+    while(p != NULL) {
+      printf("We now have: %s\n", p);
+      p = strtok(NULL, ",");
+    }
+
+/*
+    while ((read = getline(&line, &len, scorefile_in)) != -1)
+    {
+      //printf("line: %s", line);
+      if (strstr(line, "Species")!= NULL)
+      {
+        //printf("A new species starts.\n");
+        collecting = true;
+        current_species_idx++;
+      }
+      else if (collecting &&
+        ((strcmp(line,"\n")==0
+      || strstr(line, "Writing tree file") != NULL)
+        || strstr(line, "Number of") != NULL))
+      {
+        //printf("A species has ended.\n");
+        collecting = false;
+      }
+      else if (collecting)
+      {
+        // find leaf node with the same label as line,
+        // give it current_species_input = current_species_idx
+
+        bool found = false;
+        int i;
+        for (i = 0; i < num_leaves; i++)
+        {
+          strtok(line,"\n");
+          if (strcmp(leaves[i]->label, line) == 0)
+          {
+            ((score_information*) (leaves[i]->data))->current_species_input
+                = current_species_idx;
+            found = true;
+            break;
+          }
+        }
+        if (!found)
+        {
+          printf("Not found: %s", line);
+        }
+      }
+    }*/
+    fclose(scorefile_in);
+    if (line_taxa)
+    {
+      free(line_taxa);
+    }
+    if (line_species)
+    {
+      free(line_species);
+    }
+  }
+}
+
+
 void identify_alternative_taxa(char * scorefile, int num_leaves,
     rtree_t ** leaves)
 {
@@ -381,14 +463,22 @@ void compute_score(rtree_t * tree, rtree_t ** mrca_list, int num_species,
   (*score_multi) = coalescent_multi + speciation;
 }
 
-void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br)
+void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br,
+  bool strangefile)
 {
   rtree_t ** leaves_list = calloc(tree->leaves, sizeof(rtree_t));
   rtree_query_tipnodes(tree, leaves_list);
 
   init_tree_data_score(tree);
   // Identify taxa of the scorefile solution
-  identify_alternative_taxa(scorefile, tree->leaves, leaves_list);
+  if (strangefile)
+  {
+    identify_alternative_taxa_strangefile(scorefile, tree->leaves, leaves_list);
+  }
+  else
+  {
+    identify_alternative_taxa(scorefile, tree->leaves, leaves_list);
+  }
 
   // Mark mrca nodes
   int num_species_real = 0;

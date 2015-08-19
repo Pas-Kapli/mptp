@@ -55,6 +55,8 @@ typedef unsigned int UINT32;
 typedef unsigned short WORD;
 typedef unsigned char BYTE;
 
+typedef double (*PRIOR_FUNC)(int, int); // takes num_species and num of taxa, returns a logarithm
+
 typedef struct utree_s
 {
   char * label;
@@ -88,6 +90,8 @@ typedef struct spec_array_entry
   double score_single;
   int taken_left_index;
   int taken_right_index;
+  int num_species;
+  bool valid;
 } spec_entry;
 
 typedef struct node_information_ptpmulti
@@ -243,14 +247,20 @@ unsigned long arch_get_memtotal();
 /* functions in ptp_multi.c */
 
 void ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br);
+  bool quiet, double min_br, PRIOR_FUNC species_logprior);
 double compute_loglikelihood(int num, double sum);
 void init_tree_data(rtree_t * tree, double min_br);
 void free_tree_data(rtree_t * tree);
 
 /* functions in score.c */
 
-void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br);
+void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br,
+  bool strangefile);
 
 /* functions in svg.c */
 void cmd_svg(rtree_t * rtree);
+
+/* functions in priors.c */
+
+double uniform_logprior(int num_species, int num_taxa);
+double no_logprior(int num_species, int num_taxa);
