@@ -120,6 +120,7 @@ void args_init(int argc, char ** argv)
   opt_svg_marginright = 20;
   opt_svg_margintop = 20;
   opt_svg_marginbottom = 20;
+  opt_svg_inner_radius = 0;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -288,9 +289,21 @@ void cmd_help()
           "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
           "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
           "  --quiet                        only output warnings and fatal errors to stderr.\n"
+          "  --precision                    Precision of decimal part of floating point numbers on output (default: 7).\n"
           "Input and output options:\n"
           "  --tree_file FILENAME           tree file in newick format.\n"
           "  --output_file FILENAME         output file name.\n"
+          "Visualization options:\n"
+          "  --svg_width NUMBER             Width of the resulting SVG image in pixels (default: 1920).\n"
+          "  --svg_fontsize NUMBER          Size of font in SVG image. (default: 12)\n"
+          "  --svg_tipspacing NUMBER        Vertical space between taxa in SVG image (default: 20).\n"
+          "  --svg_legend_ratio <0..1>      Ratio of the total tree length to be displayed as legend line.\n"
+          "  --svg_nolegend                 Hides the legend.\n"
+          "  --svg_marginleft               Left margin in pixels (default: 20).\n"
+          "  --svg_marginright              Right margin in pixels (default: 20).\n"
+          "  --svg_margintop                Top margin in pixels (default: 20).\n"
+          "  --svg_marginbottom             Bottom margin in pixels (default: 20).\n"
+          "  --svg_inner_radius             Radius of inner nodes in pixels (default: 0).\n"
          );
 }
 

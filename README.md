@@ -59,6 +59,8 @@ The code is currently licensed under the GNU Affero General Public License versi
 **parse_rtree.y**| Functions for parsing rooted trees in newick format.
 **parse_utree.y**| Functions for parsing unrooted trees in newick format.
 **lca_utree.c**  | Naive LCA computation in unrooted trees.
+**svg.c**        | SVG visualization.
+**score.c**      | Computation of NMI and Kassian's score.
 
 ## The team
 
@@ -82,3 +84,8 @@ doi:[10.1093/sysbio/syt033](http://dx.doi.org/10.1093/sysbio/syt033)
 **Sequence-Based Species Delimitation for the DNA Taxonomy of Undescribed Insects.**
 *Systematic Biology*, 55(4):595-609.
 doi:[10.1080/10635150600852011](http://dx.doi.org/10.1080/10635150600852011)
+
+* Nguyen XV, Epps J., Bailey J. (2010)
+**Information Theoretic Measures for Clustering Comparison: Variants, Properties, Normalization and Correction for Chance.**
+*Joirnal of Machine Learning Research*, 11:2837-2854.
+i[PDF](http://www.jmlr.org/papers/volume11/vinh10a/vinh10a.pdf)
