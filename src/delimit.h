@@ -51,11 +51,20 @@
 #define EVENT_SPECIATION 0
 #define EVENT_COALESCENT 1
 
+#define PRIOR_NOPRIOR           0
+#define PRIOR_UNIFORM           1
+#define PRIOR_NEGATIVE_BINOMIAL 2
+#define PRIOR_BINOMIAL          3
+#define PRIOR_GAMMA             4
+#define PRIOR_DIRICHLET         5
+#define PRIOR_BETA              6
+
+#define HYPERPRIOR_UNIFORM     0
+#define HYPERPRIOR_EXPONENTIAL 1
+
 typedef unsigned int UINT32;
 typedef unsigned short WORD;
 typedef unsigned char BYTE;
-
-typedef double (*PRIOR_FUNC)(int, int); // takes num_species and num of taxa, returns a logarithm
 
 typedef struct utree_s
 {
@@ -114,6 +123,30 @@ typedef struct node_information_score
   int current_species_real; // for finding the "real" mrca
   int current_species_input; // for finding the alternative mrca
 } score_information;
+
+typedef struct prior_information
+{
+  int num_taxa; // number of taxa in the tree
+
+  double gamma_shape;
+  double gamma_rate;
+
+  double binomial_probability;
+
+  double negative_binomial_probability;
+  int negative_binomial_failures; // number of failures until the experiment is stopped
+} prior_inf;
+
+typedef struct hyperprior_information
+{
+  double uniform_from;
+  double uniform_to;
+
+  double exponential_rate;
+} hyperprior_inf;
+
+typedef double (*PRIOR_FUNC)(int, prior_inf);
+typedef double (*HYPERPRIOR_FUNC)(double, hyperprior_inf);
 
 /* macros */
 
@@ -247,7 +280,7 @@ unsigned long arch_get_memtotal();
 /* functions in ptp_multi.c */
 
 void ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, PRIOR_FUNC species_logprior);
+  bool quiet, double min_br, PRIOR_FUNC species_logprior, prior_inf prior_information);
 double compute_loglikelihood(int num, double sum);
 void init_tree_data(rtree_t * tree, double min_br);
 void free_tree_data(rtree_t * tree);
@@ -261,6 +294,13 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br,
 void cmd_svg(rtree_t * rtree);
 
 /* functions in priors.c */
+double uniform_hyperprior(double x, hyperprior_inf info);
+double exponential_hyperprior(double x, hyperprior_inf info);
 
-double uniform_logprior(int num_species, int num_taxa);
-double no_logprior(int num_species, int num_taxa);
+double dirichlet_logprior(int num_species, prior_inf info);
+double gamma_logprior(int num_species, prior_inf info);
+double beta_logprior(int num_species, prior_inf info);
+double binomial_logprior(int num_species, prior_inf info);
+double negative_binomial_logprior(int num_species, prior_inf info);
+double uniform_logprior(int num_species, prior_inf info);
+double no_logprior(int num_species, prior_inf info);

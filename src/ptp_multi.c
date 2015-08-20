@@ -210,16 +210,16 @@ void init_additional_tree_data(rtree_t * tree, double min_br)
 }
 
 void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
-  PRIOR_FUNC species_logprior, int num_taxa)
+  PRIOR_FUNC species_logprior, prior_inf prior_information)
 {
   // post order traversal
   if (tree->left)
   {
-    multi_traversal(tree->left, multiple_lambda, min_br, species_logprior, num_taxa);
+    multi_traversal(tree->left, multiple_lambda, min_br, species_logprior, prior_information);
   }
   if (tree->right)
   {
-    multi_traversal(tree->right, multiple_lambda, min_br, species_logprior, num_taxa);
+    multi_traversal(tree->right, multiple_lambda, min_br, species_logprior, prior_information);
   }
 
   node_information* data = (node_information*) (tree->data);
@@ -231,7 +231,7 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
   int combined_spec_num = data->num_known_speciation_edges;
   double speciation_value =
     compute_loglikelihood(combined_spec_num, combined_spec_sum)
-    + species_logprior(1, num_taxa);
+    + species_logprior(1, prior_information);
   spec_array_act[0].speciation_value = speciation_value;
   spec_array_act[0].sum_speciation_edges_subtree = 0;
   spec_array_act[0].score_multi = data->coalescent + speciation_value;
@@ -270,7 +270,7 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
         {
           int current_num_species = spec_array_left[i].num_species
             + spec_array_right[j].num_species;
-    
+
           double combined_spec_sum = 0;
           int combined_spec_num = 0;
           double sum_speciation_edges_subtree = 0;
@@ -311,7 +311,7 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
 
           double speciation_value =
             compute_loglikelihood(combined_spec_num, combined_spec_sum)
-            + species_logprior(current_num_species, num_taxa);
+            + species_logprior(current_num_species, prior_information);
 
           double score_multi = coalescent_value_multi + speciation_value;
           double score_single = coalescent_value_single + speciation_value;
@@ -425,12 +425,12 @@ bool likelihood_ratio_test(rtree_t * tree, double likelihood_alternative_model,
 }
 
 void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, PRIOR_FUNC prior_function)
+  bool quiet, double min_br, PRIOR_FUNC prior_function, prior_inf prior_information)
 {
   init_tree_data(tree, min_br);
   init_additional_tree_data(tree, min_br);
   int num_taxa = tree->leaves;
-  multi_traversal(tree, multiple_lambda, min_br, prior_function, num_taxa);
+  multi_traversal(tree, multiple_lambda, min_br, prior_function, prior_information);
   //print_debug_information(tree);
 
   double max = 0;

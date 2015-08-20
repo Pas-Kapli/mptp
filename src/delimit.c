@@ -45,6 +45,8 @@ long opt_version;
 long opt_treeshow;
 long opt_ptpmulti;
 long opt_ptpsingle;
+long opt_ptpmulti_bayesian;
+long opt_ptpsingle_bayesian;
 double opt_pvalue;
 double opt_minbr;
 long opt_svg;
@@ -85,7 +87,9 @@ static struct option long_options[] =
   {"svg_marginbottom",   required_argument, 0, 0 },  /* 20 */
   {"svg_inner_radius",   required_argument, 0, 0 },  /* 21 */
   {"precision",          required_argument, 0, 0 },  /* 22 */
-  {"strangefile",          required_argument, 0, 0 },  /* 23 */
+  {"strangefile",        required_argument, 0, 0 },  /* 23 */
+  {"ptp_multi_bayesian", no_argument,       0, 0 },  /* 24 */
+  {"ptp_single_bayesian",no_argument,       0, 0 },  /* 25 */
   { 0, 0, 0, 0 }
 };
 
@@ -108,6 +112,8 @@ void args_init(int argc, char ** argv)
   opt_quiet = 0;
   opt_ptpmulti = 0;
   opt_ptpsingle = 0;
+  opt_ptpmulti_bayesian = 0;
+  opt_ptpsingle_bayesian = 0;
   opt_scorefile = NULL;
   opt_pvalue = 0.001;
   opt_minbr = 0.0001;
@@ -232,8 +238,16 @@ void args_init(int argc, char ** argv)
         break;
 
       case 23:
-          opt_strangefile = true;
-          break;
+        opt_strangefile = true;
+        break;
+
+      case 24:
+        opt_ptpmulti_bayesian = true;
+        break;
+
+      case 25:
+        opt_ptpsingle_bayesian = true;
+        break;
 
       default:
         fatal("Internal error in option parsing");
@@ -259,6 +273,10 @@ void args_init(int argc, char ** argv)
   if (opt_ptpmulti)
     commands++;
   if (opt_ptpsingle)
+    commands++;
+  if (opt_ptpmulti_bayesian)
+    commands++;
+  if (opt_ptpsingle_bayesian)
     commands++;
   if (opt_scorefile)
     commands++;
@@ -292,6 +310,8 @@ void cmd_help()
           "  --tree_show                    display an ASCII version of the tree.\n"
           "  --ptp_multi                    PTP style with one lambda per coalescent.\n"
           "  --ptp_single                   PTP style with single lambda for all coalescent.\n"
+          "  --ptp_multi_bayesian           Bayesian PTP style with one lambda per coalescent.\n"
+          "  --ptp_single_bayesian          Bayesian PTP style with single lambda for all coalescent.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
           "  --strangefile                  Use score with a strange delimitation output file from PTP.\n"
           "  --pvalue                       Specify a P-value (default: 0.001)\n"
@@ -347,8 +367,9 @@ void cmd_ptpmulti(bool multiple_lambda)
   }
 
   PRIOR_FUNC ptr_no_logprior = no_logprior;
+  prior_inf info;
   ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet,
-    opt_minbr, ptr_no_logprior);
+    opt_minbr, ptr_no_logprior, info);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
