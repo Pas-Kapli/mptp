@@ -332,11 +332,6 @@ double compute_nmi_score(rtree_t ** mrca_real_list, int num_species_real,
       double num_taxa_input = (double) mrca_input->leaves;
       double num_common_taxa = (double) count_common_taxa(mrca_real, mrca_input);
 
-      /*printf("num_taxa: %d\n", num_taxa);
-      printf("num_taxa_real: %d\n", num_taxa_real);
-      printf("num_taxa_input: %d\n", num_taxa_input);
-      printf("num_common_taxa: %d\n", num_common_taxa);*/
-
       if (num_common_taxa != 0)
       {
         mutual_information += (num_common_taxa / num_taxa)
@@ -367,7 +362,6 @@ void compute_score(rtree_t * tree, rtree_t ** mrca_list, int num_species,
   {
     node_information * data_current = (node_information*) (mrca_list[i]->data);
     coalescent_multi += data_current->coalescent;
-    //printf("  Coalescent multi is now adding: %.6f\n", data_current->coalescent);
     num_edges_coalescent += data_current->num_edges_subtree;
     sum_edges_coalescent += data_current->sum_edges_subtree;
   }
