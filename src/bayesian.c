@@ -81,7 +81,7 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
           break;
 
         default:
-          fatal("No hyperprior for the binomial probability selected.\n");
+          fatal("No hyperprior for the negative binomial probability selected.\n");
       }
       switch(hyperprior_2)
       {
@@ -101,7 +101,7 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
           break;
 
         default:
-          fatal("No hyperprior for the binomial failures selected.\n");
+          fatal("No hyperprior for the negative binomial failures selected.\n");
       }
 
       break;
@@ -161,7 +161,7 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
           break;
 
         default:
-          fatal("No hyperprior for the binomial probability selected.\n");
+          fatal("No hyperprior for the gamma rate selected.\n");
       }
       switch(hyperprior_2)
       {
@@ -181,7 +181,7 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
           break;
 
         default:
-          fatal("No hyperprior for the binomial failures selected.\n");
+          fatal("No hyperprior for the gamma shape selected.\n");
       }
       break;
 
@@ -219,7 +219,7 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
           break;
 
         default:
-          fatal("No hyperprior for the binomial probability selected.\n");
+          fatal("No hyperprior for the beta alpha selected.\n");
       }
       switch(hyperprior_2)
       {
@@ -239,7 +239,7 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
           break;
 
         default:
-          fatal("No hyperprior for the binomial failures selected.\n");
+          fatal("No hyperprior for the beta beta selected.\n");
       }
       break;
 
