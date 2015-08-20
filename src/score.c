@@ -52,6 +52,7 @@ void free_tree_data_score(rtree_t * tree)
     free_tree_data_score(tree->right);
   }
   free((score_information*) (tree->data));
+  tree->data = NULL;
 }
 
 void identify_alternative_taxa(char * scorefile, int num_leaves,
@@ -349,7 +350,6 @@ double compute_nmi_score(rtree_t ** mrca_real_list, int num_species_real,
   printf("Entropy real: %.6f\n", entropy_real);
   printf("Entropy input: %.6f\n", entropy_input);
   printf("Maximum Entropy: %.6f\n", max_entropy);
-
   return 1 - (mutual_information / max_entropy);
 }
 
@@ -406,7 +406,7 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br)
   printf("Tree penalty score: %d\n", tree_penalty_score);
   double nmi_score = compute_nmi_score(mrca_real_list, num_species_real,
     mrca_input_list, num_species_input, tree->leaves);
-  printf("NMI score: %6.f\n", nmi_score);
+  printf("NMI score: %.6f\n", nmi_score);
 
   free_tree_data_score(tree);
 

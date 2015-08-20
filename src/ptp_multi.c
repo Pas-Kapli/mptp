@@ -153,6 +153,7 @@ void free_tree_data(rtree_t * tree)
   }
   free(((node_information*) (tree->data))->spec_array);
   free((node_information*) (tree->data));
+  tree->data = NULL;
 }
 
 void init_additional_tree_data(rtree_t * tree, double min_br)
