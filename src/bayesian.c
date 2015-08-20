@@ -37,8 +37,11 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
   HYPERPRIOR_FUNC hyperprior_function_2;
   hyperprior_inf hyperprior_info_2;
   // +/- how much in the proposals?
-  double window_hyperprior_1 = 10;
-  double window_hyperprior_2 = 10;
+  double window_hyperprior_1 = 1;
+  double window_hyperprior_2 = 1;
+
+  assert(window_hyperprior_1 > 0);
+  assert(window_hyperprior_2 > 0);
 
   int num_hyperpriors = 0;
 
@@ -268,13 +271,21 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
       {
         switch(prior)
         {
-          case PRIOR_NEGATIVE_BINOMIAL:
+          case PRIOR_NEGATIVE_BINOMIAL: // negative binomial probability
+            assert(window_hyperprior_1 <= 1);
+            double old_negative_binomial_probability = ((params_negative_binomial*) (prior_info.params))->negative_binomial_probability;
             break;
-          case PRIOR_BINOMIAL:
+          case PRIOR_BINOMIAL: // binomial probability
+            assert(window_hyperprior_1 <= 1);
+            double old_binomial_probability = ((params_binomial*) (prior_info.params))->binomial_probability;
             break;
-          case PRIOR_GAMMA:
+          case PRIOR_GAMMA: // gamma rate
+            ;
+            double old_gamma_rate = ((params_gamma*) (prior_info.params))->gamma_rate;
             break;
-          case PRIOR_BETA:
+          case PRIOR_BETA: // beta alpha
+            ;
+            double old_beta_alpha = ((params_beta*) (prior_info.params))->beta_alpha;
             break;
           default:
             fatal("Something is wrong with the priors (1).\n");
@@ -283,11 +294,17 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
         {
           switch(prior)
           {
-            case PRIOR_NEGATIVE_BINOMIAL:
+            case PRIOR_NEGATIVE_BINOMIAL: // negative binomial failures
+              ;
+              int old_negative_binomial_failures = ((params_negative_binomial*) (prior_info.params))->negative_binomial_failures;
               break;
-            case PRIOR_GAMMA:
+            case PRIOR_GAMMA: // gamma shape
+              ;
+              double old_gamma_shape = ((params_gamma*) (prior_info.params))->gamma_shape;
               break;
-            case PRIOR_BETA:
+            case PRIOR_BETA: // beta beta
+              ;
+              double old_beta_beta = ((params_beta*) (prior_info.params))->beta_beta;
               break;
             default:
               fatal("Something is wrong with the priors (2).\n");
