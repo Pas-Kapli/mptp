@@ -131,6 +131,9 @@ typedef struct prior_information
   double gamma_shape;
   double gamma_rate;
 
+  double beta_alpha;
+  double beta_beta;
+
   double binomial_probability;
 
   double negative_binomial_probability;

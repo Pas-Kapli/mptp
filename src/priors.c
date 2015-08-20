@@ -48,7 +48,7 @@ long long combi(int n, int k)
 double exponential_hyperprior(double x, hyperprior_inf info)
 {
   double rate = info.exponential_rate;
-  return rate * exp(-rate * num_species);
+  return rate * exp(-rate * x);
 }
 
 double uniform_hyperprior(double x, hyperprior_inf info)
@@ -61,9 +61,13 @@ double uniform_hyperprior(double x, hyperprior_inf info)
 
 double beta_logprior(int num_species, prior_inf info)
 {
-  assert(0);
-  // TODO: not implemented!
-  return -1;
+  double alpha = info.beta_alpha;
+  double beta = info.beta_beta;
+  assert(alpha > 0);
+  assert(beta > 0);
+  double x = (double) num_species;
+  return log(gamma(alpha+beta)) - log(gamma(alpha)) - log(gamma(beta))
+    + log(pow(x, alpha-1)) + log(pow(1-x, beta-1));
 }
 
 double dirichlet_logprior(int num_species, prior_inf info)
@@ -118,14 +122,14 @@ double negative_binomial_logprior(int num_species, prior_inf info)
 
 double uniform_logprior(int num_species, prior_inf info)
 {
-  assert(info.num_species > 0);
+  assert(num_species > 0);
   assert(info.num_taxa > 0);
   return log(1.0 / ((double) info.num_taxa));
 }
 
 double no_logprior(int num_species, prior_inf info)
 {
-  assert(info.num_species > 0);
+  assert(num_species > 0);
   return 0;
 }
 
