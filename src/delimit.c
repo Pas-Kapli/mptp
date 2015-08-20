@@ -381,7 +381,7 @@ void cmd_ptpmulti(bool multiple_lambda, bool bayesian)
   else
   {
     ptp_bayesian(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet,
-      opt_minbr, PRIOR_UNIFORM, HYPERPRIOR_UNIFORM, opt_bayesian_runs);
+      opt_minbr, PRIOR_UNIFORM, HYPERPRIOR_NONE, HYPERPRIOR_NONE, opt_bayesian_runs);
   }
 
   if (opt_treeshow)

@@ -22,14 +22,26 @@
 #include "delimit.h"
 
 void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, int prior, int hyperprior, int runs)
+  bool quiet, double min_br, int prior, int hyperprior_1, int hyperprior_2,
+  int runs)
 {
   assert(runs > 0);
-  
-  // select prior
+
+  // select prior and hyperpriors
   PRIOR_FUNC prior_function;
   prior_inf prior_info;
   int num_taxa = rtree->leaves;
+
+  HYPERPRIOR_FUNC hyperprior_function_1;
+  hyperprior_inf hyperprior_info_1;
+  HYPERPRIOR_FUNC hyperprior_function_2;
+  hyperprior_inf hyperprior_info_2;
+  // +/- how much in the proposals?
+  double window_hyperprior_1 = 10;
+  double window_hyperprior_2 = 10;
+
+  int num_hyperpriors = 0;
+
   switch(prior)
   {
     case PRIOR_UNIFORM:
@@ -38,6 +50,9 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
       params_uni_prior->uniform_from = 1;
       params_uni_prior->uniform_to = num_taxa;
       prior_info.params = params_uni_prior;
+      num_hyperpriors = 0;
+      assert(hyperprior_1 == HYPERPRIOR_NONE);
+      assert(hyperprior_2 == HYPERPRIOR_NONE);
       break;
 
     case PRIOR_NEGATIVE_BINOMIAL:
@@ -47,6 +62,48 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
       params_neg_binom->negative_binomial_probability = 0.1337;
       params_neg_binom->negative_binomial_failures = 42;
       prior_info.params = params_neg_binom;
+      num_hyperpriors = 2;
+      switch(hyperprior_1)
+      {
+        case HYPERPRIOR_EXPONENTIAL:
+          hyperprior_function_1 = exponential_hyperprior;
+          params_exponential* params_exp = malloc(sizeof(params_exponential));
+          params_exp->exponential_rate = 42;
+          hyperprior_info_1.params = params_exp;
+          break;
+
+        case HYPERPRIOR_UNIFORM:
+          hyperprior_function_1 = uniform_hyperprior;
+          params_uniform* params_uni = malloc(sizeof(params_uniform));
+          params_uni->uniform_from = 0;
+          params_uni->uniform_to = 1;
+          hyperprior_info_1.params = params_uni;
+          break;
+
+        default:
+          fatal("No hyperprior for the binomial probability selected.\n");
+      }
+      switch(hyperprior_2)
+      {
+        case HYPERPRIOR_EXPONENTIAL:
+          hyperprior_function_1 = exponential_hyperprior;
+          params_exponential* params_exp = malloc(sizeof(params_exponential));
+          params_exp->exponential_rate = 42;
+          hyperprior_info_1.params = params_exp;
+          break;
+
+        case HYPERPRIOR_UNIFORM:
+          hyperprior_function_2 = uniform_hyperprior;
+          params_uniform* params_uni = malloc(sizeof(params_uniform));
+          params_uni->uniform_from = 42;
+          params_uni->uniform_to = 1337;
+          hyperprior_info_2.params = params_uni;
+          break;
+
+        default:
+          fatal("No hyperprior for the binomial failures selected.\n");
+      }
+
       break;
 
     case PRIOR_BINOMIAL:
@@ -55,6 +112,28 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
       params_binom->binomial_probability = 0.1337;
       params_binom->binomial_n = num_taxa;
       prior_info.params = params_binom;
+      num_hyperpriors = 1;
+      assert(hyperprior_2 == HYPERPRIOR_NONE);
+      switch(hyperprior_1)
+      {
+        case HYPERPRIOR_EXPONENTIAL:
+          hyperprior_function_1 = exponential_hyperprior;
+          params_exponential* params_exp = malloc(sizeof(params_exponential));
+          params_exp->exponential_rate = 42;
+          hyperprior_info_1.params = params_exp;
+          break;
+
+        case HYPERPRIOR_UNIFORM:
+          hyperprior_function_1 = uniform_hyperprior;
+          params_uniform* params_uni = malloc(sizeof(params_uniform));
+          params_uni->uniform_from = 0;
+          params_uni->uniform_to = 1;
+          hyperprior_info_1.params = params_uni;
+          break;
+
+        default:
+          fatal("No hyperprior for the binomial probability selected.\n");
+      }
       break;
 
     case PRIOR_GAMMA:
@@ -63,12 +142,56 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
       params_g->gamma_rate = 42;
       params_g->gamma_shape = 42;
       prior_info.params = params_g;
+      num_hyperpriors = 2;
+      switch(hyperprior_1)
+      {
+        case HYPERPRIOR_EXPONENTIAL:
+          hyperprior_function_1 = exponential_hyperprior;
+          params_exponential* params_exp = malloc(sizeof(params_exponential));
+          params_exp->exponential_rate = 42;
+          hyperprior_info_1.params = params_exp;
+          break;
+
+        case HYPERPRIOR_UNIFORM:
+          hyperprior_function_1 = uniform_hyperprior;
+          params_uniform* params_uni = malloc(sizeof(params_uniform));
+          params_uni->uniform_from = 42;
+          params_uni->uniform_to = 1337;
+          hyperprior_info_1.params = params_uni;
+          break;
+
+        default:
+          fatal("No hyperprior for the binomial probability selected.\n");
+      }
+      switch(hyperprior_2)
+      {
+        case HYPERPRIOR_EXPONENTIAL:
+          hyperprior_function_1 = exponential_hyperprior;
+          params_exponential* params_exp = malloc(sizeof(params_exponential));
+          params_exp->exponential_rate = 42;
+          hyperprior_info_1.params = params_exp;
+          break;
+
+        case HYPERPRIOR_UNIFORM:
+          hyperprior_function_2 = uniform_hyperprior;
+          params_uniform* params_uni = malloc(sizeof(params_uniform));
+          params_uni->uniform_from = 42;
+          params_uni->uniform_to = 1337;
+          hyperprior_info_2.params = params_uni;
+          break;
+
+        default:
+          fatal("No hyperprior for the binomial failures selected.\n");
+      }
       break;
 
     case PRIOR_DIRICHLET:
       prior_function = dirichlet_logprior;
       params_dirichlet* params_d = malloc(sizeof(params_dirichlet));
       prior_info.params = params_d;
+      num_hyperpriors = 0;
+      assert(hyperprior_1 == HYPERPRIOR_NONE);
+      assert(hyperprior_2 == HYPERPRIOR_NONE);
       break;
 
     case PRIOR_BETA:
@@ -77,32 +200,109 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
       params_b->beta_alpha = 42;
       params_b->beta_beta = 42;
       prior_info.params = params_b;
+      num_hyperpriors = 2;
+      switch(hyperprior_1)
+      {
+        case HYPERPRIOR_EXPONENTIAL:
+          hyperprior_function_1 = exponential_hyperprior;
+          params_exponential* params_exp = malloc(sizeof(params_exponential));
+          params_exp->exponential_rate = 42;
+          hyperprior_info_1.params = params_exp;
+          break;
+
+        case HYPERPRIOR_UNIFORM:
+          hyperprior_function_1 = uniform_hyperprior;
+          params_uniform* params_uni = malloc(sizeof(params_uniform));
+          params_uni->uniform_from = 42;
+          params_uni->uniform_to = 1337;
+          hyperprior_info_1.params = params_uni;
+          break;
+
+        default:
+          fatal("No hyperprior for the binomial probability selected.\n");
+      }
+      switch(hyperprior_2)
+      {
+        case HYPERPRIOR_EXPONENTIAL:
+          hyperprior_function_1 = exponential_hyperprior;
+          params_exponential* params_exp = malloc(sizeof(params_exponential));
+          params_exp->exponential_rate = 42;
+          hyperprior_info_1.params = params_exp;
+          break;
+
+        case HYPERPRIOR_UNIFORM:
+          hyperprior_function_2 = uniform_hyperprior;
+          params_uniform* params_uni = malloc(sizeof(params_uniform));
+          params_uni->uniform_from = 42;
+          params_uni->uniform_to = 1337;
+          hyperprior_info_2.params = params_uni;
+          break;
+
+        default:
+          fatal("No hyperprior for the binomial failures selected.\n");
+      }
       break;
 
     default:
       prior_function = no_logprior;
+      assert(hyperprior_1 == HYPERPRIOR_NONE);
+      assert(hyperprior_2 == HYPERPRIOR_NONE);
   }
 
-  // select hyperprior
-  HYPERPRIOR_FUNC hyperprior_function;
-  hyperprior_inf hyperprior_info;
-  switch(hyperprior)
-  {
-    case HYPERPRIOR_EXPONENTIAL:
-      hyperprior_function = exponential_hyperprior;
-      params_exponential* params_exp = malloc(sizeof(params_exponential));
-      params_exp->exponential_rate = 42;
-      hyperprior_info.params = params_exp;
-      break;
+  delimit_stats* best_solution = ptp_multi_heuristic(rtree, multiple_lambda,
+    p_value, quiet, min_br, prior_function, prior_info);
 
-    default:
-      hyperprior_function = uniform_hyperprior;
-      params_uniform* params_uni = malloc(sizeof(params_uniform));
-      params_uni->uniform_from = 42;
-      params_uni->uniform_to = 1337;
-      hyperprior_info.params = params_uni;
+  assert(num_hyperpriors >= 0);
+  assert(num_hyperpriors <= 2);
+  if (num_hyperpriors > 0)
+  {
+    delimit_stats* previous_solution = best_solution;
+    int i;
+    for (i = 0; i < runs; ++i)
+    {
+      // do some bayesian stuff, MCMC for the hyperpriors
+      // TODO: grab old parameter value, do the proposal,
+      //   decide to take the jump or not
+      if (num_hyperpriors >= 1)
+      {
+        switch(prior)
+        {
+          case PRIOR_NEGATIVE_BINOMIAL:
+            break;
+          case PRIOR_BINOMIAL:
+            break;
+          case PRIOR_GAMMA:
+            break;
+          case PRIOR_BETA:
+            break;
+          default:
+            fatal("Something is wrong with the priors (1).\n");
+        }
+        if (num_hyperpriors == 2)
+        {
+          switch(prior)
+          {
+            case PRIOR_NEGATIVE_BINOMIAL:
+              break;
+            case PRIOR_GAMMA:
+              break;
+            case PRIOR_BETA:
+              break;
+            default:
+              fatal("Something is wrong with the priors (2).\n");
+          }
+        }
+      }
+    }
   }
 
   free(prior_info.params);
-  free(hyperprior_info.params);
+  if (hyperprior_info_1.params)
+  {
+    free(hyperprior_info_1.params);
+  }
+  if (hyperprior_info_2.params)
+  {
+    free(hyperprior_info_2.params);
+  }
 }

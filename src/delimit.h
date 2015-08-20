@@ -59,8 +59,9 @@
 #define PRIOR_DIRICHLET         5
 #define PRIOR_BETA              6
 
-#define HYPERPRIOR_UNIFORM     0
-#define HYPERPRIOR_EXPONENTIAL 1
+#define HYPERPRIOR_NONE        0
+#define HYPERPRIOR_UNIFORM     1
+#define HYPERPRIOR_EXPONENTIAL 2
 
 typedef unsigned int UINT32;
 typedef unsigned short WORD;
@@ -354,4 +355,4 @@ double no_logprior(int num_species, prior_inf info);
 
 /* functions in bayesian.c */
 void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, int prior, int hyperprior, int runs);
+  bool quiet, double min_br, int prior, int hyperprior_1, int hyperprior_2, int runs);
