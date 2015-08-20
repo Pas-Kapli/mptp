@@ -59,7 +59,6 @@ long opt_svg_margintop;
 long opt_svg_marginbottom;
 long opt_svg_inner_radius;
 double opt_svg_legend_ratio;
-bool opt_strangefile;
 int opt_bayesian_runs;
 
 
@@ -88,9 +87,8 @@ static struct option long_options[] =
   {"svg_marginbottom",   required_argument, 0, 0 },  /* 20 */
   {"svg_inner_radius",   required_argument, 0, 0 },  /* 21 */
   {"precision",          required_argument, 0, 0 },  /* 22 */
-  {"strangefile",        required_argument, 0, 0 },  /* 23 */
-  {"ptp_multi_bayesian", required_argument, 0, 0 },  /* 24 */
-  {"ptp_single_bayesian",required_argument, 0, 0 },  /* 25 */
+  {"ptp_multi_bayesian", required_argument, 0, 0 },  /* 23 */
+  {"ptp_single_bayesian",required_argument, 0, 0 },  /* 24 */
   { 0, 0, 0, 0 }
 };
 
@@ -131,8 +129,6 @@ void args_init(int argc, char ** argv)
   opt_svg_margintop = 20;
   opt_svg_marginbottom = 20;
   opt_svg_inner_radius = 0;
-
-  opt_strangefile = false;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -240,15 +236,11 @@ void args_init(int argc, char ** argv)
         break;
 
       case 23:
-        opt_strangefile = true;
-        break;
-
-      case 24:
         opt_ptpmulti_bayesian = true;
         opt_bayesian_runs = atoi(optarg);
         break;
 
-      case 25:
+      case 24:
         opt_ptpsingle_bayesian = true;
         opt_bayesian_runs = atoi(optarg);
         break;
@@ -317,7 +309,6 @@ void cmd_help()
           "  --ptp_multi_bayesian RUNS      Bayesian PTP style with one lambda per coalescent.\n"
           "  --ptp_single_bayesian RUNS     Bayesian PTP style with single lambda for all coalescent.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
-          "  --strangefile                  Use score with a strange delimitation output file from PTP.\n"
           "  --pvalue                       Specify a P-value (default: 0.001)\n"
           "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
           "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
@@ -432,7 +423,7 @@ void cmd_score()
   }
 
   /* TODO: Sarah's score function should be called here */
-  score_delimitation_tree(opt_scorefile, rtree, opt_minbr, opt_strangefile);
+  score_delimitation_tree(opt_scorefile, rtree, opt_minbr);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);

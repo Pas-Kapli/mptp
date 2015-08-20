@@ -335,8 +335,7 @@ void free_tree_data(rtree_t * tree);
 
 /* functions in score.c */
 
-void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br,
-  bool strangefile);
+void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br);
 
 /* functions in svg.c */
 void cmd_svg(rtree_t * rtree);
