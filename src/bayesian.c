@@ -21,6 +21,17 @@
 
 #include "delimit.h"
 
+// Taken from http://stackoverflow.com/questions/2999075/generate-a-random-number-within-range
+// TODO: Use some better random function since this one will not generate uniformly distributed random numbers
+int rand_range_int(int min_n, int max_n)
+{
+    return rand() % (max_n - min_n + 1) + min_n;
+}
+double rand_range_double(double min_n, double max_n)
+{
+    return (double)rand()/RAND_MAX * (max_n - min_n) + min_n;
+}
+
 void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
   bool quiet, double min_br, int prior, int hyperprior_1, int hyperprior_2,
   int runs)
@@ -261,6 +272,7 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
   if (num_hyperpriors > 0)
   {
     delimit_stats* previous_solution = best_solution;
+    prior_inf previous_prior_info = prior_info;
     int i;
     for (i = 0; i < runs; ++i)
     {
@@ -274,18 +286,23 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
           case PRIOR_NEGATIVE_BINOMIAL: // negative binomial probability
             assert(window_hyperprior_1 <= 1);
             double old_negative_binomial_probability = ((params_negative_binomial*) (prior_info.params))->negative_binomial_probability;
+            double new_negative_binomial_probability = rand_range_double(MAX(0,old_negative_binomial_probability - window_hyperprior_1), MIN(1,old_negative_binomial_probability + window_hyperprior_1));
+            ((params_negative_binomial*) (prior_info.params))->negative_binomial_probability = new_negative_binomial_probability;
             break;
           case PRIOR_BINOMIAL: // binomial probability
             assert(window_hyperprior_1 <= 1);
             double old_binomial_probability = ((params_binomial*) (prior_info.params))->binomial_probability;
+            double new_binomial_probability = rand_range_double(MAX(0,old_binomial_probability - window_hyperprior_1), MIN(1,old_binomial_probability + window_hyperprior_1));
             break;
           case PRIOR_GAMMA: // gamma rate
             ;
             double old_gamma_rate = ((params_gamma*) (prior_info.params))->gamma_rate;
+            double new_gamma_rate = rand_range_double(MAX(0,old_gamma_rate - window_hyperprior_1), old_gamma_rate + window_hyperprior_1);
             break;
           case PRIOR_BETA: // beta alpha
             ;
             double old_beta_alpha = ((params_beta*) (prior_info.params))->beta_alpha;
+            double new_beta_alpha = rand_range_double(MAX(0,old_beta_alpha - window_hyperprior_1), old_beta_alpha + window_hyperprior_1);
             break;
           default:
             fatal("Something is wrong with the priors (1).\n");
@@ -297,14 +314,17 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
             case PRIOR_NEGATIVE_BINOMIAL: // negative binomial failures
               ;
               int old_negative_binomial_failures = ((params_negative_binomial*) (prior_info.params))->negative_binomial_failures;
+              int new_negative_binomial_failures = rand_range_int(MAX(1,old_negative_binomial_failures - window_hyperprior_2), old_negative_binomial_failures + window_hyperprior_2);
               break;
             case PRIOR_GAMMA: // gamma shape
               ;
               double old_gamma_shape = ((params_gamma*) (prior_info.params))->gamma_shape;
+              double new_gamma_shape = rand_range_double(MAX(0,old_gamma_shape - window_hyperprior_2), old_gamma_shape + window_hyperprior_2);
               break;
             case PRIOR_BETA: // beta beta
               ;
               double old_beta_beta = ((params_beta*) (prior_info.params))->beta_beta;
+              double new_beta_beta = rand_range_double(MAX(0,old_beta_beta - window_hyperprior_2), old_beta_beta + window_hyperprior_2);
               break;
             default:
               fatal("Something is wrong with the priors (2).\n");
