@@ -462,12 +462,14 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
     }
   }
 
-  printf("Num big enough edges in tree: %d\n",
-    data->num_edges_subtree);
-
-  printf("Score Null Model: %.6f\n", data->coalescent);
-  printf("Best score found single: %.6f\n", spec_array[pos].score_single);
-  printf("Best score found multi: %.6f\n", spec_array[pos].score_multi);
+  if (!quiet)
+  {
+    printf("Num big enough edges in tree: %d\n",
+      data->num_edges_subtree);
+    printf("Score Null Model: %.6f\n", data->coalescent);
+    printf("Best score found single: %.6f\n", spec_array[pos].score_single);
+    printf("Best score found multi: %.6f\n", spec_array[pos].score_multi);
+  }
 
   bool good_delimitation = true;
   double computed_p_value = -1;
@@ -483,23 +485,26 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
       spec_array[pos].score_single, p_value, 1, &computed_p_value);
   }
 
-  printf("Computed P-value: %.6f\n", computed_p_value);
+  if (!quiet)
+  {
+    printf("Computed P-value: %.6f\n", computed_p_value);
+  }
 
   if (good_delimitation)
   {
     bool print_speciation_warning = false;
     backtrack_species_assignment(tree, pos, quiet, min_br,
       &print_speciation_warning);
-    if (print_speciation_warning)
+    if (print_speciation_warning && !quiet)
     {
       printf("WARNING: A speciation edge in the result is too small.\n");
     }
   }
   else
   {
-    printf("The Null Model is the preferred one.\n");
     if (!quiet)
     {
+      printf("The Null Model is the preferred one.\n");
       print_null_model(tree);
     }
     else
@@ -507,8 +512,11 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
       current_species_idx = 2;
     }
   }
-  printf("Number of delimited species: %d\n", current_species_idx - 1);
-  if (data->num_edges_subtree == 0)
+  if (!quiet)
+  {
+    printf("Number of delimited species: %d\n", current_species_idx - 1);
+  }
+  if (data->num_edges_subtree == 0 && !quiet)
   {
     printf("WARNING: The tree has no edges that are greater or equal min_br. All edges have been ignored. \n");
   }

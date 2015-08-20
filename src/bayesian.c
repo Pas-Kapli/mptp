@@ -22,8 +22,10 @@
 #include "delimit.h"
 
 void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, int prior, int hyperprior)
+  bool quiet, double min_br, int prior, int hyperprior, int runs)
 {
+  assert(runs > 0);
+  
   // select prior
   PRIOR_FUNC prior_function;
   prior_inf prior_info;

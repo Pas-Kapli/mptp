@@ -340,4 +340,4 @@ double no_logprior(int num_species, prior_inf info);
 
 /* functions in bayesian.c */
 void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, int prior, int hyperprior);
+  bool quiet, double min_br, int prior, int hyperprior, int runs);
