@@ -250,10 +250,11 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
   }
 
   delimit_stats* best_solution = ptp_multi_heuristic(rtree, multiple_lambda,
-    p_value, quiet, min_br, prior_function, prior_info);
+    p_value, true, min_br, prior_function, prior_info);
 
   assert(num_hyperpriors >= 0);
   assert(num_hyperpriors <= 2);
+
   if (num_hyperpriors > 0)
   {
     delimit_stats* previous_solution = best_solution;
@@ -296,13 +297,20 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
     }
   }
 
-  free(prior_info.params);
-  if (hyperprior_info_1.params)
+  if (prior_info.params)
+  {
+    free(prior_info.params);
+  }
+
+  if (num_hyperpriors >= 1)
   {
     free(hyperprior_info_1.params);
   }
-  if (hyperprior_info_2.params)
+
+  if (num_hyperpriors == 2)
   {
     free(hyperprior_info_2.params);
   }
+
+  free(best_solution);
 }
