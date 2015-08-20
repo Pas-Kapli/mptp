@@ -336,7 +336,7 @@ void cmd_help()
          );
 }
 
-void cmd_ptpmulti(bool multiple_lambda)
+void cmd_ptpmulti(bool multiple_lambda, bool bayesian)
 {
   /* parse tree */
   if (!opt_quiet)
@@ -366,10 +366,18 @@ void cmd_ptpmulti(bool multiple_lambda)
       fprintf(stdout, "Loaded rooted tree...\n");
   }
 
-  PRIOR_FUNC ptr_no_logprior = no_logprior;
-  prior_inf info;
-  ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet,
-    opt_minbr, ptr_no_logprior, info);
+  if (!bayesian)
+  {
+    PRIOR_FUNC ptr_no_logprior = no_logprior;
+    prior_inf info;
+    ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet,
+      opt_minbr, ptr_no_logprior, info);
+  }
+  else
+  {
+    ptp_bayesian(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet,
+      opt_minbr, PRIOR_UNIFORM, HYPERPRIOR_UNIFORM);
+  }
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
@@ -495,11 +503,19 @@ int main (int argc, char * argv[])
   }
   else if (opt_ptpmulti)
   {
-    cmd_ptpmulti(true);
+    cmd_ptpmulti(true, false);
   }
   else if (opt_ptpsingle)
   {
-    cmd_ptpmulti(false);
+    cmd_ptpmulti(false, false);
+  }
+  else if (opt_ptpmulti_bayesian)
+  {
+    cmd_ptpmulti(true, true);
+  }
+  else if (opt_ptpsingle_bayesian)
+  {
+    cmd_ptpmulti(false, true);
   }
   else if (opt_scorefile)
   {

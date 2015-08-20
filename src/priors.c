@@ -47,24 +47,30 @@ long long combi(int n, int k)
 
 double exponential_hyperprior(double x, hyperprior_inf info)
 {
+  params_exponential* params = (params_exponential*) (info.params);
+
   assert(x >= 0);
-  double rate = info.exponential_rate;
+  double rate = params->exponential_rate;
   return rate * exp(-rate * x);
 }
 
 double uniform_hyperprior(double x, hyperprior_inf info)
 {
-  double from = info.uniform_from;
-  double to = info.uniform_to;
+  params_uniform* params = (params_uniform*) (info.params);
+
+  double from = params->uniform_from;
+  double to = params->uniform_to;
   assert(from < to);
   return 1.0 / (from - to);
 }
 
 double beta_logprior(int num_species, prior_inf info)
 {
+  params_beta* params = (params_beta*) (info.params);
+
   assert(num_species > 0);
-  double alpha = info.beta_alpha;
-  double beta = info.beta_beta;
+  double alpha = params->beta_alpha;
+  double beta = params->beta_beta;
   assert(alpha > 0);
   assert(beta > 0);
   double x = (double) num_species;
@@ -74,6 +80,8 @@ double beta_logprior(int num_species, prior_inf info)
 
 double dirichlet_logprior(int num_species, prior_inf info)
 {
+  params_dirichlet* params = (params_dirichlet*) (info.params);
+
   assert(num_species > 0);
   assert(0);
   // TODO: not implemented!
@@ -82,10 +90,12 @@ double dirichlet_logprior(int num_species, prior_inf info)
 
 double gamma_logprior(int num_species, prior_inf info)
 {
+  params_gamma* params = (params_gamma*) (info.params);
+
   assert(num_species > 0);
-  double beta = info.gamma_rate;
+  double beta = params->gamma_rate;
   assert(beta > 0);
-  double alpha = info.gamma_shape;
+  double alpha = params->gamma_shape;
   assert(alpha > 0);
 
   return log(pow(beta, alpha)) - log(gamma(alpha))
@@ -95,27 +105,29 @@ double gamma_logprior(int num_species, prior_inf info)
 
 double binomial_logprior(int num_species, prior_inf info)
 {
+  params_binomial* params = (params_binomial*) (info.params);
+
   assert(num_species > 0);
-  double p = info.binomial_probability;
+  double p = params->binomial_probability;
   assert(p > 0);
   assert(p < 1);
-  int num_taxa = info.num_taxa;
-  assert(num_taxa > 0);
+  int n = params->binomial_n;
+  assert(n > 0);
 
-  return log(combi(num_taxa, num_species))
+  return log(combi(n, num_species))
     + log(pow(1.0 - p, num_species))
-    + log(pow(p, num_taxa - num_species));
+    + log(pow(p, n - num_species));
 }
 
 double negative_binomial_logprior(int num_species, prior_inf info)
 {
+  params_negative_binomial* params = (params_negative_binomial*) (info.params);
+
   assert(num_species > 0);
-  double p = info.negative_binomial_probability;
+  double p = params->negative_binomial_probability;
   assert(p > 0);
   assert(p < 1);
-  int num_taxa = info.num_taxa;
-  assert(num_taxa > 0);
-  int r = info.negative_binomial_failures;
+  int r = params->negative_binomial_failures;
   assert(r > 0);
 
   // r is the number of failures until the experiment is stopped
@@ -126,9 +138,13 @@ double negative_binomial_logprior(int num_species, prior_inf info)
 
 double uniform_logprior(int num_species, prior_inf info)
 {
+  params_uniform* params = (params_uniform*) (info.params);
+
   assert(num_species > 0);
-  assert(info.num_taxa > 0);
-  return log(1.0 / ((double) info.num_taxa));
+  double from = params->uniform_from;
+  double to = params->uniform_to;
+  assert(from < to);
+  return 1.0 / (from - to);
 }
 
 double no_logprior(int num_species, prior_inf info)

@@ -124,28 +124,58 @@ typedef struct node_information_score
   int current_species_input; // for finding the alternative mrca
 } score_information;
 
-typedef struct prior_information
-{
-  int num_taxa; // number of taxa in the tree
+/* priors and hyperpriors */
 
+typedef struct params_prior_gamma_struct // only for prior
+{
   double gamma_shape;
   double gamma_rate;
+} params_gamma;
 
+typedef struct params_beta_struct // only for prior
+{
   double beta_alpha;
   double beta_beta;
+} params_beta;
 
+typedef struct params_binomial_struct // only for prior
+{
+  int binomial_n;
   double binomial_probability;
+} params_binomial;
 
+typedef struct params_negative_binomial_struct // only for prior
+{
   double negative_binomial_probability;
   int negative_binomial_failures; // number of failures until the experiment is stopped
+} params_negative_binomial;
+
+typedef struct params_dirichlet_struct // only for prior
+{
+  // TODO: Find out what the parameters for the dirichlet prior are
+} params_dirichlet;
+
+typedef struct params_uniform_struct // for prior and hyperprior
+{
+  double uniform_from;
+  double uniform_to;
+} params_uniform;
+
+typedef struct params_exponential_struct // only for hyperprior
+{
+  double exponential_rate;
+} params_exponential;
+
+typedef struct prior_information
+{
+  int prior_select;
+  void * params;
 } prior_inf;
 
 typedef struct hyperprior_information
 {
-  double uniform_from;
-  double uniform_to;
-
-  double exponential_rate;
+  int hyperprior_select;
+  void * params;
 } hyperprior_inf;
 
 typedef double (*PRIOR_FUNC)(int, prior_inf);
@@ -307,3 +337,7 @@ double binomial_logprior(int num_species, prior_inf info);
 double negative_binomial_logprior(int num_species, prior_inf info);
 double uniform_logprior(int num_species, prior_inf info);
 double no_logprior(int num_species, prior_inf info);
+
+/* functions in bayesian.c */
+void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
+  bool quiet, double min_br, int prior, int hyperprior);
