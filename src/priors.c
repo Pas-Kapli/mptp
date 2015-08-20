@@ -47,6 +47,7 @@ long long combi(int n, int k)
 
 double exponential_hyperprior(double x, hyperprior_inf info)
 {
+  assert(x >= 0);
   double rate = info.exponential_rate;
   return rate * exp(-rate * x);
 }
@@ -61,6 +62,7 @@ double uniform_hyperprior(double x, hyperprior_inf info)
 
 double beta_logprior(int num_species, prior_inf info)
 {
+  assert(num_species > 0);
   double alpha = info.beta_alpha;
   double beta = info.beta_beta;
   assert(alpha > 0);
@@ -72,6 +74,7 @@ double beta_logprior(int num_species, prior_inf info)
 
 double dirichlet_logprior(int num_species, prior_inf info)
 {
+  assert(num_species > 0);
   assert(0);
   // TODO: not implemented!
   return -1;
@@ -79,6 +82,7 @@ double dirichlet_logprior(int num_species, prior_inf info)
 
 double gamma_logprior(int num_species, prior_inf info)
 {
+  assert(num_species > 0);
   double beta = info.gamma_rate;
   assert(beta > 0);
   double alpha = info.gamma_shape;
