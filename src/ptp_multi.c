@@ -424,7 +424,7 @@ bool likelihood_ratio_test(rtree_t * tree, double likelihood_alternative_model,
   return good_delimitation;
 }
 
-void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
+delimit_stats* ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
   bool quiet, double min_br, PRIOR_FUNC prior_function, prior_inf prior_information)
 {
   init_tree_data(tree, min_br);
@@ -521,5 +521,20 @@ void ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
     printf("WARNING: The tree has no edges that are greater or equal min_br. All edges have been ignored. \n");
   }
 
+  delimit_stats* solution = malloc(sizeof(delimit_stats));
+  solution->number_of_species = current_species_idx - 1;
+  solution->is_null_model = !good_delimitation;
+  if (good_delimitation)
+  {
+    solution->score_single = spec_array[pos].score_single;
+    solution->score_multi = spec_array[pos].score_multi;
+  }
+  else
+  {
+    solution->score_single = data->coalescent;
+    solution->score_multi = data->coalescent;
+  }
+
   free_tree_data(tree);
+  return solution;
 }

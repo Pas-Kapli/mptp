@@ -374,8 +374,9 @@ void cmd_ptpmulti(bool multiple_lambda, bool bayesian)
   {
     PRIOR_FUNC ptr_no_logprior = no_logprior;
     prior_inf info;
-    ptp_multi_heuristic(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet,
-      opt_minbr, ptr_no_logprior, info);
+    delimit_stats* solution = ptp_multi_heuristic(rtree, multiple_lambda,
+      opt_pvalue, (bool) opt_quiet, opt_minbr, ptr_no_logprior, info);
+    free(solution);
   }
   else
   {

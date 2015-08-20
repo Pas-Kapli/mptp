@@ -90,6 +90,20 @@ typedef struct rtree_s
   void * data;
 } rtree_t;
 
+/* solution of the heuristic */
+
+typedef struct delimit_solution_struct
+{
+  int number_of_species;
+  double score_single;
+  double score_multi;
+  bool is_null_model;
+  //rtree_t** mrca_list; // the most recent common ancestors of the species
+  // TODO: Do we need the MRCAs?
+} delimit_stats;
+
+/* additional data for the tree nodes, needed by the heuristic or the scoring */
+
 typedef struct spec_array_entry
 {
   double sum_speciation_edges_subtree;
@@ -312,7 +326,7 @@ unsigned long arch_get_memtotal();
 
 /* functions in ptp_multi.c */
 
-void ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda, double p_value,
+delimit_stats* ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda, double p_value,
   bool quiet, double min_br, PRIOR_FUNC species_logprior, prior_inf prior_information);
 double compute_loglikelihood(int num, double sum);
 void init_tree_data(rtree_t * tree, double min_br);
