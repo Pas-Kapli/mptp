@@ -51,7 +51,7 @@ for set_name in set_names:
 		else:
 			input_tree_file = "unique_taxa_trees_big_dataset/set_" + set_name + "/RAxML_inferred_trees_unique_taxa/rooted.inferred_unique_taxa_set_" + set_name + "." + str(i)
 		output_delimit_single_minbr_0_file = "unique_taxa_big_delimit_single_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
-		output_delimit_multi_minbr_0_file = "unique_taxa_big_delimit_single_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		output_delimit_multi_minbr_0_file = "unique_taxa_big_delimit_multi_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
 		output_delimit_single_minbr_default_file = "unique_taxa_big_delimit_single_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
-		output_delimit_multi_minbr_default_file = "unique_taxa_big_delimit_single_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		output_delimit_multi_minbr_default_file = "unique_taxa_big_delimit_multi_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
 		run_delimit_on_data(input_tree_file, output_delimit_single_minbr_0_file, output_delimit_multi_minbr_0_file, output_delimit_single_minbr_default_file, output_delimit_multi_minbr_default_file)
