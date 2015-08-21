@@ -84,7 +84,7 @@ void init_tree_data(rtree_t * tree, double min_br)
     init_tree_data(tree->left, min_br);
     node_information* left_data = (node_information*) (tree->left->data);
 
-    if (tree->left->length < min_br)
+    if (tree->left->length <= min_br)
     {
       subtree_size_edges += left_data->num_edges_subtree;
       subtree_sum_edges += left_data->sum_edges_subtree;
@@ -101,7 +101,7 @@ void init_tree_data(rtree_t * tree, double min_br)
     init_tree_data(tree->right, min_br);
     node_information* right_data = (node_information*) (tree->right->data);
 
-    if (tree->right->length < min_br)
+    if (tree->right->length <= min_br)
     {
       subtree_size_edges += right_data->num_edges_subtree;
       subtree_sum_edges += right_data->sum_edges_subtree;
@@ -165,7 +165,7 @@ void init_additional_tree_data(rtree_t * tree, double min_br)
   {
     node_information* parent_data = (node_information*) (tree->parent->data);
 
-    if (tree->length < min_br)
+    if (tree->length <= min_br)
     {
       num_known_speciation_edges = parent_data->num_known_speciation_edges;
       sum_known_speciation_edges = parent_data->sum_known_speciation_edges;
@@ -179,7 +179,7 @@ void init_additional_tree_data(rtree_t * tree, double min_br)
 
     if (tree == tree->parent->left)
     {
-        if (tree->parent->right && tree->parent->right->length >= min_br)
+        if (tree->parent->right && tree->parent->right->length > min_br)
         {
           num_known_speciation_edges++;
           sum_known_speciation_edges += tree->parent->right->length;
@@ -187,7 +187,7 @@ void init_additional_tree_data(rtree_t * tree, double min_br)
     }
     else
     {
-      if (tree->parent->left && tree->parent->left->length >= min_br)
+      if (tree->parent->left && tree->parent->left->length > min_br)
       {
         num_known_speciation_edges++;
         sum_known_speciation_edges += tree->parent->left->length;
@@ -252,11 +252,11 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
       ((node_information*) (tree->right->data))->spec_array;
 
     int num_valid_child_edges = 2;
-    if (tree->left->length < min_br)
+    if (tree->left->length <= min_br)
     {
       num_valid_child_edges--;
     }
-    if (tree->right->length < min_br)
+    if (tree->right->length <= min_br)
     {
       num_valid_child_edges--;
     }
@@ -276,13 +276,13 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
           int combined_spec_num = 0;
           double sum_speciation_edges_subtree = 0;
 
-          if (tree->left->length >= min_br)
+          if (tree->left->length > min_br)
           {
             combined_spec_sum += tree->left->length;
             combined_spec_num++;
             sum_speciation_edges_subtree += tree->left->length;
           }
-          if (tree->right->length >= min_br)
+          if (tree->right->length > min_br)
           {
             combined_spec_sum += tree->right->length;
             combined_spec_num++;
@@ -375,7 +375,7 @@ void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet,
     // speciation event
   {
     tree->event = EVENT_SPECIATION;
-    if (tree->length < min_br)
+    if (tree->length <= min_br)
     {
       (*print_speciation_warning) = true;
     }
