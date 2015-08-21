@@ -375,7 +375,7 @@ void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet,
     // speciation event
   {
     tree->event = EVENT_SPECIATION;
-    if (tree->length <= min_br)
+    if (tree->length <= min_br && tree->parent)
     {
       (*print_speciation_warning) = true;
     }
