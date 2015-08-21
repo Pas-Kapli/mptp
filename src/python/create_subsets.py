@@ -70,7 +70,7 @@ uniform_num_alignments = 360
 nonuniform_num_alignments = 369
 
 for set_name in set_names:
-	for i in range(1,100):
+	for i in range(1,101):
 		for bp in base_pairs:
 			output_nonuniform_taxa_file = "nonuniform/taxa/"+str(bp)+"/taxa.simulated_" + set_name + "_" + str(i)
 			output_nonuniform_alignment_file = "nonuniform/alignments/"+str(bp)+"/simulated_tree_" + set_name + "_" + str(i)
