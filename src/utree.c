@@ -415,7 +415,8 @@ rtree_t * utree_convert_rtree(utree_t * root, int tip_count)
   rnode->label = NULL;
   rnode->length = 0;
 
-  rtree_reset_leaves(rnode);
+  /* reset per-node leaves and valid edges */
+  rtree_reset_info(rnode);
 
   free(node_list);
 

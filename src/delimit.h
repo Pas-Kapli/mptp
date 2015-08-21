@@ -86,8 +86,17 @@ typedef struct rtree_s
   struct rtree_s * right;
   struct rtree_s * parent;
   int leaves;
-  int event;
 
+  /* number of edges with length > opt_minbr and their sum for the subtree
+     at current node */
+  int valid_edge_count;
+  double valid_edgelen_sum;
+
+  /* which process does this node belong to (coalesent or speciation) */
+  int event;
+  double coalescent_logl;
+
+  /* auxialiary data */
   void * data;
 } rtree_t;
 
@@ -120,9 +129,7 @@ typedef struct spec_array_entry
 
 typedef struct node_information_ptpmulti
 {
-  int num_edges_subtree;
-  double sum_edges_subtree;
-  double coalescent;
+  //double coalescent;
   spec_entry * spec_array;
 
   // additional data
@@ -141,17 +148,17 @@ typedef struct node_information_score
 
 /* priors and hyperpriors */
 
-typedef struct params_prior_gamma_struct // only for prior
+typedef struct gamma_params_s
 {
-  double gamma_shape;
-  double gamma_rate;
-} params_gamma;
+  double alpha;
+  double beta;
+} gamma_params_t;
 
-typedef struct params_beta_struct // only for prior
+typedef struct beta_params_s
 {
-  double beta_alpha;
-  double beta_beta;
-} params_beta;
+  double alpha;
+  double beta;
+} beta_params_t;
 
 typedef struct params_binomial_struct // only for prior
 {
@@ -222,6 +229,8 @@ extern long opt_svg_margintop;
 extern long opt_svg_marginbottom;
 extern long opt_svg_inner_radius;
 extern double opt_svg_legend_ratio;
+extern double opt_pvalue;
+extern double opt_minbr;
 
 /* common data */
 
@@ -308,7 +317,7 @@ int rtree_query_tipnodes(rtree_t * root,
 int rtree_query_innernodes(rtree_t * root,
                            rtree_t ** node_list);
 
-void rtree_reset_leaves(rtree_t * root);
+void rtree_reset_info(rtree_t * root);
 
 /* functions in parse_rtree.y */
 
@@ -327,15 +336,15 @@ unsigned long arch_get_memtotal();
 
 /* functions in ptp_multi.c */
 
-delimit_stats* ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, PRIOR_FUNC species_logprior, prior_inf prior_information);
-double compute_loglikelihood(int num, double sum);
-void init_tree_data(rtree_t * tree, double min_br);
+delimit_stats* ptp_multi_heuristic(rtree_t * rtree, bool multiple_lambda,
+  PRIOR_FUNC species_logprior, prior_inf prior_information);
+double loglikelihood(int num, double sum);
+void init_tree_data(rtree_t * tree);
 void free_tree_data(rtree_t * tree);
 
 /* functions in score.c */
 
-void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br);
+void score_delimitation_tree(char * scorefile, rtree_t * tree);
 
 /* functions in svg.c */
 void cmd_svg(rtree_t * rtree);
@@ -345,7 +354,7 @@ double uniform_hyperprior(double x, hyperprior_inf info);
 double exponential_hyperprior(double x, hyperprior_inf info);
 
 double dirichlet_logprior(int num_species, prior_inf info);
-double gamma_logprior(int num_species, prior_inf info);
+double gamma_logpdf(int num_species, prior_inf info);
 double beta_logprior(int num_species, prior_inf info);
 double binomial_logprior(int num_species, prior_inf info);
 double negative_binomial_logprior(int num_species, prior_inf info);
@@ -353,5 +362,5 @@ double uniform_logprior(int num_species, prior_inf info);
 double no_logprior(int num_species, prior_inf info);
 
 /* functions in bayesian.c */
-void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, int prior, int hyperprior_1, int hyperprior_2, int runs);
+void ptp_bayesian(rtree_t * rtree, bool multiple_lambda,
+  int prior, int hyperprior_1, int hyperprior_2, int runs);

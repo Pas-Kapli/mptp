@@ -32,9 +32,8 @@ double rand_range_double(double min_n, double max_n)
     return (double)rand()/RAND_MAX * (max_n - min_n) + min_n;
 }
 
-void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, int prior, int hyperprior_1, int hyperprior_2,
-  int runs)
+void ptp_bayesian(rtree_t * rtree, bool multiple_lambda,
+  int prior, int hyperprior_1, int hyperprior_2, int runs)
 {
   assert(runs > 0);
 
@@ -151,10 +150,10 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
       break;
 
     case PRIOR_GAMMA:
-      prior_function = gamma_logprior;
-      params_gamma* params_g = malloc(sizeof(params_gamma));
-      params_g->gamma_rate = 42;
-      params_g->gamma_shape = 42;
+      prior_function = gamma_logpdf;
+      gamma_params_t * params_g = malloc(sizeof(gamma_params_t));
+      params_g->beta = 42;
+      params_g->alpha = 42;
       prior_info.params = params_g;
       num_hyperpriors = 2;
       switch(hyperprior_1)
@@ -210,9 +209,9 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
 
     case PRIOR_BETA:
       prior_function = beta_logprior;
-      params_beta* params_b = malloc(sizeof(params_beta));
-      params_b->beta_alpha = 42;
-      params_b->beta_beta = 42;
+      beta_params_t * params_b = malloc(sizeof(beta_params_t));
+      params_b->alpha = 42;
+      params_b->beta = 42;
       prior_info.params = params_b;
       num_hyperpriors = 2;
       switch(hyperprior_1)
@@ -264,7 +263,7 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
   }
 
   delimit_stats* best_solution = ptp_multi_heuristic(rtree, multiple_lambda,
-    p_value, true, min_br, prior_function, prior_info);
+    prior_function, prior_info);
 
   assert(num_hyperpriors >= 0);
   assert(num_hyperpriors <= 2);
@@ -296,13 +295,13 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
             break;
           case PRIOR_GAMMA: // gamma rate
             ;
-            double old_gamma_rate = ((params_gamma*) (prior_info.params))->gamma_rate;
-            double new_gamma_rate = rand_range_double(MAX(0,old_gamma_rate - window_hyperprior_1), old_gamma_rate + window_hyperprior_1);
+            double old_beta = ((gamma_params_t *) (prior_info.params))->beta;
+            double new_beta = rand_range_double(MAX(0,old_beta - window_hyperprior_1), old_beta + window_hyperprior_1);
             break;
           case PRIOR_BETA: // beta alpha
             ;
-            double old_beta_alpha = ((params_beta*) (prior_info.params))->beta_alpha;
-            double new_beta_alpha = rand_range_double(MAX(0,old_beta_alpha - window_hyperprior_1), old_beta_alpha + window_hyperprior_1);
+            double old_alpha = ((beta_params_t *) (prior_info.params))->alpha;
+            double new_alpha = rand_range_double(MAX(0,old_alpha - window_hyperprior_1), old_alpha + window_hyperprior_1);
             break;
           default:
             fatal("Something is wrong with the priors (1).\n");
@@ -318,13 +317,13 @@ void ptp_bayesian(rtree_t * rtree, bool multiple_lambda, double p_value,
               break;
             case PRIOR_GAMMA: // gamma shape
               ;
-              double old_gamma_shape = ((params_gamma*) (prior_info.params))->gamma_shape;
-              double new_gamma_shape = rand_range_double(MAX(0,old_gamma_shape - window_hyperprior_2), old_gamma_shape + window_hyperprior_2);
+              double old_alpha = ((gamma_params_t *) (prior_info.params))->alpha;
+              double new_alpha= rand_range_double(MAX(0,old_alpha - window_hyperprior_2), old_alpha + window_hyperprior_2);
               break;
             case PRIOR_BETA: // beta beta
               ;
-              double old_beta_beta = ((params_beta*) (prior_info.params))->beta_beta;
-              double new_beta_beta = rand_range_double(MAX(0,old_beta_beta - window_hyperprior_2), old_beta_beta + window_hyperprior_2);
+              double old_beta = ((beta_params_t *) (prior_info.params))->beta;
+              double new_beta = rand_range_double(MAX(0,old_beta - window_hyperprior_2), old_beta + window_hyperprior_2);
               break;
             default:
               fatal("Something is wrong with the priors (2).\n");
