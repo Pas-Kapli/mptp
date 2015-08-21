@@ -363,7 +363,6 @@ double compute_nmi_score(rtree_t ** mrca_real_list, int num_species_real,
 void compute_score(rtree_t * tree, rtree_t ** mrca_list, int num_species,
   double * score_single, double * score_multi)
 {
-  node_information * data_root = (node_information*) (tree->data);
   double speciation = 0;
   double coalescent_single = 0;
   double coalescent_multi = 0;
@@ -372,22 +371,22 @@ void compute_score(rtree_t * tree, rtree_t ** mrca_list, int num_species,
   int i;
   for (i = 0; i < num_species; i++)
   {
-    node_information * data_current = (node_information*) (mrca_list[i]->data);
-    coalescent_multi += data_current->coalescent;
-    num_edges_coalescent += data_current->num_edges_subtree;
-    sum_edges_coalescent += data_current->sum_edges_subtree;
+    coalescent_multi += mrca_list[i]->coalescent_logl;
+    //printf("  Coalescent multi is now adding: %.6f\n", data_current->coalescent);
+    num_edges_coalescent += mrca_list[i]->valid_edge_count;
+    sum_edges_coalescent += mrca_list[i]->valid_edgelen_sum;
   }
-  speciation = compute_loglikelihood(
-    data_root->num_edges_subtree - num_edges_coalescent,
-    data_root->sum_edges_subtree - sum_edges_coalescent);
-  coalescent_single = compute_loglikelihood(num_edges_coalescent,
+  speciation = loglikelihood(
+    tree->valid_edge_count - num_edges_coalescent,
+    tree->valid_edgelen_sum - sum_edges_coalescent);
+  coalescent_single = loglikelihood(num_edges_coalescent,
     sum_edges_coalescent);
 
   (*score_single) = coalescent_single + speciation;
   (*score_multi) = coalescent_multi + speciation;
 }
 
-void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br)
+void score_delimitation_tree(char * scorefile, rtree_t * tree)
 {
   rtree_t ** leaves_list = calloc(tree->leaves, sizeof(rtree_t));
   rtree_query_tipnodes(tree, leaves_list);
@@ -419,7 +418,7 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br)
 
   free_tree_data_score(tree);
 
-  init_tree_data(tree, min_br);
+  init_tree_data(tree);
   double score_single_input = 0;
   double score_multi_input = 0;
   double score_single_real = 0;

@@ -22,108 +22,37 @@
 #include "delimit.h"
 #include <gsl/gsl_cdf.h>
 
-double compute_loglikelihood(int num, double sum)
+double loglikelihood(int edge_count, double edgelen_sum)
 {
-  assert(num >= 0);
-  if (num == 0 || sum == 0) { // TODO: Try to find out if sum == 0 makes sense here
+  assert(edge_count >= 0);
+
+  if (edge_count == 0 || edgelen_sum == 0) // TODO: Try to find out if sum == 0 makes sense here
     return 0;
-  }
-  else
-  {
-    return num * log(num) - num - num * log(sum);
-  }
+  
+  return edge_count * (log(edge_count) - 1 - log(edgelen_sum));
 }
 
-void print_spec_entry(spec_entry * entry)
+void init_tree_data(rtree_t * tree)
 {
-  printf("{sum_speciation_edges_subtree: %f, coalescent_value: %f, "
-      "speciation_value: %f, score_multi: %f, score_single: %f, "
-      "taken_left_index: %d, taken_right_index: %d}\n",
-      entry->sum_speciation_edges_subtree, entry->coalescent_value,
-      entry->speciation_value, entry->score_multi, entry->score_single,
-      entry->taken_left_index, entry->taken_right_index);
-}
-
-void print_debug_information(rtree_t * tree)
-{
-  if (tree->left)
-  {
-    print_debug_information(tree->left);
-  }
-  if (tree->right)
-  {
-    print_debug_information(tree->right);
-  }
-  node_information* data = (node_information*) (tree->data);
-  printf("num_edges_subtree: %d, ", data->num_edges_subtree);
-  printf("sum_edges_subtree: %f, ", data->sum_edges_subtree);
-  printf("coalescent: %f, ", data->coalescent);
-  printf("num_known_speciation_edges: %d, ", data->num_known_speciation_edges);
-  printf("sum_known_speciation_edges: %f\n", data->sum_known_speciation_edges);
-  printf("spec_array: \n");
-  int i = 0;
-  for (i = 0; i <= data->num_edges_subtree; i+=2) {
-    printf("%d: ", i);
-    print_spec_entry(&data->spec_array[i]);
-  }
-  printf("\n");
-}
-
-void init_tree_data(rtree_t * tree, double min_br)
-{
-  // post-order traversal
-  int subtree_size_edges = 0;
-  double subtree_sum_edges = 0;
 
   /* initialize everything to coalescent, speciations will then
      over-write this value */
   tree->event = EVENT_COALESCENT;
 
   if (tree->left)
-  {
-    init_tree_data(tree->left, min_br);
-    node_information* left_data = (node_information*) (tree->left->data);
-
-    if (tree->left->length <= min_br)
-    {
-      subtree_size_edges += left_data->num_edges_subtree;
-      subtree_sum_edges += left_data->sum_edges_subtree;
-    }
-    else
-    {
-      subtree_size_edges += left_data->num_edges_subtree + 1;
-      subtree_sum_edges += left_data->sum_edges_subtree;
-      subtree_sum_edges += tree->left->length;
-    }
-  }
+    init_tree_data(tree->left);
   if (tree->right)
-  {
-    init_tree_data(tree->right, min_br);
-    node_information* right_data = (node_information*) (tree->right->data);
+    init_tree_data(tree->right);
 
-    if (tree->right->length <= min_br)
-    {
-      subtree_size_edges += right_data->num_edges_subtree;
-      subtree_sum_edges += right_data->sum_edges_subtree;
-    }
-    else
-    {
-      subtree_size_edges += right_data->num_edges_subtree + 1;
-      subtree_sum_edges += right_data->sum_edges_subtree;
-      subtree_sum_edges += tree->right->length;
-    }
-  }
   node_information* info = malloc(sizeof(node_information));
 
   // TODO: Check whether this is the best way to handle those
   //   nasty zero-length edges.
-  info->num_edges_subtree = subtree_size_edges;
-  info->sum_edges_subtree = subtree_sum_edges;
 
-  info->spec_array = calloc(info->num_edges_subtree + 1, sizeof(spec_entry));
+  info->spec_array = calloc(tree->valid_edge_count + 1, sizeof(spec_entry));
 
   int i;
-  for (i = 0; i <= info->num_edges_subtree; i++)
+  for (i = 0; i <= tree->valid_edge_count; i++)
   {
     info->spec_array[i].taken_left_index = -1;
     info->spec_array[i].taken_right_index = -1;
@@ -136,8 +65,10 @@ void init_tree_data(rtree_t * tree, double min_br)
     info->spec_array[i].valid = false;
   }
 
-  info->coalescent =
-    compute_loglikelihood(info->num_edges_subtree, info->sum_edges_subtree);
+  assert(tree->valid_edge_count >= 0);
+
+  tree->coalescent_logl = loglikelihood(tree->valid_edge_count,
+                                        tree->valid_edgelen_sum);
   tree->data = info;
 }
 
@@ -156,7 +87,7 @@ void free_tree_data(rtree_t * tree)
   tree->data = NULL;
 }
 
-void init_additional_tree_data(rtree_t * tree, double min_br)
+static void init_additional_tree_data(rtree_t * tree)
 {
   // pre-order traversal
   int num_known_speciation_edges = 0;
@@ -165,7 +96,7 @@ void init_additional_tree_data(rtree_t * tree, double min_br)
   {
     node_information* parent_data = (node_information*) (tree->parent->data);
 
-    if (tree->length <= min_br)
+    if (tree->length <= opt_minbr)
     {
       num_known_speciation_edges = parent_data->num_known_speciation_edges;
       sum_known_speciation_edges = parent_data->sum_known_speciation_edges;
@@ -179,7 +110,7 @@ void init_additional_tree_data(rtree_t * tree, double min_br)
 
     if (tree == tree->parent->left)
     {
-        if (tree->parent->right && tree->parent->right->length > min_br)
+        if (tree->parent->right && tree->parent->right->length > opt_minbr)
         {
           num_known_speciation_edges++;
           sum_known_speciation_edges += tree->parent->right->length;
@@ -187,7 +118,7 @@ void init_additional_tree_data(rtree_t * tree, double min_br)
     }
     else
     {
-      if (tree->parent->left && tree->parent->left->length > min_br)
+      if (tree->parent->left && tree->parent->left->length > opt_minbr)
       {
         num_known_speciation_edges++;
         sum_known_speciation_edges += tree->parent->left->length;
@@ -202,41 +133,42 @@ void init_additional_tree_data(rtree_t * tree, double min_br)
 
   if (tree->left)
   {
-    init_additional_tree_data(tree->left, min_br);
+    init_additional_tree_data(tree->left);
   }
   if (tree->right)
   {
-    init_additional_tree_data(tree->right, min_br);
+    init_additional_tree_data(tree->right);
   }
 }
 
-void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
+void multi_traversal(rtree_t * tree, bool multiple_lambda,
   PRIOR_FUNC species_logprior, prior_inf prior_information)
 {
   // post order traversal
   if (tree->left)
   {
-    multi_traversal(tree->left, multiple_lambda, min_br, species_logprior, prior_information);
+    multi_traversal(tree->left, multiple_lambda, species_logprior, prior_information);
   }
   if (tree->right)
   {
-    multi_traversal(tree->right, multiple_lambda, min_br, species_logprior, prior_information);
+    multi_traversal(tree->right, multiple_lambda, species_logprior, prior_information);
   }
 
   node_information* data = (node_information*) (tree->data);
   spec_entry* spec_array_act = data->spec_array;
 
   // zero speciation edges means that the current node is the MRCA of a species
-  spec_array_act[0].coalescent_value = data->coalescent;
+  spec_array_act[0].coalescent_value = tree->coalescent_logl;
   double combined_spec_sum = data->sum_known_speciation_edges;
   int combined_spec_num = data->num_known_speciation_edges;
+  assert(combined_spec_num >= 0);
   double speciation_value =
-    compute_loglikelihood(combined_spec_num, combined_spec_sum)
+    loglikelihood(combined_spec_num, combined_spec_sum)
     + species_logprior(1, prior_information);
   spec_array_act[0].speciation_value = speciation_value;
   spec_array_act[0].sum_speciation_edges_subtree = 0;
-  spec_array_act[0].score_multi = data->coalescent + speciation_value;
-  spec_array_act[0].score_single = data->coalescent + speciation_value;
+  spec_array_act[0].score_multi = tree->coalescent_logl + speciation_value;
+  spec_array_act[0].score_single = tree->coalescent_logl + speciation_value;
   spec_array_act[0].num_species = 1;
   spec_array_act[0].valid = true;
 
@@ -244,28 +176,26 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
   if (tree->left && tree->right)
   // inner node with two children
   {
-    node_information* data_left = (node_information*) (tree->left->data);
-    node_information* data_right = (node_information*) (tree->right->data);
     spec_entry* spec_array_left =
       ((node_information*) (tree->left->data))->spec_array;
     spec_entry* spec_array_right =
       ((node_information*) (tree->right->data))->spec_array;
 
     int num_valid_child_edges = 2;
-    if (tree->left->length <= min_br)
+    if (tree->left->length <= opt_minbr)
     {
       num_valid_child_edges--;
     }
-    if (tree->right->length <= min_br)
+    if (tree->right->length <= opt_minbr)
     {
       num_valid_child_edges--;
     }
 
     int i;
-    for (i = 0; i <= data_left->num_edges_subtree; i++)
+    for (i = 0; i <= tree->left->valid_edge_count; i++)
     {
       int j;
-      for (j = 0; j <= data_right->num_edges_subtree; j++)
+      for (j = 0; j <= tree->right->valid_edge_count; j++)
       {
         if (spec_array_left[i].valid && spec_array_right[j].valid)
         {
@@ -276,13 +206,13 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
           int combined_spec_num = 0;
           double sum_speciation_edges_subtree = 0;
 
-          if (tree->left->length > min_br)
+          if (tree->left->length > opt_minbr)
           {
             combined_spec_sum += tree->left->length;
             combined_spec_num++;
             sum_speciation_edges_subtree += tree->left->length;
           }
-          if (tree->right->length > min_br)
+          if (tree->right->length > opt_minbr)
           {
             combined_spec_sum += tree->right->length;
             combined_spec_num++;
@@ -299,19 +229,23 @@ void multi_traversal(rtree_t * tree, bool multiple_lambda, double min_br,
             spec_array_left[i].sum_speciation_edges_subtree
             + spec_array_right[j].sum_speciation_edges_subtree;
 
-          double sum_coalescent_edges = data->sum_edges_subtree
+          double sum_coalescent_edges = tree->valid_edgelen_sum
             - sum_speciation_edges_subtree;
           double num_coalescent_edges =
-            data->num_edges_subtree - (i + j + num_valid_child_edges);
+            tree->valid_edge_count - (i + j + num_valid_child_edges);
 
           double coalescent_value_multi = spec_array_left[i].coalescent_value
               + spec_array_right[j].coalescent_value;
 
+          if (num_coalescent_edges < 0)
+            printf("Error: %d %d %d %d\n", tree->valid_edge_count, i, j, num_valid_child_edges);
+          assert(num_coalescent_edges >= 0);
           double coalescent_value_single =
-            compute_loglikelihood(num_coalescent_edges, sum_coalescent_edges);
+            loglikelihood(num_coalescent_edges, sum_coalescent_edges);
 
+          assert(combined_spec_num >= 0);
           double speciation_value =
-            compute_loglikelihood(combined_spec_num, combined_spec_sum)
+            loglikelihood(combined_spec_num, combined_spec_sum)
             + species_logprior(current_num_species, prior_information);
 
           double score_multi = coalescent_value_multi + speciation_value;
@@ -366,8 +300,8 @@ void print_subtree_leaves(rtree_t * tree)
 
 int current_species_idx = 1;
 
-void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet,
-  double min_br, bool *print_speciation_warning)
+static void backtrack_species_assignment(rtree_t * tree, int pos,
+  bool *print_speciation_warning)
 {
   spec_entry* spec_array = ((node_information*) (tree->data))->spec_array;
   if (spec_array[pos].taken_left_index != -1
@@ -375,19 +309,19 @@ void backtrack_species_assignment(rtree_t * tree, int pos, bool quiet,
     // speciation event
   {
     tree->event = EVENT_SPECIATION;
-    if (tree->length <= min_br && tree->parent)
+    if (tree->length <= opt_minbr && tree->parent)
     {
       (*print_speciation_warning) = true;
     }
     backtrack_species_assignment(tree->left, spec_array[pos].taken_left_index,
-      quiet, min_br, print_speciation_warning);
+      print_speciation_warning);
     backtrack_species_assignment(tree->right,
-      spec_array[pos].taken_right_index, quiet, min_br, print_speciation_warning);
+      spec_array[pos].taken_right_index, print_speciation_warning);
   }
   else  // coalescent event
   {
     tree->event = EVENT_COALESCENT;
-    if (quiet)
+    if (opt_quiet)
     {
       current_species_idx++;
     }
@@ -409,8 +343,7 @@ void print_null_model(rtree_t * tree)
 bool likelihood_ratio_test(rtree_t * tree, double likelihood_alternative_model,
   double p_value, int degrees_of_freedom, double * computed_p_value)
 {
-  node_information* data = (node_information*) (tree->data);
-  double likelihood_null_model = data->coalescent;
+  double likelihood_null_model = tree->coalescent_logl;
   double lr = 2 * (likelihood_alternative_model - likelihood_null_model);
   (*computed_p_value) = 1 - gsl_cdf_chisq_P(lr, degrees_of_freedom);
     // should return
@@ -425,13 +358,14 @@ bool likelihood_ratio_test(rtree_t * tree, double likelihood_alternative_model,
   return good_delimitation;
 }
 
-delimit_stats* ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double p_value,
-  bool quiet, double min_br, PRIOR_FUNC prior_function, prior_inf prior_information)
+delimit_stats * ptp_multi_heuristic(rtree_t * tree,
+                                    bool multiple_lambda,
+                                    PRIOR_FUNC prior_function,
+                                    prior_inf prior_information)
 {
-  init_tree_data(tree, min_br);
-  init_additional_tree_data(tree, min_br);
-  int num_taxa = tree->leaves;
-  multi_traversal(tree, multiple_lambda, min_br, prior_function, prior_information);
+  init_tree_data(tree);
+  init_additional_tree_data(tree);
+  multi_traversal(tree, multiple_lambda, prior_function, prior_information);
   //print_debug_information(tree);
 
   double max = 0;
@@ -442,7 +376,7 @@ delimit_stats* ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double 
 
   if (multiple_lambda)
   {
-    for (i = 0; i < data->num_edges_subtree; i++)
+    for (i = 0; i < tree->valid_edge_count; i++)
     {
       if (max < spec_array[i].score_multi)
       {
@@ -453,7 +387,7 @@ delimit_stats* ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double 
   }
   else // single lambda
   {
-    for (i = 0; i < data->num_edges_subtree; i++)
+    for (i = 0; i < tree->valid_edge_count; i++)
     {
       if (max < spec_array[i].score_single)
       {
@@ -463,11 +397,11 @@ delimit_stats* ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double 
     }
   }
 
-  if (!quiet)
+  if (!opt_quiet)
   {
     printf("Num big enough edges in tree: %d\n",
-      data->num_edges_subtree);
-    printf("Score Null Model: %.6f\n", data->coalescent);
+      tree->valid_edge_count);
+    printf("Score Null Model: %.6f\n", tree->coalescent_logl);
     printf("Best score found single: %.6f\n", spec_array[pos].score_single);
     printf("Best score found multi: %.6f\n", spec_array[pos].score_multi);
   }
@@ -477,16 +411,16 @@ delimit_stats* ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double 
   if (multiple_lambda)
   {
     good_delimitation = likelihood_ratio_test(tree, spec_array[pos].score_multi,
-      p_value, 1, &computed_p_value);
+      opt_pvalue, 1, &computed_p_value);
     // TODO: Find out whether here is really just 1 degree of freedom or not
   }
   else
   {
     good_delimitation = likelihood_ratio_test(tree,
-      spec_array[pos].score_single, p_value, 1, &computed_p_value);
+      spec_array[pos].score_single, opt_pvalue, 1, &computed_p_value);
   }
 
-  if (!quiet)
+  if (!opt_quiet)
   {
     printf("Computed P-value: %.6f\n", computed_p_value);
   }
@@ -494,16 +428,16 @@ delimit_stats* ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double 
   if (good_delimitation)
   {
     bool print_speciation_warning = false;
-    backtrack_species_assignment(tree, pos, quiet, min_br,
+    backtrack_species_assignment(tree, pos,
       &print_speciation_warning);
-    if (print_speciation_warning && !quiet)
+    if (print_speciation_warning && !opt_quiet)
     {
       printf("WARNING: A speciation edge in the result is too small.\n");
     }
   }
   else
   {
-    if (!quiet)
+    if (!opt_quiet)
     {
       printf("The Null Model is the preferred one.\n");
       print_null_model(tree);
@@ -513,13 +447,13 @@ delimit_stats* ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double 
       current_species_idx = 2;
     }
   }
-  if (!quiet)
+  if (!opt_quiet)
   {
     printf("Number of delimited species: %d\n", current_species_idx - 1);
   }
-  if (data->num_edges_subtree == 0 && !quiet)
+  if (tree->valid_edge_count == 0 && !opt_quiet)
   {
-    printf("WARNING: The tree has no edges that are greater or equal min_br. All edges have been ignored. \n");
+    fprintf(stderr, "WARNING: The tree has no edges >= %f. All edges have been ignored. \n", opt_minbr);
   }
 
   delimit_stats* solution = malloc(sizeof(delimit_stats));
@@ -532,8 +466,8 @@ delimit_stats* ptp_multi_heuristic(rtree_t * tree, bool multiple_lambda, double 
   }
   else
   {
-    solution->score_single = data->coalescent;
-    solution->score_multi = data->coalescent;
+    solution->score_single = tree->coalescent_logl;
+    solution->score_multi = tree->coalescent_logl;
   }
 
   free_tree_data(tree);

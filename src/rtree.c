@@ -269,16 +269,33 @@ int rtree_query_innernodes(rtree_t * root,
   return index;
 }
 
-void rtree_reset_leaves(rtree_t * root)
+void rtree_reset_info(rtree_t * root)
 {
   if (!root->left)
   {
     root->leaves = 1;
+    root->valid_edge_count = 0;
+    root->valid_edgelen_sum = 0;
     return;
   }
   
-  rtree_reset_leaves(root->left);
-  rtree_reset_leaves(root->right);
+  rtree_reset_info(root->left);
+  rtree_reset_info(root->right);
 
   root->leaves = root->left->leaves + root->right->leaves;
+  root->valid_edge_count = root->left->valid_edge_count + 
+                           root->right->valid_edge_count;
+  root->valid_edgelen_sum = root->left->valid_edgelen_sum +
+                            root->right->valid_edgelen_sum;
+
+  if (root->left->length > opt_minbr)
+  {
+    root->valid_edge_count++;
+    root->valid_edgelen_sum += root->left->length;
+  }
+  if (root->right->length > opt_minbr)
+  {
+    root->valid_edge_count++;
+    root->valid_edgelen_sum += root->right->length;
+  }
 }

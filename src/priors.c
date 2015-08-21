@@ -21,28 +21,24 @@
 
 #include "delimit.h"
 
-// function taken from http://stackoverflow.com/questions/24294192/computing-the-binomial-coefficient-in-c
-long long combi(int n, int k)
+static double * logn_table;
+
+/* precompute all log(i!) for 0 <= i <= n and store in logn_table */
+void init_logn_table(unsigned int n)
 {
-  long long ans=1;
-  k=k>n-k?n-k:k;
-  int j=1;
-  for(;j<=k;j++,n--)
-  {
-    if(n%j==0)
-    {
-      ans*=n/j;
-    }
-    else if (ans%j==0)
-    {
-      ans=ans/j*n;
-    }
-    else
-    {
-      ans=(ans*n)/j;
-    }
-  }
-  return ans;
+  unsigned int i;
+
+  logn_table = (double *)xmalloc((n+1)*sizeof(double));
+
+  logn_table[0] = 0;
+  for (i = 1; i <= n; ++i)
+    logn_table[i] = logn_table[i-1] + log(i);
+}
+
+/* calculate log comb(n,k) from precomputed table */
+static double logcomb(unsigned int n, unsigned int k)
+{
+  return (logn_table[n] - (logn_table[n-k] + logn_table[k]));
 }
 
 double exponential_hyperprior(double x, hyperprior_inf info)
@@ -56,7 +52,7 @@ double exponential_hyperprior(double x, hyperprior_inf info)
 
 double uniform_hyperprior(double x, hyperprior_inf info)
 {
-  params_uniform* params = (params_uniform*) (info.params);
+  params_uniform * params = (params_uniform*) (info.params);
 
   double from = params->uniform_from;
   double to = params->uniform_to;
@@ -66,11 +62,11 @@ double uniform_hyperprior(double x, hyperprior_inf info)
 
 double beta_logprior(int num_species, prior_inf info)
 {
-  params_beta* params = (params_beta*) (info.params);
+  beta_params_t * params = (beta_params_t *) (info.params);
 
   assert(num_species > 0);
-  double alpha = params->beta_alpha;
-  double beta = params->beta_beta;
+  double alpha = params->alpha;
+  double beta = params->beta;
   assert(alpha > 0);
   assert(beta > 0);
   double x = (double) num_species;
@@ -80,7 +76,7 @@ double beta_logprior(int num_species, prior_inf info)
 
 double dirichlet_logprior(int num_species, prior_inf info)
 {
-  params_dirichlet* params = (params_dirichlet*) (info.params);
+  params_dirichlet * params = (params_dirichlet*) (info.params);
 
   assert(num_species > 0);
   assert(0);
@@ -88,18 +84,15 @@ double dirichlet_logprior(int num_species, prior_inf info)
   return -1;
 }
 
-double gamma_logprior(int num_species, prior_inf info)
+double gamma_logpdf(int num_species, prior_inf info)
 {
-  params_gamma* params = (params_gamma*) (info.params);
+  gamma_params_t * params = (gamma_params_t *) (info.params);
+  double beta = params->beta;
+  double alpha = params->alpha;
+  assert(alpha > 0 && beta > 0 && num_species > 0);
 
-  assert(num_species > 0);
-  double beta = params->gamma_rate;
-  assert(beta > 0);
-  double alpha = params->gamma_shape;
-  assert(alpha > 0);
-
-  return log(pow(beta, alpha)) - log(gamma(alpha))
-    + log(pow(num_species, alpha - 1))
+  return alpha*log(beta) - log(gamma(alpha))
+    + (alpha-1)*log(num_species)
     - beta * num_species;
 }
 
@@ -114,7 +107,7 @@ double binomial_logprior(int num_species, prior_inf info)
   int n = params->binomial_n;
   assert(n > 0);
 
-  return log(combi(n, num_species))
+  return logcomb(n, num_species)
     + log(pow(1.0 - p, num_species))
     + log(pow(p, n - num_species));
 }
@@ -133,7 +126,7 @@ double negative_binomial_logprior(int num_species, prior_inf info)
   // r is the number of failures until the experiment is stopped
   int k = num_species; // k is the number of successes
 
-  return log(combi(k + r - 1, k)) + log(pow(1.0 - p, r)) + log(pow(p, k));
+  return logcomb(k + r - 1, k) + log(pow(1.0 - p, r)) + log(pow(p, k));
 }
 
 double uniform_logprior(int num_species, prior_inf info)

@@ -87,5 +87,10 @@ doi:[10.1080/10635150600852011](http://dx.doi.org/10.1080/10635150600852011)
 
 * Nguyen XV, Epps J., Bailey J. (2010)
 **Information Theoretic Measures for Clustering Comparison: Variants, Properties, Normalization and Correction for Chance.**
-*Joirnal of Machine Learning Research*, 11:2837-2854.
-i[PDF](http://www.jmlr.org/papers/volume11/vinh10a/vinh10a.pdf)
+*Journal of Machine Learning Research*, 11:2837-2854.
+[PDF](http://www.jmlr.org/papers/volume11/vinh10a/vinh10a.pdf)
+
+* Gulek M., Toroslu IH. (2010)
+**A dynamic programming algorithm for tree-like weighted set packing problem.**
+*Information Sciences*, 180(20):3974-3979.
+doi:[10.1016/j.ins.2010.06.035](http://dx.doi.org/10.1016/j.ins.2010.06.035)

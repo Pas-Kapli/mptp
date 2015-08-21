@@ -40,6 +40,7 @@ char * opt_scorefile;
 int opt_quiet;
 int opt_precision;
 int opt_svg_showlegend;
+int opt_bayesian_runs;
 long opt_help;
 long opt_version;
 long opt_treeshow;
@@ -47,8 +48,6 @@ long opt_ptpmulti;
 long opt_ptpsingle;
 long opt_ptpmulti_bayesian;
 long opt_ptpsingle_bayesian;
-double opt_pvalue;
-double opt_minbr;
 long opt_svg;
 long opt_svg_width;
 long opt_svg_fontsize;
@@ -59,7 +58,8 @@ long opt_svg_margintop;
 long opt_svg_marginbottom;
 long opt_svg_inner_radius;
 double opt_svg_legend_ratio;
-int opt_bayesian_runs;
+double opt_pvalue;
+double opt_minbr;
 
 
 static struct option long_options[] =
@@ -331,7 +331,7 @@ void cmd_help()
          );
 }
 
-void cmd_ptpmulti(bool multiple_lambda, bool bayesian)
+static rtree_t * load_tree(void)
 {
   /* parse tree */
   if (!opt_quiet)
@@ -360,19 +360,61 @@ void cmd_ptpmulti(bool multiple_lambda, bool bayesian)
     if (!opt_quiet)
       fprintf(stdout, "Loaded rooted tree...\n");
   }
+  
+  return rtree;
+}
+
+void cmd_ptpmulti(bool multiple_lambda, bool bayesian)
+{
+  
+  rtree_t * rtree = load_tree();
 
   if (!bayesian)
   {
     PRIOR_FUNC ptr_no_logprior = no_logprior;
     prior_inf info;
-    delimit_stats* solution = ptp_multi_heuristic(rtree, multiple_lambda,
-      opt_pvalue, (bool) opt_quiet, opt_minbr, ptr_no_logprior, info);
+    delimit_stats* solution = ptp_multi_heuristic(rtree, true,
+      ptr_no_logprior, info);
     free(solution);
   }
   else
   {
-    ptp_bayesian(rtree, multiple_lambda, opt_pvalue, (bool) opt_quiet,
-      opt_minbr, PRIOR_UNIFORM, HYPERPRIOR_NONE, HYPERPRIOR_NONE, opt_bayesian_runs);
+    ptp_bayesian(rtree, multiple_lambda,
+      PRIOR_UNIFORM, HYPERPRIOR_NONE, HYPERPRIOR_NONE, opt_bayesian_runs);
+  }
+
+  if (opt_treeshow)
+    rtree_show_ascii(rtree);
+
+  if (!opt_quiet)
+    fprintf(stdout, "Writing tree file...\n");
+
+  cmd_svg(rtree);
+
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
+
+  if (!opt_quiet)
+    fprintf(stdout, "Done...\n");
+}
+
+void cmd_ptpsingle(bool multiple_lambda, bool bayesian)
+{
+
+  rtree_t * rtree = load_tree();
+
+  if (!bayesian)
+  {
+    PRIOR_FUNC ptr_no_logprior = no_logprior;
+    prior_inf info;
+    delimit_stats* solution = ptp_multi_heuristic(rtree, false,
+      ptr_no_logprior, info);
+    free(solution);
+  }
+  else
+  {
+    ptp_bayesian(rtree, multiple_lambda,
+      PRIOR_UNIFORM, HYPERPRIOR_NONE, HYPERPRIOR_NONE, opt_bayesian_runs);
   }
 
   if (opt_treeshow)
@@ -423,7 +465,7 @@ void cmd_score()
   }
 
   /* TODO: Sarah's score function should be called here */
-  score_delimitation_tree(opt_scorefile, rtree, opt_minbr);
+  score_delimitation_tree(opt_scorefile, rtree);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
