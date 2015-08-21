@@ -4,7 +4,7 @@ set border 3 back ls 11
 set tics nomirror
 
 #define key
-set key opaque
+#set key opaque
 set key outside
 
 # define grid
@@ -12,15 +12,18 @@ set style line 12 lc rgb '#808080' lt 0 lw 1
 set grid back ls 12
 
 # define linecolors
-set style line 1 lc rgb '#0060ad' pt 2 ps 1 lt 1 lw 2 # --- blue
-set style line 2 lc rgb '#8b1a0e' pt 1 ps 1 lt 1 lw 2 # --- red
-set style line 3 lc rgb '#5e9c36' pt 6 ps 1 lt 1 lw 2 # --- green
-set style line 4 lc rgb '#ffa500' pt 2 ps 1 lt 1 lw 2 # --- orange
-set style line 5 lc rgb '#40e0d0' pt 1 ps 1 lt 1 lw 2 # --- turquoise
-set style line 6 lc rgb '#e6e6Fa' pt 6 ps 1 lt 1 lw 2 # --- lavender
-set style line 7 lc rgb '#ff00ff' pt 2 ps 1 lt 1 lw 2 # --- magenta
-set style line 8 lc rgb '#c0c0c0' pt 1 ps 1 lt 1 lw 2 # --- silver
-set style line 9 lc rgb '#9400d3' pt 6 ps 1 lt 1 lw 2 # --- darkviolet
+
+set style line 1 lc rgb '#0060ad' pt 7 ps 1 pi -1 lt 0 lw 2 # --- blue
+set style line 2 lc rgb '#8b1a0e' pt 7 ps 1 pi -1 lt 0 lw 2 # --- red
+set style line 3 lc rgb '#5e9c36' pt 7 ps 1 pi -1 lt 0 lw 2 # --- green
+set style line 4 lc rgb '#ffa500' pt 7 ps 1 pi -1 lt 0 lw 2 # --- orange
+set style line 5 lc rgb '#40e0d0' pt 7 ps 1 pi -1 lt 0 lw 2 # --- turquoise
+set style line 6 lc rgb '#9400d3' pt 7 ps 1 pi -1 lt 0 lw 2 # --- darkviolet
+set style line 7 lc rgb '#ff00ff' pt 7 ps 1 pi -1 lt 0 lw 2 # --- magenta
+set style line 8 lc rgb '#c0c0c0' pt 7 ps 1 pi -1 lt 0 lw 2 # --- silver
+set style line 9 lc rgb '#e6e6Fa' pt 7 ps 1 pi -1 lt 0 lw 2 # --- lavender
+
+set pointintervalbox 3
 
 set samples 300
 #Start of user script
@@ -33,7 +36,7 @@ set ylabel "Average tree score"
 ExtData1 = 'workfile_tree_scores'
 set output 'average_tree_scores.png'
 
-plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints
+plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints ls 1, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints ls 2, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints ls 3, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints ls 4, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints ls 5
 
 set title "Average NMI Score unique taxa"
 set xlabel "Set number"
@@ -42,7 +45,7 @@ set ylabel "Average NMI score"
 ExtData1 = 'workfile_nmi_scores'
 set output 'average_nmi_scores.png'
 
-plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints
+plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints ls 1, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints ls 2, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints ls 3, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints ls 4, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints ls 5
 
 set title "Average Number of Species unique taxa"
 set xlabel "Set number"
@@ -51,7 +54,7 @@ set ylabel "Average number of species"
 ExtData1 = 'workfile_num_species'
 set output 'average_num_species.png'
 
-plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints, ExtData1 using 1:7 title 'real' with linespoints
+plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints ls 1, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints ls 2, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints ls 3, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints ls 4, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints ls 5, ExtData1 using 1:7 title 'real' with linespoints ls 6
 
 set title "Average Single Lambda Score unique taxa"
 set xlabel "Set number"
@@ -60,7 +63,7 @@ set ylabel "Average single lambda score"
 ExtData1 = 'workfile_single_scores'
 set output 'average_single_scores.png'
 
-plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints, ExtData1 using 1:7 title 'real minbr 0' with linespoints, ExtData1 using 1:8 title 'real minbr default' with linespoints
+plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints ls 1, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints ls 2, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints ls 3, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints ls 4, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints ls 5, ExtData1 using 1:7 title 'real minbr 0' with linespoints ls 6, ExtData1 using 1:8 title 'real minbr default' with linespoints ls 7
 
 set title "Average Multi Lambda Score unique taxa"
 set xlabel "Set number"
@@ -69,6 +72,6 @@ set ylabel "Average multi lambda score"
 ExtData1 = 'workfile_multi_scores'
 set output 'average_multi_scores.png'
 
-plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints, ExtData1 using 1:7 title 'real minbr 0' with linespoints, ExtData1 using 1:8 title 'real minbr default' with linespoints
+plot ExtData1 using 1:2 title 'delimit single minbr 0' with linespoints ls 1, ExtData1 using 1:3 title 'delimit multi minbr 0' with linespoints ls 2, ExtData1 using 1:4 title 'delimit single minbr default' with linespoints ls 3, ExtData1 using 1:5 title 'delimit multi minbr default' with linespoints ls 4, ExtData1 using 1:6 title 'PTP minbr 0' with linespoints ls 5, ExtData1 using 1:7 title 'real minbr 0' with linespoints ls 6, ExtData1 using 1:8 title 'real minbr default' with linespoints ls 7
 
 reset;
