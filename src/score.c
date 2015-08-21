@@ -82,7 +82,8 @@ void identify_alternative_taxa(char * scorefile, int num_leaves,
       else if (collecting &&
         ((strcmp(line,"\n")==0
       || strstr(line, "Writing tree file") != NULL)
-        || strstr(line, "Number of") != NULL))
+        || strstr(line, "Number of") != NULL)
+        || strstr(line, "WARNING: ") != NULL)
       {
         //printf("A species has ended.\n");
         collecting = false;
@@ -149,12 +150,16 @@ void retrieve_mrca_nodes(rtree_t * tree, int * num_species_real,
         data_left->marked = true;
         data_left->is_real_mrca = true;
         (*num_species_real)++;
+        /*printf("Left: Added real species %d\n", data_left->current_species_real);
+        printf("Left: Right was: %d\n", data_right->current_species_real);*/
       }
       if (data_right->current_species_real != -1)
       {
         data_right->marked = true;
         data_right->is_real_mrca = true;
         (*num_species_real)++;
+        /*printf("Right: Added real species %d\n", data_right->current_species_real);
+        printf("Right: Left was: %d\n", data_left->current_species_real);*/
       }
     }
 
@@ -182,8 +187,15 @@ void retrieve_mrca_nodes(rtree_t * tree, int * num_species_real,
   {
     char * label = tree->label;
     char * species_idx_real = strtok(label,".");
+
+    assert(atoi(species_idx_real) <= 30); // TODO: remove this again
+
     ((score_information*) tree->data)->current_species_real =
         atoi(species_idx_real);
+  }
+  else
+  {
+    assert(0); // this should not happen
   }
 }
 
@@ -388,7 +400,10 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree, double min_br)
   int num_species_real = 0;
   int num_species_input = 0;
   retrieve_mrca_nodes(tree, &num_species_real, &num_species_input);
+  assert(num_species_real > 0);
+  assert(num_species_real == 30); // TODO: Remove this again
   printf("Number of real species: %d\n", num_species_real);
+  assert(num_species_input > 0);
   printf("Number of species in input file: %d\n", num_species_input);
 
   rtree_t ** mrca_real_list = calloc(num_species_real, sizeof(rtree_t));
