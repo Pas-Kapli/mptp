@@ -28,7 +28,7 @@ double loglikelihood(int edge_count, double edgelen_sum)
 
   if (edge_count == 0 || edgelen_sum == 0) // TODO: Try to find out if sum == 0 makes sense here
     return 0;
-  
+
   return edge_count * (log(edge_count) - 1 - log(edgelen_sum));
 }
 
@@ -453,7 +453,7 @@ delimit_stats * ptp_multi_heuristic(rtree_t * tree,
   }
   if (tree->valid_edge_count == 0 && !opt_quiet)
   {
-    fprintf(stderr, "WARNING: The tree has no edges >= %f. All edges have been ignored. \n", opt_minbr);
+    fprintf(stderr, "WARNING: The tree has no edges > %f. All edges have been ignored. \n", opt_minbr);
   }
 
   delimit_stats* solution = malloc(sizeof(delimit_stats));
