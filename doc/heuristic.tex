@@ -218,7 +218,7 @@ score = 0\;
 \If{$v$.hasLeftChild() \textbf{and} $v$.hasRightChild()} {
 	\For{$k = 0, \ldots, |S(v)|$} {
 		\For{$i = 0, \ldots, k - 2$} {
-			\For{$j = 0, \ldots, k - 2 - i$} {
+			$j$ = $k-2-i$\;
 				\If{$v$.leftChild.delimitations[$i$].isValid \textbf{and} $v$.rightChild.delimitations[$j$].isValid}{
 					currentMRCAList = $v$.leftChild.delimitations[i].mostRecentCommonAncestors $\cup$ $v$.rightChild.delimitations[j].mostRecentCommonAncestors\;
 					currentlyObservedTreeEdges = $v$.knownSpeciationEdges $\cup$ edges of $S(v)$\;
@@ -234,7 +234,6 @@ score = 0\;
 						$v$.delimitations[k].mostRecentCommonAncestors = currentMRCAList\;
 						$v$.delimitations[k].score = currentScore\;
 						$v$.delimitations[k].valid = True\;
-					}
 				}
 			}
 		}
