@@ -217,7 +217,7 @@ score = 0\;
 
 \If{$v$.hasLeftChild() \textbf{and} $v$.hasRightChild()} {
 	\For{$k = 0, \ldots, |S(v)|$} {
-		\For{$i = 0, \ldots, |S(v)| - 2$} {
+		\For{$i = 0, \ldots, k - 2$} {
 			\For{$j = 0, \ldots, |S(v)| - 2 - i$} {
 				\If{$v$.leftChild.delimitations[$i$].isValid \textbf{and} $v$.rightChild.delimitations[$j$].isValid}{
 					currentMRCAList = $v$.leftChild.delimitations[i].mostRecentCommonAncestors $\cup$ $v$.rightChild.delimitations[j].mostRecentCommonAncestors\;
