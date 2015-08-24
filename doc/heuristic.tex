@@ -215,11 +215,11 @@ score = 0\;
 	combineSolutions($v$.leftRight, $min\_br$)\;
 }
 
-\If{$v$.hasLeftChild() \textbf{ and } $v$.hasRightChild()} {
+\If{$v$.hasLeftChild() \textbf{and} $v$.hasRightChild()} {
 	\For{$k = 0, \ldots, |S(v)|$} {
 		\For{$i = 0, \ldots, |S(v)| - 2$} {
 			\For{$j = 0, \ldots, |S(v)| - 2 - i$} {
-				\If{$v$.leftChild.delimitations[$i$].isValid \textbf{ and } $v$.rightChild.delimitations[$j$].isValid}{
+				\If{$v$.leftChild.delimitations[$i$].isValid \textbf{and} $v$.rightChild.delimitations[$j$].isValid}{
 					currentMRCAList = $v$.leftChild.delimitations[i].mostRecentCommonAncestors $\cup$ $v$.rightChild.delimitations[j].mostRecentCommonAncestors\;
 					currentlyObservedTreeEdges = $v$.knownSpeciationEdges $\cup$ edges of $S(v)$\;
 					\If{multipleLambda} {
@@ -230,7 +230,7 @@ score = 0\;
 					}
 					currentSpeciationScore = computeLoglikelihoodScore(currentlyObservedTreeEdges $\backslash \bigcup_{m \in \text{currentMRCAList}} {\text{edges of } S(m)}, min\_br)$\;
 					currentScore = currentCoalescentScore + currentSpeciationScore\;
-					\If{currentScore > $v$.delimitations[k].score} {
+					\If{currentScore $>$ $v$.delimitations[k].score} {
 						$v$.delimitations[k].mostRecentCommonAncestors = currentMRCAList\;
 						$v$.delimitations[k].score = currentScore\;
 						$v$.delimitations[k].valid = True\;
