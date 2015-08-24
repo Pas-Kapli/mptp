@@ -68,13 +68,13 @@ For each node $v$, the \emph{currently observed tree} (COT) consists of the subt
 
 \subsection{Combination of solutions}
 
-For every node $v$, we store an array that contains the best found score for $0, 2, 4, \ldots, |S(v)|$ speciation edges and the delimitation (i.e., the set of MRCAs) that led to it. A node $v$ can either be a coalescent event or a speciation event.
+For every node $v$, we store an array that contains the best found score for $0, 1, 2, 3, \ldots, |S(v)|$ speciation edges and the delimitation (i.e., the set of MRCAs) that led to it. A node $v$ can either be a coalescent event or a speciation event.
 
 \paragraph{Coalescent event}
 If $v$ is a coalescent event (i.e., the MRCA of a species), we have $0$ speciation edges in $S(v)$. For this case, we compute the score of all edges in $S(v)$ being coalescent edges and the known speciation edges in the COT of $v$ being speciation edges and store it in $v$. Since we do not need to look at the solutions for the children of $v$ in this case, we can do this step already in the initialisation.
 
 \paragraph{Speciation event}
-In order to find a solution for a subtree $S(v)$ and $k>1$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitations using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
+In order to find a solution for a subtree $S(v)$ and $k \geq 1$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2 \footnote{Notice that with ignoring of too small edges included, the 2 can also become 0 or 1.}$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitations using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
 
 \begin{figure}[h!]
 \centering
@@ -83,13 +83,9 @@ In order to find a solution for a subtree $S(v)$ and $k>1$ speciation edges, we 
 \label{fig:combining}
 \end{figure}
 
-\subsection{Handling zero-length Edges}
+\subsection{Handling of too small Edges}
 
-If the sum of edge-weights in a subtree is zero, its corresponding log-likelihood value would be infinity. Because this worsens the delimitation results a lot, we decided to treat this case differently.
-
-Since a subtree with edge sum zero originates from identical sampled sequences, we shrink the whole subtree to a single leaf node, reducing the total number of edges in the tree by this operation.
-
-Other zero-length edges that may appear in the tree (e.g., for representing multifurcations) are not treated differently as they do not cause any problems.
+We allow the user to specify a minimum branch length $min\_br \geq 0$ such that all all edges with length \textbf{less or equal} $min\_br$ will be ignored in the loglikelihood score computation. Ignoring an edge means that we do not count it towards the number of edges and we do not add its length to the sum of edge weights.
 
 \subsection{Final Result}
 We obtain the final result by choosing the delimitation that led to the highest score for the root of the tree.
@@ -99,9 +95,9 @@ We obtain the final result by choosing the delimitation that led to the highest 
 \SetKwInOut{Input}{Input}
 \SetKwInOut{Output}{Output}
 
-\underline{function delimit} $(T)$\;
+\underline{function delimit} $(T, min\_br)$\;
 
-\Input{A fully binary rooted tree $T$ with non-negative edge weights $w$}
+\Input{A fully binary rooted tree $T$ with non-negative edge weights $w$, a minimum branch length $min\_br$}
 \Output{A delimitation with maximal score}
 
 \caption{The multiple-lambda heuristic for the PTP species delimitation problem}
