@@ -20,9 +20,27 @@
 */
 
 #include "delimit.h"
-#include <string.h>
 
-void init_tree_data_score(rtree_t * tree)
+typedef struct node_information_score
+{
+  bool marked; // is the node a most recent common ancestor (mrca) node or not?
+  bool is_real_mrca;
+  bool is_input_mrca;
+  int current_species_real; // for finding the "real" mrca
+  int current_species_input; // for finding the alternative mrca
+} score_information;
+
+static double loglikelihood(int edge_count, double edgelen_sum)
+{
+  assert(edge_count >= 0);
+
+  /* TODO: Find out whether edgelen_sum == 0 makes sense */
+  if (edge_count == 0 || edgelen_sum == 0) return 0;
+  
+  return edge_count * (log(edge_count) - 1 - log(edgelen_sum));
+}
+
+static void init_tree_data_score(rtree_t * tree)
 {
   if (tree->left)
   {
@@ -41,22 +59,19 @@ void init_tree_data_score(rtree_t * tree)
   tree->data = info;
 }
 
-void free_tree_data_score(rtree_t * tree)
+static void free_tree_data_score(rtree_t * tree)
 {
-  if (tree->left)
-  {
-    free_tree_data_score(tree->left);
-  }
-  if (tree->right)
-  {
-    free_tree_data_score(tree->right);
-  }
+  if (tree->left)  free_tree_data_score(tree->left);
+  if (tree->right) free_tree_data_score(tree->right);
+
   free((score_information*) (tree->data));
+
   tree->data = NULL;
 }
 
-void identify_alternative_taxa(char * scorefile, int num_leaves,
-    rtree_t ** leaves)
+static void identify_alternative_taxa(char * scorefile,
+                                      int num_leaves,
+                                      rtree_t ** leaves)
 {
   FILE * scorefile_in = fopen(scorefile, "r");
   char * line = NULL;
@@ -119,8 +134,9 @@ void identify_alternative_taxa(char * scorefile, int num_leaves,
   }
 }
 
-void retrieve_mrca_nodes(rtree_t * tree, int * num_species_real,
-  int * num_species_input)
+static void retrieve_mrca_nodes(rtree_t * tree,
+                                int * num_species_real,
+                                int * num_species_input)
 {
   // Do a post-order traversal for finding common ancestor nodes.
   // As long as the current letters are the same, it is the same species.
@@ -187,7 +203,7 @@ void retrieve_mrca_nodes(rtree_t * tree, int * num_species_real,
   }
 }
 
-int walk_to_root(rtree_t * starting_node, rtree_t * root)
+static int walk_to_root(rtree_t * starting_node, rtree_t * root)
 {
   int steps = 0;
   int penalty = 0;
@@ -205,8 +221,9 @@ int walk_to_root(rtree_t * starting_node, rtree_t * root)
   return penalty;
 }
 
-void compute_tree_penalty_score(rtree_t * current_node, rtree_t * root,
-  int * score_ptr)
+static void compute_tree_penalty_score(rtree_t * current_node,
+                                       rtree_t * root,
+                                       int * score_ptr)
 {
   // Go from each marked node up towards the root, if another marked node is
   // encountered, add up the number of steps taken to get there to the penalty.
@@ -227,8 +244,11 @@ void compute_tree_penalty_score(rtree_t * current_node, rtree_t * root,
   }
 }
 
-void collect_mrca_nodes_recursive(rtree_t * tree, rtree_t ** mrca_real_list,
-  rtree_t ** mrca_input_list, int * index_real, int * index_input)
+static void collect_mrca_nodes_recursive(rtree_t * tree,
+                                         rtree_t ** mrca_real_list,
+                                         rtree_t ** mrca_input_list,
+                                         int * index_real,
+                                         int * index_input)
 {
   if (tree->left)
   {
@@ -254,8 +274,9 @@ void collect_mrca_nodes_recursive(rtree_t * tree, rtree_t ** mrca_real_list,
   }
 }
 
-void collect_mrca_nodes(rtree_t * tree, rtree_t ** mrca_real_list,
-  rtree_t ** mrca_input_list)
+static void collect_mrca_nodes(rtree_t * tree,
+                               rtree_t ** mrca_real_list,
+                               rtree_t ** mrca_input_list)
 {
   int index_real = 0;
   int index_input = 0;
@@ -263,7 +284,9 @@ void collect_mrca_nodes(rtree_t * tree, rtree_t ** mrca_real_list,
     &index_real, &index_input);
 }
 
-double compute_entropy(rtree_t ** mrca_list, int num_species, int num_taxa)
+static double compute_entropy(rtree_t ** mrca_list,
+                              int num_species,
+                              int num_taxa)
 {
   double entropy = 0;
   int i;
@@ -276,7 +299,7 @@ double compute_entropy(rtree_t ** mrca_list, int num_species, int num_taxa)
   return entropy;
 }
 
-int count_common_taxa(rtree_t * mrca_one, rtree_t * mrca_two)
+static int count_common_taxa(rtree_t * mrca_one, rtree_t * mrca_two)
 {
   // get leaves
   rtree_t ** leaves_one_list = calloc(mrca_one->leaves, sizeof(rtree_t));
@@ -305,8 +328,11 @@ int count_common_taxa(rtree_t * mrca_one, rtree_t * mrca_two)
   return num_common_taxa;
 }
 
-double compute_nmi_score(rtree_t ** mrca_real_list, int num_species_real,
-  rtree_t ** mrca_input_list, int num_species_input, int num_taxa)
+static double compute_nmi_score(rtree_t ** mrca_real_list,
+                                int num_species_real,
+                                rtree_t ** mrca_input_list,
+                                int num_species_input,
+                                int num_taxa)
 {
   double entropy_real = compute_entropy(mrca_real_list, num_species_real,
     num_taxa);
@@ -348,8 +374,11 @@ double compute_nmi_score(rtree_t ** mrca_real_list, int num_species_real,
   return 1 - (mutual_information / max_entropy);
 }
 
-void compute_score(rtree_t * tree, rtree_t ** mrca_list, int num_species,
-  double * score_single, double * score_multi)
+static void compute_score(rtree_t * tree,
+                          rtree_t ** mrca_list,
+                          int num_species,
+                          double * score_single,
+                          double * score_multi)
 {
   double speciation = 0;
   double coalescent_single = 0;
@@ -357,21 +386,20 @@ void compute_score(rtree_t * tree, rtree_t ** mrca_list, int num_species,
   int num_edges_coalescent = 0;
   double sum_edges_coalescent = 0;
   int i;
+
   for (i = 0; i < num_species; i++)
   {
-    coalescent_multi += mrca_list[i]->coalescent_logl;
-    //printf("  Coalescent multi is now adding: %.6f\n", data_current->coalescent);
-    num_edges_coalescent += mrca_list[i]->valid_edge_count;
-    sum_edges_coalescent += mrca_list[i]->valid_edgelen_sum;
+    coalescent_multi += mrca_list[i]->coal_logl;
+    num_edges_coalescent += mrca_list[i]->edge_count;
+    sum_edges_coalescent += mrca_list[i]->edgelen_sum;
   }
-  speciation = loglikelihood(
-    tree->valid_edge_count - num_edges_coalescent,
-    tree->valid_edgelen_sum - sum_edges_coalescent);
+  speciation = loglikelihood(tree->edge_count - num_edges_coalescent,
+                             tree->edgelen_sum - sum_edges_coalescent);
   coalescent_single = loglikelihood(num_edges_coalescent,
-    sum_edges_coalescent);
+                                    sum_edges_coalescent);
 
-  (*score_single) = coalescent_single + speciation;
-  (*score_multi) = coalescent_multi + speciation;
+  *score_single = coalescent_single + speciation;
+  *score_multi = coalescent_multi + speciation;
 }
 
 void score_delimitation_tree(char * scorefile, rtree_t * tree)
@@ -403,7 +431,7 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
 
   free_tree_data_score(tree);
 
-  init_tree_data(tree);
+  dp_init(tree);
   double score_single_input = 0;
   double score_multi_input = 0;
   double score_single_real = 0;
@@ -416,7 +444,7 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
   printf("Score input multi: %.6f\n", score_multi_input);
   printf("Score real single: %.6f\n", score_single_real);
   printf("Score real multi: %.6f\n", score_multi_real);
-  free_tree_data(tree);
+  dp_free(tree);
 
   free(leaves_list);
   free(mrca_real_list);

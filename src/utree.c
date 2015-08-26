@@ -280,6 +280,8 @@ static rtree_t * utree_rtree(utree_t * unode)
 {
   rtree_t * rnode = (rtree_t *)xmalloc(sizeof(rtree_t)); 
 
+  rnode->event = EVENT_COALESCENT;
+
   if (unode->label)
     rnode->label = strdup(unode->label);
   else

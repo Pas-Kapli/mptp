@@ -296,7 +296,7 @@ void svg_rtree_init(rtree_t * root)
 }
 
 
-void cmd_svg(rtree_t * rtree)
+void cmd_svg(rtree_t * root)
 {
   if (!opt_quiet)
     printf("Creating SVG...\n");
@@ -305,7 +305,7 @@ void cmd_svg(rtree_t * rtree)
   if (!svg_fp)
     fatal("Cannot write to file %s", opt_outfile);
 
-  svg_rtree_init(rtree);
+  svg_rtree_init(root);
 
   fclose(svg_fp);
 }

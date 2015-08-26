@@ -274,8 +274,8 @@ void rtree_reset_info(rtree_t * root)
   if (!root->left)
   {
     root->leaves = 1;
-    root->valid_edge_count = 0;
-    root->valid_edgelen_sum = 0;
+    root->edge_count = 0;
+    root->edgelen_sum = 0;
     return;
   }
   
@@ -283,19 +283,19 @@ void rtree_reset_info(rtree_t * root)
   rtree_reset_info(root->right);
 
   root->leaves = root->left->leaves + root->right->leaves;
-  root->valid_edge_count = root->left->valid_edge_count + 
-                           root->right->valid_edge_count;
-  root->valid_edgelen_sum = root->left->valid_edgelen_sum +
-                            root->right->valid_edgelen_sum;
+  root->edge_count = root->left->edge_count + 
+                     root->right->edge_count;
+  root->edgelen_sum = root->left->edgelen_sum +
+                      root->right->edgelen_sum;
 
   if (root->left->length > opt_minbr)
   {
-    root->valid_edge_count++;
-    root->valid_edgelen_sum += root->left->length;
+    root->edge_count++;
+    root->edgelen_sum += root->left->length;
   }
   if (root->right->length > opt_minbr)
   {
-    root->valid_edge_count++;
-    root->valid_edgelen_sum += root->right->length;
+    root->edge_count++;
+    root->edgelen_sum += root->right->length;
   }
 }

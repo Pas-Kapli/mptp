@@ -77,22 +77,23 @@ input: OPAR subtree COMMA subtree CPAR optional_label optional_length SEMICOLON
   tree->length = $7 ? atof($7) : 0;
   tree->leaves = $2->leaves + $4->leaves;
   tree->parent = NULL;
+  tree->event  = EVENT_COALESCENT;
   free($7);
 
   tree->left->parent  = tree;
   tree->right->parent = tree;
 
-  tree->valid_edge_count = $2->valid_edge_count + $4->valid_edge_count;
-  tree->valid_edgelen_sum = $2->valid_edgelen_sum + $4->valid_edgelen_sum;
+  tree->edge_count = $2->edge_count + $4->edge_count;
+  tree->edgelen_sum = $2->edgelen_sum + $4->edgelen_sum;
   if ($2->length > opt_minbr)
   {
-    tree->valid_edge_count++;
-    tree->valid_edgelen_sum += $2->length;
+    tree->edge_count++;
+    tree->edgelen_sum += $2->length;
   }
   if ($4->length > opt_minbr)
   {
-    tree->valid_edge_count++;
-    tree->valid_edgelen_sum += $4->length;
+    tree->edge_count++;
+    tree->edgelen_sum += $4->length;
   }
 };
 
@@ -104,22 +105,23 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->label  = $6;
   $$->length = $7 ? atof($7) : 0;
   $$->leaves = $2->leaves + $4->leaves;
+  $$->event  = EVENT_COALESCENT;
   free($7);
 
   $$->left->parent  = $$;
   $$->right->parent = $$;
 
-  $$->valid_edge_count = $2->valid_edge_count + $4->valid_edge_count;
-  $$->valid_edgelen_sum = $2->valid_edgelen_sum + $4->valid_edgelen_sum;
+  $$->edge_count = $2->edge_count + $4->edge_count;
+  $$->edgelen_sum = $2->edgelen_sum + $4->edgelen_sum;
   if ($2->length > opt_minbr)
   {
-    $$->valid_edge_count++;
-    $$->valid_edgelen_sum += $2->length;
+    $$->edge_count++;
+    $$->edgelen_sum += $2->length;
   }
   if ($4->length > opt_minbr)
   {
-    $$->valid_edge_count++;
-    $$->valid_edgelen_sum += $4->length;
+    $$->edge_count++;
+    $$->edgelen_sum += $4->length;
   }
 }
        | label optional_length
@@ -130,9 +132,10 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->left   = NULL;
   $$->right  = NULL;
   $$->leaves = 1;
+  $$->event  = EVENT_COALESCENT;
 
-  $$->valid_edge_count = 0;
-  $$->valid_edgelen_sum = 0;
+  $$->edge_count = 0;
+  $$->edgelen_sum = 0;
 
   free($2);
 };

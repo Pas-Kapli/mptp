@@ -41,129 +41,94 @@ static double logcomb(unsigned int n, unsigned int k)
   return (logn_table[n] - (logn_table[n-k] + logn_table[k]));
 }
 
-double exponential_hyperprior(double x, hyperprior_inf info)
-{
-  params_exponential* params = (params_exponential*) (info.params);
 
-  assert(x >= 0);
-  double rate = params->exponential_rate;
-  return rate * exp(-rate * x);
+double prior_score(unsigned int species_count, prior_t * prior)
+{
+  if (!prior) return 0;
+
+  int dist = prior->dist;
+
+  if (dist == PRIOR_NONE)
+    return 0;
+  else if (dist == PRIOR_UNI)
+    return uni_logpdf(species_count, (uni_params_t *)(prior->params));
+  else if (dist == PRIOR_BINOMIAL)
+    return bin_logpmf(species_count, (bin_params_t *)(prior->params));
+  else if (dist == PRIOR_NBIN)
+    return nbin_logpmf(species_count, (nbin_params_t *)(prior->params));
+  else if (dist == PRIOR_BETA)
+    return beta_logpdf(species_count, (beta_params_t *)(prior->params));
+  else if (dist == PRIOR_GAMMA)
+    return gamma_logpdf(species_count, (gamma_params_t *)(prior->params));
+
+  /* TODO: Handle the dirichlet distribution */
+    
+  return 0;
 }
 
-double uniform_hyperprior(double x, hyperprior_inf info)
+
+double beta_logpdf(double x, beta_params_t * params)
 {
-  params_uniform * params = (params_uniform*) (info.params);
+  assert(x > 0);
 
-  double from = params->uniform_from;
-  double to = params->uniform_to;
-  assert(from < to);
-  return 1.0 / (from - to);
-}
-
-double beta_logprior(int num_species, prior_inf info)
-{
-  beta_params_t * params = (beta_params_t *) (info.params);
-
-  assert(num_species > 0);
   double alpha = params->alpha;
   double beta = params->beta;
-  assert(alpha > 0);
-  assert(beta > 0);
-  double x = (double) num_species;
+  assert(params->alpha > 0);
+  assert(params->beta > 0);
   return log(gamma(alpha+beta)) - log(gamma(alpha)) - log(gamma(beta))
     + log(pow(x, alpha-1)) + log(pow(1-x, beta-1));
 }
 
-double dirichlet_logprior(int num_species, prior_inf info)
+double gamma_logpdf(double x, gamma_params_t * params)
 {
-  params_dirichlet * params = (params_dirichlet*) (info.params);
+  double beta = params->beta;
+  double alpha = params->alpha;
+  assert(alpha > 0 && beta > 0 && x > 0);
 
-  assert(num_species > 0);
+  return alpha*log(beta) - 
+         log(gamma(alpha)) +
+         (alpha-1)*log(x) -
+         beta*x;
+}
+
+
+double dir_logpdf(double * x, dir_params_t * params)
+{
   assert(0);
   // TODO: not implemented!
   return -1;
 }
 
-double gamma_logpdf(int num_species, prior_inf info)
+double bin_logpmf(int k, bin_params_t * params)
 {
-  gamma_params_t * params = (gamma_params_t *) (info.params);
-  double beta = params->beta;
-  double alpha = params->alpha;
-  assert(alpha > 0 && beta > 0 && num_species > 0);
+  assert(k >= 0);
+  double p = params->prob;
+  assert(p >= 0 && p <= 1);
+  int n = params->trials;
+  assert(n >= 0);
 
-  return alpha*log(beta) - log(gamma(alpha))
-    + (alpha-1)*log(num_species)
-    - beta * num_species;
+  return logcomb(n, k) +
+         log(pow(1.0 - p, k)) +
+         log(pow(p, n - k));
 }
 
-double binomial_logprior(int num_species, prior_inf info)
+double nbin_logpmf(int k, nbin_params_t * params)
 {
-  params_binomial* params = (params_binomial*) (info.params);
-
-  assert(num_species > 0);
-  double p = params->binomial_probability;
-  assert(p > 0);
-  assert(p < 1);
-  int n = params->binomial_n;
-  assert(n > 0);
-
-  return logcomb(n, num_species)
-    + log(pow(1.0 - p, num_species))
-    + log(pow(p, n - num_species));
-}
-
-double negative_binomial_logprior(int num_species, prior_inf info)
-{
-  params_negative_binomial* params = (params_negative_binomial*) (info.params);
-
-  assert(num_species > 0);
-  double p = params->negative_binomial_probability;
-  assert(p > 0);
-  assert(p < 1);
-  int r = params->negative_binomial_failures;
+  assert(k >= 0);
+  double p = params->prob;
+  assert(p >= 0 && p <= 1);
+  int r = params->failures;
   assert(r > 0);
 
-  // r is the number of failures until the experiment is stopped
-  int k = num_species; // k is the number of successes
-
-  return logcomb(k + r - 1, k) + log(pow(1.0 - p, r)) + log(pow(p, k));
+  return logcomb(k + r - 1, k) + 
+         log(pow(1.0 - p, r)) + 
+         log(pow(p, k));
 }
 
-double uniform_logprior(int num_species, prior_inf info)
+double uni_logpdf(double x, uni_params_t * params)
 {
-  params_uniform* params = (params_uniform*) (info.params);
+  assert(x >= params->min && x <= params->max);
+  assert(params->min < params->max);
 
-  assert(num_species > 0);
-  double from = params->uniform_from;
-  double to = params->uniform_to;
-  assert(from < to);
-  return 1.0 / (from - to);
+  return 1.0 / (params->max - params->min);
 }
-
-double no_logprior(int num_species, prior_inf info)
-{
-  assert(num_species > 0);
-  return 0;
-}
-
-/*
-Nice idea, but did not work :-(
-
-PRIOR_FUNC create_uniform_logprior(int num_taxa)
-{
-  assert(num_taxa > 0);
-  double logprior(int num_species) {
-        return uniform_logprior(num_species, num_taxa);
-  }
-  return logprior;
-}
-
-PRIOR_FUNC create_no_logprior(int num_taxa)
-{
-  assert(num_taxa > 0);
-  double logprior(int num_species) {
-        return no_logprior(num_species, num_taxa);
-  }
-  return logprior;
-}
-*/

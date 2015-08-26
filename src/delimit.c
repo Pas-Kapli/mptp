@@ -33,21 +33,17 @@ static const char mandatory_options_count = 2;
 static const char * mandatory_options_list = " --tree_file --output_file";
 
 /* options */
-char * opt_treefile;
-char * opt_outfile;
-char * opt_outgroup;
-char * opt_scorefile;
 int opt_quiet;
 int opt_precision;
 int opt_svg_showlegend;
-int opt_bayesian_runs;
 long opt_help;
 long opt_version;
 long opt_treeshow;
-long opt_ptpmulti;
-long opt_ptpsingle;
-long opt_ptpmulti_bayesian;
-long opt_ptpsingle_bayesian;
+long opt_ml_multi;
+long opt_ml_single;
+long opt_bayes_multi;
+long opt_bayes_single;
+long opt_bayes_runs;
 long opt_svg;
 long opt_svg_width;
 long opt_svg_fontsize;
@@ -60,7 +56,11 @@ long opt_svg_inner_radius;
 double opt_svg_legend_ratio;
 double opt_pvalue;
 double opt_minbr;
-
+char * opt_treefile;
+char * opt_outfile;
+char * opt_outgroup;
+char * opt_scorefile;
+prior_t * opt_prior;
 
 static struct option long_options[] =
 {
@@ -70,8 +70,8 @@ static struct option long_options[] =
   {"tree_file",          required_argument, 0, 0 },  /*  3 */
   {"tree_show",          no_argument,       0, 0 },  /*  4 */
   {"output_file",        required_argument, 0, 0 },  /*  5 */
-  {"ptp_multi",          no_argument,       0, 0 },  /*  6 */
-  {"ptp_single",         no_argument,       0, 0 },  /*  7 */
+  {"ml_multi",           no_argument,       0, 0 },  /*  6 */
+  {"ml_single",          no_argument,       0, 0 },  /*  7 */
   {"outgroup",           required_argument, 0, 0 },  /*  8 */
   {"score",              required_argument, 0, 0 },  /*  9 */
   {"pvalue",             required_argument, 0, 0 },  /* 10 */
@@ -87,8 +87,8 @@ static struct option long_options[] =
   {"svg_marginbottom",   required_argument, 0, 0 },  /* 20 */
   {"svg_inner_radius",   required_argument, 0, 0 },  /* 21 */
   {"precision",          required_argument, 0, 0 },  /* 22 */
-  {"ptp_multi_bayesian", required_argument, 0, 0 },  /* 23 */
-  {"ptp_single_bayesian",required_argument, 0, 0 },  /* 24 */
+  {"bayes_multi",        required_argument, 0, 0 },  /* 23 */
+  {"bayes_single",       required_argument, 0, 0 },  /* 24 */
   { 0, 0, 0, 0 }
 };
 
@@ -109,15 +109,15 @@ void args_init(int argc, char ** argv)
   opt_outfile = NULL;
   opt_outgroup = NULL;
   opt_quiet = 0;
-  opt_ptpmulti = 0;
-  opt_ptpsingle = 0;
-  opt_ptpmulti_bayesian = 0;
-  opt_ptpsingle_bayesian = 0;
+  opt_ml_multi = 0;
+  opt_ml_single = 0;
+  opt_bayes_multi = 0;
+  opt_bayes_single = 0;
   opt_scorefile = NULL;
   opt_pvalue = 0.001;
   opt_minbr = 0.0001;
   opt_precision = 7;
-  opt_bayesian_runs = 1;
+  opt_bayes_runs = 1;
 
   opt_svg_width = 1920;
   opt_svg_fontsize = 12;
@@ -129,6 +129,8 @@ void args_init(int argc, char ** argv)
   opt_svg_margintop = 20;
   opt_svg_marginbottom = 20;
   opt_svg_inner_radius = 0;
+
+  opt_prior = NULL;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -161,11 +163,11 @@ void args_init(int argc, char ** argv)
         break;
 
       case 6:
-        opt_ptpmulti = 1;
+        opt_ml_multi = 1;
         break;
 
       case 7:
-        opt_ptpsingle = 1;
+        opt_ml_single = 1;
         break;
 
       case 8:
@@ -236,13 +238,13 @@ void args_init(int argc, char ** argv)
         break;
 
       case 23:
-        opt_ptpmulti_bayesian = true;
-        opt_bayesian_runs = atoi(optarg);
+        opt_bayes_multi = 1;
+        opt_bayes_runs = atoi(optarg);
         break;
 
       case 24:
-        opt_ptpsingle_bayesian = true;
-        opt_bayesian_runs = atoi(optarg);
+        opt_bayes_single = 1;
+        opt_bayes_runs = atoi(optarg);
         break;
 
       default:
@@ -266,13 +268,13 @@ void args_init(int argc, char ** argv)
     commands++;
   if (opt_help)
     commands++;
-  if (opt_ptpmulti)
+  if (opt_ml_multi)
     commands++;
-  if (opt_ptpsingle)
+  if (opt_ml_single)
     commands++;
-  if (opt_ptpmulti_bayesian)
+  if (opt_bayes_multi)
     commands++;
-  if (opt_ptpsingle_bayesian)
+  if (opt_bayes_single)
     commands++;
   if (opt_scorefile)
     commands++;
@@ -304,23 +306,31 @@ void cmd_help()
           "  --help                         display help information.\n"
           "  --version                      display version information.\n"
           "  --tree_show                    display an ASCII version of the tree.\n"
-          "  --ptp_multi                    PTP style with one lambda per coalescent.\n"
-          "  --ptp_single                   PTP style with single lambda for all coalescent.\n"
-          "  --ptp_multi_bayesian RUNS      Bayesian PTP style with one lambda per coalescent.\n"
-          "  --ptp_single_bayesian RUNS     Bayesian PTP style with single lambda for all coalescent.\n"
+          "  --ml_multi                     Maximum-likelihood PTP with one lambda per coalescent.\n"
+          "  --ml_single                    Maximum-likelihood PTP with a single lambda for all coalescent.\n"
+          "  --bayes_multi INT              Bayesian PTP with one lambda per coalescent and INT runs.\n"
+          "  --bayes_single INT             Bayesian PTP with a single lambda for all coalescent and INT runs.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
           "  --pvalue                       Specify a P-value (default: 0.001)\n"
           "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
           "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
           "  --quiet                        only output warnings and fatal errors to stderr.\n"
           "  --precision                    Precision of decimal part of floating point numbers on output (default: 7).\n"
+          "Prior options:\n"
+          "  --prior_exp REAL               Rate of exponential prior.\n"
+          "  --prior_ln REAL,REAL           Log-normal prior with mean (first param) and standard deviation (second param).\n"
+          "  --prior_uni REAL,REAL          Uniform prior with minimum (first param) and maximum (second param) bounds.\n"
+          "  --prior_bin INT,REAL           Binomial prior with number of trials (first param) and success probability (second param).\n"
+          "  --prior_nbin INT,REAL          Negative binomial prior with number of failures (first param) and success probability (second param).\n"
+          "  --prior_gamma REAL,REAL        Gamma distribution with shape (first param) and rate (second param).\n"
+          "  --prior_beta REAL,REAL         Beta distribution with alpha shape (first param) and beta shape (second param).\n"
           "Input and output options:\n"
           "  --tree_file FILENAME           tree file in newick format.\n"
           "  --output_file FILENAME         output file name.\n"
           "Visualization options:\n"
-          "  --svg_width NUMBER             Width of the resulting SVG image in pixels (default: 1920).\n"
-          "  --svg_fontsize NUMBER          Size of font in SVG image. (default: 12)\n"
-          "  --svg_tipspacing NUMBER        Vertical space between taxa in SVG image (default: 20).\n"
+          "  --svg_width INT                Width of the resulting SVG image in pixels (default: 1920).\n"
+          "  --svg_fontsize INT             Size of font in SVG image. (default: 12)\n"
+          "  --svg_tipspacing INT           Vertical space between taxa in SVG image (default: 20).\n"
           "  --svg_legend_ratio <0..1>      Ratio of the total tree length to be displayed as legend line.\n"
           "  --svg_nolegend                 Hides the legend.\n"
           "  --svg_marginleft               Left margin in pixels (default: 20).\n"
@@ -364,24 +374,15 @@ static rtree_t * load_tree(void)
   return rtree;
 }
 
-void cmd_ptpmulti(bool multiple_lambda, bool bayesian)
+void cmd_ml_multi()
 {
   
   rtree_t * rtree = load_tree();
 
-  if (!bayesian)
-  {
-    PRIOR_FUNC ptr_no_logprior = no_logprior;
-    prior_inf info;
-    delimit_stats* solution = ptp_multi_heuristic(rtree, true,
-      ptr_no_logprior, info);
-    free(solution);
-  }
-  else
-  {
-    ptp_bayesian(rtree, multiple_lambda,
-      PRIOR_UNIFORM, HYPERPRIOR_NONE, HYPERPRIOR_NONE, opt_bayesian_runs);
-  }
+  dp_init(rtree);
+  dp_set_pernode_spec_edges(rtree);
+  dp_ptp(rtree, PTP_METHOD_MULTI, opt_prior);
+  dp_free(rtree);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
@@ -398,24 +399,15 @@ void cmd_ptpmulti(bool multiple_lambda, bool bayesian)
     fprintf(stdout, "Done...\n");
 }
 
-void cmd_ptpsingle(bool multiple_lambda, bool bayesian)
+void cmd_ml_single()
 {
 
   rtree_t * rtree = load_tree();
 
-  if (!bayesian)
-  {
-    PRIOR_FUNC ptr_no_logprior = no_logprior;
-    prior_inf info;
-    delimit_stats* solution = ptp_multi_heuristic(rtree, false,
-      ptr_no_logprior, info);
-    free(solution);
-  }
-  else
-  {
-    ptp_bayesian(rtree, multiple_lambda,
-      PRIOR_UNIFORM, HYPERPRIOR_NONE, HYPERPRIOR_NONE, opt_bayesian_runs);
-  }
+  dp_init(rtree);
+  dp_set_pernode_spec_edges(rtree);
+  dp_ptp(rtree, PTP_METHOD_SINGLE, opt_prior);
+  dp_free(rtree);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
@@ -539,21 +531,21 @@ int main (int argc, char * argv[])
   {
     cmd_help();
   }
-  else if (opt_ptpmulti)
+  else if (opt_ml_multi)
   {
-    cmd_ptpmulti(true, false);
+    cmd_ml_multi();
   }
-  else if (opt_ptpsingle)
+  else if (opt_ml_single)
   {
-    cmd_ptpmulti(false, false);
+    cmd_ml_single();
   }
-  else if (opt_ptpmulti_bayesian)
+  else if (opt_bayes_multi)
   {
-    cmd_ptpmulti(true, true);
+    assert(0);
   }
-  else if (opt_ptpsingle_bayesian)
+  else if (opt_bayes_single)
   {
-    cmd_ptpmulti(false, true);
+    assert(0);
   }
   else if (opt_scorefile)
   {

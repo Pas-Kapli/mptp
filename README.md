@@ -15,8 +15,12 @@ Currently, the code can be compiled using the included Makefile:
 
 `make`
 
-You will need to have the GNU Scientific Library installed, this can be done
-on Ubuntu via `sudo apt-get install libgsl0-dev`
+You will need the [GNU Scientific Library](http://www.gnu.org/software/gsl/),
+[GNU Bison](http://www.gnu.org/software/bison/) and [Flex](http://flex.sourceforge.net/)
+installed on your system. On a Debian-based Linux system, the three packages can be installed
+using the command
+
+`sudo apt-get install libgsl0-dev flex bison`
 
 ## Command-line options
 
@@ -24,16 +28,42 @@ General options:
 
 * `--help`
 * `--version`
-* `--tree_show`
-* `--ptp_multi`
-* `--ptp_single`
-* `--outgroup`
 * `--quiet`
+* `--tree_show`
+* `--ml_single`
+* `--ml_multi`
+* `--outgroup`
+* `--min_br`
+* `--pvalue`
+* `--precision`
+* `--score`
 
 Input and output options:
 
 * `--tree_file`
 * `--output_file`
+
+Prior options:
+
+* `--prior_exp`
+* `--prior_uni`
+* `--prior_bin`
+* `--prior_nbin`
+* `--prior_gamma`
+* `--prior_beta`
+
+Visualization options:
+
+* `--svg_width`
+* `--svg_fontsize`
+* `--svg_tipspacing`
+* `--svg_legend_ratio`
+* `--svg_nolegend`
+* `--svg_marginleft`
+* `--svg_marginright`
+* `--svg_margintop`
+* `--svg_marginbottom`
+* `--svg_inner_radius`
 
 ## Usage example
 
@@ -47,25 +77,30 @@ The code is currently licensed under the GNU Affero General Public License versi
 
     File         | Description
 -----------------|----------------
+**arch.c**       | Architecture specific code (Mac/Linux).
 **delimit.c**    | Main file handling command-line parameters and executing corresponding parts.
-**ptp_multi.c**  | Single- and multi-rate heuristics for solving the PTP assumption.
-**Makefile**     | Makefile.
+**dp.c**         | Single- and multi-rate DP heuristics for solving the PTP problem.
+**lca_utree.c**  | Naive LCA computation in unrooted trees.
 **lex_rtree.l**  | Lexical analyzer parsing newick rooted trees.
 **lex_utree.l**  | Lexical analyzer parsing newick unrooted trees.
-**util.c**       | Various common utility functions.
-**arch.c**       | Architecture specific code (Mac/Linux).
-**rtree.c**      | Rooted tree manipulation functions.
-**utree.c**      | Unrooted tree manipulation functions.
+**Makefile**     | Makefile.
 **parse_rtree.y**| Functions for parsing rooted trees in newick format.
 **parse_utree.y**| Functions for parsing unrooted trees in newick format.
-**lca_utree.c**  | Naive LCA computation in unrooted trees.
+**priors.c**     | Prior related functions.
+**rtree.c**      | Rooted tree manipulation functions.
+**score.c**      | Computation of NMI and Kassian score.
 **svg.c**        | SVG visualization.
-**score.c**      | Computation of NMI and Kassian's score.
+**util.c**       | Various common utility functions.
+**utree.c**      | Unrooted tree manipulation functions.
 
 ## The team
 
 * Paschalia Kapli
 * Sarah Lutteropp
+* Kassian Kobert
+* Pavlos Pavlides
+* Jiajie Zhang
+* Alexandros Stamatakis
 * Tom&aacute;&scaron; Flouri
 
 # References
