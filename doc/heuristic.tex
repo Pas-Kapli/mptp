@@ -68,13 +68,13 @@ For each node $v$, the \emph{currently observed tree} (COT) consists of the subt
 
 \subsection{Combination of solutions}
 
-For every node $v$, we store an array that contains the best found score for $0, 2, 4, \ldots, |S(v)|$ speciation edges and the delimitation (i.e., the set of MRCAs) that led to it. A node $v$ can either be a coalescent event or a speciation event.
+For every node $v$, we store an array that contains the best found score for $0, 1, 2, 3, \ldots, |S(v)|$ speciation edges and the delimitation (i.e., the set of MRCAs) that led to it. A node $v$ can either be a coalescent event or a speciation event.
 
 \paragraph{Coalescent event}
-If $v$ is a coalescent event (i.e., the MRCA of a species), we have $0$ speciation edges in $S(v)$. For this case, we compute the score of all edges in $S(v)$ being coalescent edges and the known speciation edges in the COT of $v$ being speciation edges and store it in $v$. Since we do not need to look at the solutions for the children of $v$ in this case, we can do this step already in the initialisation.
+If $v$ is a coalescent event (i.e., the MRCA of a species), we have $0$ speciation edges in $S(v)$. For this case, we compute the score of all edges in $S(v)$ being coalescent edges and the known speciation edges in the COT of $v$ being speciation edges and store it in $v$. Since we do not need to look at the solutions for the children of $v$ in this case, we can do this step already in the initialization.
 
 \paragraph{Speciation event}
-In order to find a solution for a subtree $S(v)$ and $k>1$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitations using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
+In order to find a solution for a subtree $S(v)$ and $k \geq 1$ speciation edges, we combine the best found solution for $i$ speciation edges from the left child of $v$ with the best found solution for $j$ speciation edges for the right child of $v$ for all choices of $i$ and $j$ where $i+j+2$ sums up to $k$ (see Fig.~\ref{fig:combining}). We compute the score of the combined delimitations using either the single-lambda or multiple-lambda approach. Then we store the delimitation that yields to the highest score for $k$ speciation edges inside $v$.
 
 \begin{figure}[h!]
 \centering
@@ -83,13 +83,9 @@ In order to find a solution for a subtree $S(v)$ and $k>1$ speciation edges, we 
 \label{fig:combining}
 \end{figure}
 
-\subsection{Handling zero-length Edges}
+\subsection{Handling of too small Edges}
 
-If the sum of edge-weights in a subtree is zero, its corresponding log-likelihood value would be infinity. Because this worsens the delimitation results a lot, we decided to treat this case differently.
-
-Since a subtree with edge sum zero originates from identical sampled sequences, we shrink the whole subtree to a single leaf node, reducing the total number of edges in the tree by this operation.
-
-Other zero-length edges that may appear in the tree (e.g., for representing multifurcations) are not treated differently as they do not cause any problems.
+We allow the user to specify a minimum branch length $min\_br \geq 0$ such that all all edges with length \textbf{less or equal} $min\_br$ will be ignored in the loglikelihood score computation. Ignoring an edge means that we do not count it towards the number of edges and we do not add its length to the sum of edge weights.
 
 \subsection{Final Result}
 We obtain the final result by choosing the delimitation that led to the highest score for the root of the tree.
@@ -99,13 +95,154 @@ We obtain the final result by choosing the delimitation that led to the highest 
 \SetKwInOut{Input}{Input}
 \SetKwInOut{Output}{Output}
 
-\underline{function delimit} $(T)$\;
-
-\Input{A fully binary rooted tree $T$ with non-negative edge weights $w$}
+\Input{A fully binary rooted tree $T$ with non-negative edge weights $w$, a minimum branch length $min\_br$}
 \Output{A delimitation with maximal score}
 
-\caption{The multiple-lambda heuristic for the PTP species delimitation problem}
+\underline{function delimit $(T, min\_br)$}\
 
+initialization(root($T$)$, min\_br$)\;
+combineSolutions(root($T$))\;
+
+delimitations = root($T$).delimitations\;
+
+bestScore = scores[0]\;
+bestIndex = 0\;
+
+\For{$i = 1, \ldots, $ number of edges in $T$}{
+	\If{delimitations[i].isValid}{
+		\If{delimitations[i].score $>$ bestScore}{
+			bestScore = delimitations[i].score\;
+			bestIndex = i\;
+		}
+	}
+}
+
+\Return{delimitations[bestIndex]}
+
+\caption{The heuristic for the PTP species delimitation problem, Main Loop}
+
+\end{algorithm}
+
+
+\begin{algorithm}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+
+\Input{A vertex $v$, a minimum branch length $min\_br$}
+
+\underline{function initialization $(v, min\_br)$}\
+
+$v$.knownSpeciationEdges = $\emptyset$\;
+
+\If{$v$.hasParent()} {
+	$v$.knownSpeciationEdges.addAll(parent($v$).knownSpeciationEdges)\;
+	$v$.knownSpeciationEdges.add($(\text{parent}(v),v)$)\;
+	\If{$v$ == parent($v$).leftChild}{
+		$v$.knownSpeciationEdges.add($(\text{parent}(v), \text{parent}(v).\text{rightChild})$)\;
+	}
+	\Else{
+		$v$.knownSpeciationEdges.add($(\text{parent}(v), \text{parent}(v).\text{leftChild})$)\;
+	}
+}
+
+\For{$i = 1, \ldots, |S(v)|$} {
+	$v$.delimitations[i].isValid = False\;
+	$v$.delimitations[i].score = $- \infty$\;
+}
+
+$v$.coalescentValue = computeLoglikelihoodScore(edges of $S(v)$, $min\_br$)\;
+
+$v$.delimitations[0].score = $v$.coalescentValue + computeLoglikelihoodScore($v$.knownSpeciationEdges, $min\_br$)\;
+$v$.delimitations[0].mostRecentCommonAncestors = $\{v\}$\;
+$v$.delimitations[0].isValid = True\;
+
+\If{$v$.hasLeftChild()} {
+	initialization($v$.leftChild, $min\_br$)\;
+}
+\If{$v$.hasRightChild()} {
+	initialization($v$.leftRight, $min\_br$)\;
+}
+\Return{}
+
+\caption{The heuristic for the PTP species delimitation problem, Initialization}
+
+\end{algorithm}
+
+\begin{algorithm}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+
+\Input{A set of edges $E$ non-negative edge weights $w$, a minimum branch length $min\_br$}
+\Output{The loglikelihood score of $E$ with edges $\leq min\_br$ ignored}
+
+\underline{function computeLoglikelihoodScore $(E, min\_br)$}\
+
+sum = 0\;
+num = 0\;
+score = 0\;
+
+\For{$e \in E$}{
+	\If{$w(e) > min\_br$}{
+		num++\;
+		sum += $w(e)$\;
+	}
+}
+
+\If {num $> 0$ \textbf{ and } sum $> 0$} {
+	score = num * (log(num) - 1 - log(sum))\;
+}
+
+\Return{score}
+
+\caption{The heuristic for the PTP species delimitation problem, Score computation}
+
+\end{algorithm}
+
+
+
+\begin{algorithm}
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+
+\Input{A vertex $v$, a minimum branch length $min\_br$}
+
+\underline{function combineSolutions $(v, min\_br)$}\
+
+\If{$v$.hasLeftChild()} {
+	combineSolutions($v$.leftChild, $min\_br$)\;
+}
+\If{$v$.hasRightChild()} {
+	combineSolutions($v$.leftRight, $min\_br$)\;
+}
+
+\If{$v$.hasLeftChild() \textbf{and} $v$.hasRightChild()} {
+	\For{$k = 0, \ldots, |S(v)|$} {
+		\For{$i = 0, \ldots, k - 2$} {
+			$j$ = $k-2-i$\;
+				\If{$v$.leftChild.delimitations[$i$].isValid \textbf{and} $v$.rightChild.delimitations[$j$].isValid}{
+					currentMRCAList = $v$.leftChild.delimitations[i].mostRecentCommonAncestors $\cup$ $v$.rightChild.delimitations[j].mostRecentCommonAncestors\;
+					currentlyObservedTreeEdges = $v$.knownSpeciationEdges $\cup$ edges of $S(v)$\;
+					\If{multipleLambda} {
+						currentCoalescentScore = $\sum_{m \in \text{currentMRCAList}} {\text{computeLoglikelihoodScore(edges of $S(m)$, min\_br)}}$
+					}
+					\Else {
+						currentCoalescentScore = computeLoglikelihoodScore($\bigcup_{m \in \text{currentMRCAList}} {\text{edges of } S(m)}, min\_br)$\;
+					}
+					currentSpeciationScore = computeLoglikelihoodScore(currentlyObservedTreeEdges $\backslash \bigcup_{m \in \text{currentMRCAList}} {\text{edges of } S(m)}, min\_br)$\;
+					currentScore = currentCoalescentScore + currentSpeciationScore\;
+					\If{currentScore $>$ $v$.delimitations[k].score} {
+						$v$.delimitations[k].mostRecentCommonAncestors = currentMRCAList\;
+						$v$.delimitations[k].score = currentScore\;
+						$v$.delimitations[k].valid = True\;
+				}
+			}
+		}
+	}
+}
+
+\Return{}
+
+\caption{The heuristic for the PTP species delimitation problem, Heuristic steps}
 
 \end{algorithm}
 

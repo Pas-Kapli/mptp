@@ -33,7 +33,7 @@ def rewrite_species_result(input_species_file, output_species_file):
 set_names = ["1", "5", "10", "20", "40", "80", "160"]
 
 for set_name in set_names:
-	for i in range(1,100):
+	for i in range(1,101):
 		if (set_name == "1"):
 			input_species_file = "unique_taxa_trees_big_dataset/set_" + set_name + "/RAxML_inferred_trees_unique_taxa/PTP_results_set" + set_name + "/PTP_result_" + set_name + "." + str(i) + ".PTPPartitions.txt"
 		elif (set_name == "80"):
