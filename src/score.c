@@ -374,8 +374,8 @@ static double compute_nmi_score(rtree_t ** mrca_real_list,
 
       if (num_common_taxa != 0)
       {
-        mutual_information += (num_common_taxa / num_taxa)
-          * log((num_common_taxa / num_taxa)
+        mutual_information += ((double)num_common_taxa / num_taxa)
+          * log(((double)num_common_taxa / num_taxa)
                  / (num_taxa_real * num_taxa_input / (num_taxa * num_taxa)));
       }
     }
