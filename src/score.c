@@ -194,8 +194,8 @@ static void retrieve_mrca_nodes(rtree_t * tree,
       data_current->current_species_input = data_left->current_species_input;
       if (!tree->parent) // root node
       {
-        if (data_left->current_species_real != -1 ||
-           data_right->current_species_real != -1)
+        if (data_left->current_species_input != -1 ||
+           data_right->current_species_input != -1)
         {
           data_current->marked = true;
           data_current->is_input_mrca = true;
@@ -427,6 +427,10 @@ static void compute_score(rtree_t * tree,
     num_edges_coalescent += mrca_list[i]->edge_count;
     sum_edges_coalescent += mrca_list[i]->edgelen_sum;
   }
+
+  printf("num_edges_coalescent: %d\n", num_edges_coalescent);
+  printf("edge count: %d\n", tree->edge_count);
+  printf("some number: %d\n", tree->edge_count - num_edges_coalescent);
   speciation = loglikelihood(tree->edge_count - num_edges_coalescent,
                              tree->edgelen_sum - sum_edges_coalescent);
   coalescent_single = loglikelihood(num_edges_coalescent,
