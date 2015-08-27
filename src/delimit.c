@@ -492,7 +492,7 @@ void getentirecommandline(int argc, char * argv[])
   for (i = 0; i < argc; ++i)
     len += strlen(argv[i]);
 
-  cmdline = (char *)xmalloc(len + argc + 1);
+  cmdline = (char *)xmalloc((size_t)(len + argc + 1));
   cmdline[0] = 0;
 
   for (i = 0; i < argc; ++i)

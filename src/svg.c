@@ -22,7 +22,6 @@
 #include "delimit.h"
 
 static double scaler = 0;
-static long stroke_width = 3;
 
 static long legend_spacing = 10;
 
@@ -102,6 +101,7 @@ static void svg_rtree_plot(rtree_t * node)
 {
   double y;
   static int tip_occ = 0;
+  double stroke_width = 3;
 
   /* traverse tree in post-order */
   if (node->left)
@@ -197,7 +197,8 @@ static void rtree_scaler_init(rtree_t * root)
   double label_len;
   int i;
 
-  rtree_t ** node_list = (rtree_t **)malloc((2*root->leaves-1)*sizeof(rtree_t *));
+  rtree_t ** node_list = (rtree_t **)malloc((size_t)(2 * root->leaves - 1) *
+                                             sizeof(rtree_t *));
 
   rtree_query_tipnodes(root, node_list);
 
@@ -238,7 +239,7 @@ static void rtree_scaler_init(rtree_t * root)
   free(node_list);
 }
 
-void svg_rtree_init(rtree_t * root)
+static void svg_rtree_init(rtree_t * root)
 {
   long svg_height;
 

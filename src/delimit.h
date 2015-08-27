@@ -83,7 +83,7 @@ typedef struct dp_vector_s
   int vec_left;
   int vec_right;
 
-  int species_count;
+  unsigned int species_count;
   int filled;
 } dp_vector_t;
 
@@ -211,6 +211,7 @@ extern double opt_minbr;
 extern char * opt_treefile;
 extern char * opt_outfile;
 extern char * opt_outgroup;
+extern char * opt_scorefile;
 extern prior_t * opt_prior;
 
 /* common data */
@@ -245,11 +246,13 @@ void show_rusage();
 /* functions in delimit.c */
 
 void args_init(int argc, char ** argv);
-void cmd_help();
+void cmd_help(void);
 void getentirecommandline(int argc, char * argv[]);
-void fillheader();
-void show_header();
-void cmd_divtimes();
+void fillheader(void);
+void show_header(void);
+void cmd_ml_single(void);
+void cmd_ml_multi(void);
+void cmd_score(void);
 
 /* functions in parse_rtree.y */
 
@@ -292,12 +295,12 @@ rtree_t * rtree_parse_newick(const char * filename);
 
 void lca_init(utree_t * root);
 utree_t * lca_compute(utree_t * tip1, utree_t * tip2);
-void lca_destroy();
+void lca_destroy(void);
 
 /* functions in arch.c */
 
-unsigned long arch_get_memused();
-unsigned long arch_get_memtotal();
+unsigned long arch_get_memused(void);
+unsigned long arch_get_memtotal(void);
 
 /* functions in dp.c */
 
@@ -317,9 +320,10 @@ void cmd_svg(rtree_t * rtree);
 /* functions in priors.c */
 
 double prior_score(unsigned int species_count, prior_t * prior);
+void init_logn_table(unsigned int n);
 double dir_logpdf(double * x, dir_params_t * params);
 double gamma_logpdf(double x, gamma_params_t * params);
 double beta_logpdf(double x, beta_params_t * params);
-double bin_logpmf(int k, bin_params_t * params);
-double nbin_logpmf(int k, nbin_params_t * params);
+double bin_logpmf(unsigned int k, bin_params_t * params);
+double nbin_logpmf(unsigned int k, nbin_params_t * params);
 double uni_logpdf(double x, uni_params_t * params);

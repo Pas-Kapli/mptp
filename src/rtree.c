@@ -97,7 +97,7 @@ void rtree_show_ascii(rtree_t * tree)
   
   int indend_max = tree_indend_level(tree,0);
 
-  int * active_node_order = (int *)malloc((indend_max+1) * sizeof(int));
+  int * active_node_order = (int *)malloc((size_t)(indend_max+1) * sizeof(int));
   active_node_order[0] = 1;
   active_node_order[1] = 1;
 

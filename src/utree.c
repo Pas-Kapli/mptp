@@ -104,7 +104,8 @@ void utree_show_ascii(utree_t * tree)
   int max_indend_level = (a > b ? a : b);
 
 
-  int * active_node_order = (int *)malloc((max_indend_level+1) * sizeof(int));
+  int * active_node_order = (int *)malloc((size_t)(max_indend_level+1) * 
+                                          sizeof(int));
   active_node_order[0] = 1;
   active_node_order[1] = 1;
 
@@ -283,7 +284,7 @@ static rtree_t * utree_rtree(utree_t * unode)
   rnode->event = EVENT_COALESCENT;
 
   if (unode->label)
-    rnode->label = strdup(unode->label);
+    rnode->label = xstrdup(unode->label);
   else
     rnode->label = NULL;
   rnode->length = unode->length;
@@ -351,8 +352,8 @@ static utree_t * find_outgroup_mrca(utree_t ** node_list,
 
   size_t taxon1_len = strcspn(opt_outgroup, ",");
 
-  char * taxon1 = strndup(opt_outgroup, taxon1_len);
-  char * taxon2 = strdup(opt_outgroup+taxon1_len+1);
+  char * taxon1 = xstrndup(opt_outgroup, taxon1_len);
+  char * taxon2 = xstrdup(opt_outgroup+taxon1_len+1);
 
   fprintf(stdout, "Rooting with outgroups %s and %s\n", taxon1, taxon2);
 
@@ -394,7 +395,7 @@ rtree_t * utree_convert_rtree(utree_t * root, int tip_count)
   utree_t * outgroup;
 
   /* query tip nodes */
-  utree_t ** node_list = (utree_t **)xmalloc(tip_count * sizeof(utree_t *));
+  utree_t ** node_list = (utree_t **)xmalloc((size_t)tip_count * sizeof(utree_t *));
   utree_query_tipnodes(root, node_list);
 
   /* find outgroup */

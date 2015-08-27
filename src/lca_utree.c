@@ -59,8 +59,8 @@ static void fill_path(utree_t ** path, int * path_len, utree_t * tip)
 void lca_init(utree_t * root)
 {
   /* allocate two paths of maximal height */
-  path1 = (utree_t **)xmalloc((root->height+1) * sizeof(utree_t *));
-  path2 = (utree_t **)xmalloc((root->height+1) * sizeof(utree_t *));
+  path1 = (utree_t **)xmalloc((size_t)(root->height+1) * sizeof(utree_t *));
+  path2 = (utree_t **)xmalloc((size_t)(root->height+1) * sizeof(utree_t *));
 }
 
 utree_t * lca_compute(utree_t * tip1, utree_t * tip2)

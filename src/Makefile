@@ -17,8 +17,6 @@
 # Heidelberg Institute for Theoretical Studies,
 # Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 
-BIN = ../bin
-
 # Profiling
 #PROFILING=-g -pg
 PROFILING=-g

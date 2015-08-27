@@ -95,10 +95,10 @@ static void identify_alternative_taxa(char * scorefile,
         current_species_idx++;
       }
       else if (collecting &&
-        ((strcmp(line,"\n")==0
+        (((strcmp(line,"\n")==0
       || strstr(line, "Writing tree file") != NULL)
         || strstr(line, "Number of") != NULL)
-        || strstr(line, "WARNING: ") != NULL)
+        || strstr(line, "WARNING: ") != NULL))
       {
         //printf("A species has ended.\n");
         collecting = false;
@@ -314,8 +314,10 @@ static double compute_entropy(rtree_t ** mrca_list,
 static int count_common_taxa(rtree_t * mrca_one, rtree_t * mrca_two)
 {
   // get leaves
-  rtree_t ** leaves_one_list = calloc(mrca_one->leaves, sizeof(rtree_t));
-  rtree_t ** leaves_two_list = calloc(mrca_two->leaves, sizeof(rtree_t));
+  rtree_t ** leaves_one_list = (rtree_t **)calloc((size_t)(mrca_one->leaves), 
+                                                  sizeof(rtree_t));
+  rtree_t ** leaves_two_list = (rtree_t **)calloc((size_t)(mrca_two->leaves),
+                                                  sizeof(rtree_t));
   rtree_query_tipnodes(mrca_one, leaves_one_list);
   rtree_query_tipnodes(mrca_two, leaves_two_list);
 
@@ -368,7 +370,7 @@ static double compute_nmi_score(rtree_t ** mrca_real_list,
       rtree_t * mrca_input = mrca_input_list[j];
       double num_taxa_real = (double) mrca_real->leaves;
       double num_taxa_input = (double) mrca_input->leaves;
-      double num_common_taxa = (double) count_common_taxa(mrca_real, mrca_input);
+      int num_common_taxa = count_common_taxa(mrca_real, mrca_input);
 
       if (num_common_taxa != 0)
       {
@@ -416,7 +418,8 @@ static void compute_score(rtree_t * tree,
 
 void score_delimitation_tree(char * scorefile, rtree_t * tree)
 {
-  rtree_t ** leaves_list = calloc(tree->leaves, sizeof(rtree_t));
+  rtree_t ** leaves_list = (rtree_t **)calloc((size_t)(tree->leaves), 
+                                              sizeof(rtree_t));
   rtree_query_tipnodes(tree, leaves_list);
 
   init_tree_data_score(tree);
@@ -433,8 +436,10 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
   assert(num_species_input > 0);
   printf("Number of species in input file: %d\n", num_species_input);
 
-  rtree_t ** mrca_real_list = calloc(num_species_real, sizeof(rtree_t));
-  rtree_t ** mrca_input_list = calloc(num_species_input, sizeof(rtree_t));
+  rtree_t ** mrca_real_list = (rtree_t **)calloc((size_t)num_species_real,
+                                                 sizeof(rtree_t));
+  rtree_t ** mrca_input_list = (rtree_t **)calloc((size_t)num_species_input,
+                                                  sizeof(rtree_t));
   collect_mrca_nodes(tree, mrca_real_list, mrca_input_list);
 
   int tree_penalty_score = 0;

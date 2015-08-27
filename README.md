@@ -1,5 +1,7 @@
 # Species Delimitation
 
+[![License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0.en.html)
+
 ## Introduction
 
 The aim of this project is to implement a fast species delimitation method,

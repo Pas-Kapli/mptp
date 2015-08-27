@@ -99,7 +99,7 @@ double dir_logpdf(double * x, dir_params_t * params)
   return -1;
 }
 
-double bin_logpmf(int k, bin_params_t * params)
+double bin_logpmf(unsigned int k, bin_params_t * params)
 {
   assert(k >= 0);
   double p = params->prob;
@@ -112,7 +112,7 @@ double bin_logpmf(int k, bin_params_t * params)
          log(pow(p, n - k));
 }
 
-double nbin_logpmf(int k, nbin_params_t * params)
+double nbin_logpmf(unsigned int k, nbin_params_t * params)
 {
   assert(k >= 0);
   double p = params->prob;

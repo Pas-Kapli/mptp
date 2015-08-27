@@ -93,7 +93,8 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
       int i = j + k + u_edge_count;
 
       /* set the number of species - needed for prior information */
-      int species_count = v_vec[j].species_count + w_vec[k].species_count;
+      unsigned int species_count = v_vec[j].species_count +
+                                   w_vec[k].species_count;
 
       /* compute multi-rate coalescent log-likelihood */
       double coal_multi_logl = v_vec[j].coal_multi_logl +
@@ -198,7 +199,7 @@ static void print_null_model(rtree_t * tree)
 
 static int lrt(double nullmodel_logl,
                double ptp_logl,
-               int df,
+               unsigned int df,
                double * pvalue)
 {
   double diff = 2*(ptp_logl - nullmodel_logl);
@@ -261,11 +262,9 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   int lrt_pass;
   if (method == PTP_METHOD_MULTI)
   {
-    /* TODO: Find out whether here is really just 1 degree of freedom or not */
-
     lrt_pass = lrt(tree->coal_logl, 
                    vec[best_index].score_multi,
-                   1,
+                   vec[best_index].species_count,
                    &pvalue);
   }
   else
@@ -317,7 +316,7 @@ void dp_init(rtree_t * tree)
   // TODO: Check whether this is the best way to handle those
   //   nasty zero-length edges.
 
-  tree->vector = calloc(tree->edge_count + 1, sizeof(dp_vector_t));
+  tree->vector = calloc((size_t)(tree->edge_count + 1), sizeof(dp_vector_t));
 
   for (i = 0; i <= tree->edge_count; i++)
   {
