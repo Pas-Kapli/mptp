@@ -36,7 +36,7 @@ static double loglikelihood(int edge_count, double edgelen_sum)
 
   /* TODO: Find out whether edgelen_sum == 0 makes sense */
   if (edge_count == 0 || edgelen_sum == 0) return 0;
-  
+
   return edge_count * (log(edge_count) - 1 - log(edgelen_sum));
 }
 
@@ -158,6 +158,12 @@ static void retrieve_mrca_nodes(rtree_t * tree,
     if (data_left->current_species_real == data_right->current_species_real)
     {
       data_current->current_species_real = data_left->current_species_real;
+      if (!tree->parent) // root node
+      {
+        data_current->marked = true;
+        data_current->is_real_mrca = true;
+        (*num_species_real)++;
+      }
     }
     else
     {
@@ -182,6 +188,12 @@ static void retrieve_mrca_nodes(rtree_t * tree,
     if (data_left->current_species_input == data_right->current_species_input)
     {
       data_current->current_species_input = data_left->current_species_input;
+      if (!tree->parent) // root node
+      {
+        data_current->marked = true;
+        data_current->is_input_mrca = true;
+        (*num_species_input)++;
+      }
     }
     else
     {
@@ -314,7 +326,7 @@ static double compute_entropy(rtree_t ** mrca_list,
 static int count_common_taxa(rtree_t * mrca_one, rtree_t * mrca_two)
 {
   // get leaves
-  rtree_t ** leaves_one_list = (rtree_t **)calloc((size_t)(mrca_one->leaves), 
+  rtree_t ** leaves_one_list = (rtree_t **)calloc((size_t)(mrca_one->leaves),
                                                   sizeof(rtree_t));
   rtree_t ** leaves_two_list = (rtree_t **)calloc((size_t)(mrca_two->leaves),
                                                   sizeof(rtree_t));
@@ -418,7 +430,7 @@ static void compute_score(rtree_t * tree,
 
 void score_delimitation_tree(char * scorefile, rtree_t * tree)
 {
-  rtree_t ** leaves_list = (rtree_t **)calloc((size_t)(tree->leaves), 
+  rtree_t ** leaves_list = (rtree_t **)calloc((size_t)(tree->leaves),
                                               sizeof(rtree_t));
   rtree_query_tipnodes(tree, leaves_list);
 
