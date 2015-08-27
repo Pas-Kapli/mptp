@@ -160,9 +160,13 @@ static void retrieve_mrca_nodes(rtree_t * tree,
       data_current->current_species_real = data_left->current_species_real;
       if (!tree->parent) // root node
       {
-        data_current->marked = true;
-        data_current->is_real_mrca = true;
-        (*num_species_real)++;
+        if (data_left->current_species_real != -1 ||
+           data_right->current_species_real != -1)
+        {
+          data_current->marked = true;
+          data_current->is_real_mrca = true;
+          (*num_species_real)++;
+        }
       }
     }
     else
@@ -190,9 +194,13 @@ static void retrieve_mrca_nodes(rtree_t * tree,
       data_current->current_species_input = data_left->current_species_input;
       if (!tree->parent) // root node
       {
-        data_current->marked = true;
-        data_current->is_input_mrca = true;
-        (*num_species_input)++;
+        if (data_left->current_species_real != -1 ||
+           data_right->current_species_real != -1)
+        {
+          data_current->marked = true;
+          data_current->is_input_mrca = true;
+          (*num_species_input)++;
+        }
       }
     }
     else
@@ -443,7 +451,7 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
   int num_species_input = 0;
   retrieve_mrca_nodes(tree, &num_species_real, &num_species_input);
   assert(num_species_real > 0);
-  assert(num_species_real == 30); // TODO: Remove this again
+  //assert(num_species_real == 30); // TODO: Remove this again
   printf("Number of real species: %d\n", num_species_real);
   assert(num_species_input > 0);
   printf("Number of species in input file: %d\n", num_species_input);
