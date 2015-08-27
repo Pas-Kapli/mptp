@@ -243,8 +243,24 @@ score = 0\;
 \Return{}
 
 \caption{The heuristic for the PTP species delimitation problem, Heuristic steps}
+\label{alg:steps}
 
 \end{algorithm}
+
+\section{Run-time Estimation}
+
+\begin{align*}
+\sum_{k=0}^{|S(v)|} \sum_{i=0}^{k-2} \mathcal{O}(1) &= \sum_{k=0}^{|S(v)|}{(k-1) * \mathcal{O}(1)} \\
+&= \left( \left(\sum_{k=1}^{|S(v)|}{k}\right) - (|S(v)| + 1) \right) * \mathcal{O}(1) \\
+&= \left( \frac{|S(v)| * (|S(v)| + 1)}{2} - (|S(v)| + 1) \right) * \mathcal{O}(1) \\
+&= \mathcal{O}(|S(v)|^2)
+\end{align*}
+
+Assuming a balanced binary tree:
+
+$$T(m) = 2*T \left( \frac{m}{2}\right) + m^2$$
+
+Using the master theorem, it follows that Algorithm~\ref{alg:steps} is in $\mathcal{O}(|E(T)|^2)$.
 
 \bibliographystyle{splncs03}
 \bibliography{delimit}
