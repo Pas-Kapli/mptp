@@ -193,7 +193,7 @@ static void backtrack(rtree_t * node,
 
 static void print_null_model(rtree_t * tree)
 {
-  printf("Species 1:\n");
+  printf("\nSpecies 1:\n");
   print_subtree_leaves(tree);
 }
 
@@ -229,23 +229,30 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   /* obtain best entry in the root DP table */
   dp_vector_t * vec = tree->vector;
   if (method == PTP_METHOD_MULTI)
-    for (i = 0; i < tree->edge_count; i++)
+  {
+    max = vec[0].score_multi;
+    for (i = 1; i < tree->edge_count; i++)
     {
-      if (max < vec[i].score_multi)
+      if (max < vec[i].score_multi && vec[i].filled)
       {
         max = vec[i].score_multi;
         best_index = i;
       }
     }
+  }
   else
-    for (i = 0; i < tree->edge_count; i++)
+  {
+    max = vec[0].score_single;
+    for (i = 1; i < tree->edge_count; i++)
     {
-      if (max < vec[i].score_single)
+      //printf("vec[%d].score_single: %.6f\n", i, vec[i].score_single);
+      if (max < vec[i].score_single && vec[i].filled)
       {
         max = vec[i].score_single;
         best_index = i;
       }
     }
+  }
 
   /* output some statistics */
   if (!opt_quiet)
@@ -262,7 +269,7 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   int lrt_pass;
   if (method == PTP_METHOD_MULTI)
   {
-    lrt_pass = lrt(tree->coal_logl, 
+    lrt_pass = lrt(tree->coal_logl,
                    vec[best_index].score_multi,
                    vec[best_index].species_count,
                    &pvalue);
@@ -280,6 +287,7 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
 
   /* if LRT passed, then back-track the DP table and print the delimitation,
      otherwise print the null-model (one single species) */
+
   if (lrt_pass)
   {
     bool warning_minbr = false;
@@ -337,6 +345,27 @@ void dp_free(rtree_t * tree)
 
   if (tree->vector) free(tree->vector);
 }
+
+void dp_set_pernode_spec_edges_silly(rtree_t * root, rtree_t * node)
+{
+  if (!node) return;
+
+  node->spec_edge_count = 0;
+  node->spec_edgelen_sum = 0;
+
+  int num_edges_root = root->edge_count;
+  double sum_edges_root = root->edgelen_sum;
+
+  int num_edges_subtree = node->edge_count;
+  double sum_edges_subtree = node->edgelen_sum;
+
+  node->spec_edge_count = num_edges_root - num_edges_subtree;
+  node->spec_edgelen_sum = sum_edges_root - sum_edges_subtree;
+
+  dp_set_pernode_spec_edges_silly(root, node->left);
+  dp_set_pernode_spec_edges_silly(root, node->right);
+}
+
 
 void dp_set_pernode_spec_edges(rtree_t * node)
 {
