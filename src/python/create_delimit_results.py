@@ -15,10 +15,10 @@ def run_delimit_on_data(input_tree_file, output_delimit_single_minbr_0_file, out
 		if not os.path.exists(os.path.dirname(output_delimit_multi_minbr_default_file)):
 	    			os.makedirs(os.path.dirname(output_delimit_multi_minbr_default_file))
 
-		delimit_single_minbr_0_call = "./delimit --ptp_single --min_br 0 --tree_file " + input_tree_file + " --output_file foo"
-		delimit_multi_minbr_0_call = "./delimit --ptp_multi --min_br 0 --tree_file " + input_tree_file + " --output_file foo"
-		delimit_single_minbr_default_call = "./delimit --ptp_single --tree_file " + input_tree_file + " --output_file foo"
-		delimit_multi_minbr_default_call = "./delimit --ptp_multi --tree_file " + input_tree_file + " --output_file foo"
+		delimit_single_minbr_0_call = "./delimit --ml_single --min_br 0 --tree_file " + input_tree_file + " --output_file foo"
+		delimit_multi_minbr_0_call = "./delimit --ml_multi --min_br 0 --tree_file " + input_tree_file + " --output_file foo"
+		delimit_single_minbr_default_call = "./delimit --ml_single --tree_file " + input_tree_file + " --output_file foo"
+		delimit_multi_minbr_default_call = "./delimit --ml_multi --tree_file " + input_tree_file + " --output_file foo"
 
 		(stat_single_minbr_0, output_single_minbr_0) = commands.getstatusoutput(delimit_single_minbr_0_call)
 		(stat_multi_minbr_0, output_multi_minbr_0) = commands.getstatusoutput(delimit_multi_minbr_0_call)
@@ -42,16 +42,13 @@ def run_delimit_on_data(input_tree_file, output_delimit_single_minbr_0_file, out
 	except IOError:
 		print "File not found: " + input_tree_file
 
-set_names = ["1", "5", "10", "20", "40", "80", "160"]
+set_names = ["Ne10000", "Ne100000", "Ne500000", "Ne1000000"]
 
 for set_name in set_names:
 	for i in range(1,101):
-		if (set_name == "1"):
-			input_tree_file = "unique_taxa_trees_big_dataset/set_" + set_name + "/RAxML_inferred_trees_unique_taxa/rooted.inferred_unique_taxa." + str(i)
-		else:
-			input_tree_file = "unique_taxa_trees_big_dataset/set_" + set_name + "/RAxML_inferred_trees_unique_taxa/rooted.inferred_unique_taxa_set_" + set_name + "." + str(i)
-		output_delimit_single_minbr_0_file = "unique_taxa_big_delimit_single_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
-		output_delimit_multi_minbr_0_file = "unique_taxa_big_delimit_multi_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
-		output_delimit_single_minbr_default_file = "unique_taxa_big_delimit_single_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
-		output_delimit_multi_minbr_default_file = "unique_taxa_big_delimit_multi_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		input_tree_file = "similar_to_GMYC/15-08-2015.16-40/set_BIRTH0.27_" + set_name + "/rooted.RAxML_result.inferred.simulated_set_BIRTH0.27_" + set_name + "_" + str(i) + ".phy"
+		output_delimit_single_minbr_0_file = "similar_to_GMYC_delimit_single_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		output_delimit_multi_minbr_0_file = "similar_to_GMYC_delimit_multi_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		output_delimit_single_minbr_default_file = "similar_to_GMYC_delimit_single_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		output_delimit_multi_minbr_default_file = "similar_to_GMYC_delimit_multi_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
 		run_delimit_on_data(input_tree_file, output_delimit_single_minbr_0_file, output_delimit_multi_minbr_0_file, output_delimit_single_minbr_default_file, output_delimit_multi_minbr_default_file)
