@@ -223,7 +223,7 @@ for set_name in set_names:
 			input_delimit_single_minbr_default_file = "similar_to_GMYC_delimit_single_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
 			input_delimit_multi_minbr_default_file = "similar_to_GMYC_delimit_multi_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
 			input_PTP_minbr_default_file = "similar_to_GMYC_PTP_minbr_default/set_" + set_name + "/PTP_results_set_" + set_name + "." + str(i) + ".txt"
-			input_gmyc_minbr_0_file = "similar_to_GMYC_gmyc_minbr_0/set_" + set_name + "/PTP_results_set_" + set_name + "." + str(i) + ".txt"
+			input_gmyc_minbr_0_file = "similar_to_GMYC_gmyc_minbr_0/set_" + set_name + "/gmyc_results_set_" + set_name + "." + str(i) + ".txt"
 		
 			score_path = "similar_to_GMYC_scoring_results/"		
 			output_delimit_single_minbr_0_file = score_path + "delimit_single_minbr_0/set_" + set_name + "/delimit_score_set_" + set_name + "." + str(i) + ".txt"
