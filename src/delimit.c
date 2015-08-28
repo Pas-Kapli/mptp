@@ -61,6 +61,7 @@ char * opt_outfile;
 char * opt_outgroup;
 char * opt_scorefile;
 prior_t * opt_prior;
+bool opt_silly;
 
 static struct option long_options[] =
 {
@@ -89,6 +90,7 @@ static struct option long_options[] =
   {"precision",          required_argument, 0, 0 },  /* 22 */
   {"bayes_multi",        required_argument, 0, 0 },  /* 23 */
   {"bayes_single",       required_argument, 0, 0 },  /* 24 */
+  {"silly",              no_argument,       0, 0 },  /* 25 */
   { 0, 0, 0, 0 }
 };
 
@@ -131,6 +133,7 @@ void args_init(int argc, char ** argv)
   opt_svg_inner_radius = 0;
 
   opt_prior = NULL;
+  opt_silly = false;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -247,6 +250,10 @@ void args_init(int argc, char ** argv)
         opt_bayes_runs = atoi(optarg);
         break;
 
+      case 25:
+        opt_silly = true;
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -308,6 +315,7 @@ void cmd_help()
           "  --tree_show                    display an ASCII version of the tree.\n"
           "  --ml_multi                     Maximum-likelihood PTP with one lambda per coalescent.\n"
           "  --ml_single                    Maximum-likelihood PTP with a single lambda for all coalescent.\n"
+          "  --silly                        Assume all edges outside subtree are speciation.\n"
           "  --bayes_multi INT              Bayesian PTP with one lambda per coalescent and INT runs.\n"
           "  --bayes_single INT             Bayesian PTP with a single lambda for all coalescent and INT runs.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
@@ -370,17 +378,24 @@ static rtree_t * load_tree(void)
     if (!opt_quiet)
       fprintf(stdout, "Loaded rooted tree...\n");
   }
-  
+
   return rtree;
 }
 
 void cmd_ml_multi()
 {
-  
+
   rtree_t * rtree = load_tree();
 
   dp_init(rtree);
-  dp_set_pernode_spec_edges(rtree);
+  if (opt_silly)
+  {
+    dp_set_pernode_spec_edges_silly(rtree, rtree);
+  }
+  else
+  {
+    dp_set_pernode_spec_edges(rtree);
+  }
   dp_ptp(rtree, PTP_METHOD_MULTI, opt_prior);
   dp_free(rtree);
 
@@ -405,7 +420,15 @@ void cmd_ml_single()
   rtree_t * rtree = load_tree();
 
   dp_init(rtree);
-  dp_set_pernode_spec_edges(rtree);
+  if (opt_silly)
+  {
+    printf("Doing silly stuff.\n");
+    dp_set_pernode_spec_edges_silly(rtree, rtree);
+  }
+  else
+  {
+    dp_set_pernode_spec_edges(rtree);
+  }
   dp_ptp(rtree, PTP_METHOD_SINGLE, opt_prior);
   dp_free(rtree);
 
@@ -476,6 +499,8 @@ void cmd_score()
   fprintf(out, "%s", newick);
   fclose(out);
   free(newick);
+
+  cmd_svg(rtree);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);

@@ -308,6 +308,7 @@ void dp_init(rtree_t * tree);
 void dp_free(rtree_t * tree);
 void dp_ptp(rtree_t * rtree, int multi, prior_t * prior);
 void dp_set_pernode_spec_edges(rtree_t * node);
+void dp_set_pernode_spec_edges_silly(rtree_t * root, rtree_t * node);
 
 /* functions in score.c */
 
