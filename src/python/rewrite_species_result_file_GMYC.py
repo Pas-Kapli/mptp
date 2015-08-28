@@ -37,12 +37,12 @@ def rewrite_species_result(input_species_file, output_species_file):
 	except IOError:
 		print "File not found: " + input_species_file
 
-set_names = ["Ne10000", "Ne100000", "Ne500000", "Ne1000000"]
+set_names = ["Ne1e+05", "Ne1e+06", "Ne5e+05", "Ne10000"]
 
-#rewrite_species_result("gmyc_results/set_Ne10000/gmyc_results_set_Ne10000.1.txt", "similar_to_GMYC_gmyc/set_Ne10000/gmyc_results_set_Ne10000.1.txt")
+#rewrite_species_result("gmyc_results_SimulB_C/set_Ne1e+05/gmyc_results_set_Ne1e+05.1.txt", "SimulB_C_gmyc_minbr_0/set_Ne1e+05/gmyc_results_set_Ne1e+05.1.txt")
 
 for set_name in set_names:
 	for i in range(1,101):
-		input_species_file = "gmyc_results/set_" + set_name + "/gmyc_results_set_" + set_name + "." + str(i) + ".txt"
-		output_species_file = "similar_to_GMYC_gmyc_minbr_0/set_" + set_name + "/gmyc_results_set_" + set_name + "." + str(i) + ".txt"
+		input_species_file = "gmyc_results_SimulB_C/set_" + set_name + "/gmyc_results_set_" + set_name + "." + str(i) + ".txt"
+		output_species_file = "SimulB_C_gmyc_minbr_0/set_" + set_name + "/gmyc_results_set_" + set_name + "." + str(i) + ".txt"
 		rewrite_species_result(input_species_file, output_species_file)

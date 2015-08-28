@@ -11,11 +11,11 @@ for set_name in set_names:
 		lines = tree_file.readlines()
 
 		for i in range(1,101): # only the first 100 trees
-			tree_destination = "SimulB&C_trees/set_" + set_name + "/SimulB&C_tree_set_" + set_name + "." + str(i) + ".txt"
+			tree_destination = "SimulB_C_trees/set_" + set_name + "/SimulB_C_tree_set_" + set_name + "." + str(i) + ".txt"
 			if not os.path.exists(os.path.dirname(tree_destination)):
 		    		os.makedirs(os.path.dirname(tree_destination))
 			tree_destination_file = open(tree_destination, 'w')
-			print(lines[i-1])
+			tree_destination_file.write(lines[i - 1])
 		
 		tree_file.close()
 	except IOError:
