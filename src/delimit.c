@@ -62,6 +62,16 @@ char * opt_outgroup;
 char * opt_scorefile;
 prior_t * opt_prior;
 
+static void dealloc_prior()
+{
+  if (opt_prior) 
+  {
+    if (opt_prior->params)
+      free(opt_prior->params);
+    free(opt_prior);
+  }
+}
+
 static struct option long_options[] =
 {
   {"help",               no_argument,       0, 0 },  /*  0 */
@@ -89,6 +99,8 @@ static struct option long_options[] =
   {"precision",          required_argument, 0, 0 },  /* 22 */
   {"bayes_multi",        required_argument, 0, 0 },  /* 23 */
   {"bayes_single",       required_argument, 0, 0 },  /* 24 */
+  {"prior_exp",          required_argument, 0, 0 },  /* 25 */
+  {"prior_gamma",        required_argument, 0, 0 },  /* 26 */
   { 0, 0, 0, 0 }
 };
 
@@ -247,6 +259,29 @@ void args_init(int argc, char ** argv)
         opt_bayes_runs = atoi(optarg);
         break;
 
+      case 25:
+        dealloc_prior();
+
+        opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
+        opt_prior->dist = PRIOR_EXP;
+
+        exp_params_t * exp_params =(exp_params_t *)xmalloc(sizeof(exp_params_t));
+        exp_params->rate = atof(optarg);
+        opt_prior->params = (void *)exp_params;
+        break;
+
+      case 26:
+        dealloc_prior();
+
+        opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
+        opt_prior->dist = PRIOR_GAMMA;
+
+        gamma_params_t * gamma_params = (gamma_params_t *)xmalloc(sizeof(gamma_params_t));
+        if (!extract2f(optarg, &(gamma_params->alpha), &(gamma_params->beta)))
+          fatal("Incorrect format for --prior_gamma");
+        opt_prior->params = (void *)gamma_params;
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -289,7 +324,6 @@ void args_init(int argc, char ** argv)
     opt_help = 1;
     return;
   }
-
   /* check for mandatory options */
   if (mand_options != mandatory_options_count)
     fatal("Mandatory options are:\n\n%s", mandatory_options_list);
@@ -553,6 +587,9 @@ int main (int argc, char * argv[])
   {
     cmd_score();
   }
+
+  /* free prior information */
+  dealloc_prior();
 
   free(cmdline);
   return (0);

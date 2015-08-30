@@ -31,6 +31,7 @@
 #include <limits.h>
 #include <locale.h>
 #include <math.h>
+#include <regex.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -48,7 +49,6 @@
 #define PROG_ARCH "linux_x86_64"
 #endif
 
-/* structures and data types */
 #define EVENT_SPECIATION 0
 #define EVENT_COALESCENT 1
 
@@ -59,9 +59,14 @@
 #define PRIOR_GAMMA             4
 #define PRIOR_DIRICHLET         5
 #define PRIOR_BETA              6
+#define PRIOR_EXP               7
 
 #define PTP_METHOD_SINGLE       0
 #define PTP_METHOD_MULTI        1
+
+#define REGEX_REAL   "([-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)"
+
+/* structures and data types */
 
 typedef unsigned int UINT32;
 typedef unsigned short WORD;
@@ -242,6 +247,7 @@ char * xstrdup(const char * s);
 char * xstrndup(const char * s, size_t len);
 long getusec(void);
 void show_rusage();
+int extract2f(char * text, double * a, double * b);
 
 /* functions in delimit.c */
 
@@ -327,3 +333,4 @@ double beta_logpdf(double x, beta_params_t * params);
 double bin_logpmf(unsigned int k, bin_params_t * params);
 double nbin_logpmf(unsigned int k, nbin_params_t * params);
 double uni_logpdf(double x, uni_params_t * params);
+double exp_logpdf(double x, exp_params_t * params);

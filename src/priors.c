@@ -60,6 +60,8 @@ double prior_score(unsigned int species_count, prior_t * prior)
     return beta_logpdf(species_count, (beta_params_t *)(prior->params));
   else if (dist == PRIOR_GAMMA)
     return gamma_logpdf(species_count, (gamma_params_t *)(prior->params));
+  else if (dist == PRIOR_EXP)
+    return exp_logpdf(species_count, (exp_params_t *)(prior->params));
 
   /* TODO: Handle the dirichlet distribution */
     
@@ -86,7 +88,7 @@ double gamma_logpdf(double x, gamma_params_t * params)
   assert(alpha > 0 && beta > 0 && x > 0);
 
   return alpha*log(beta) - 
-         log(gamma(alpha)) +
+         lgamma(alpha) +
          (alpha-1)*log(x) -
          beta*x;
 }
@@ -131,4 +133,14 @@ double uni_logpdf(double x, uni_params_t * params)
   assert(params->min < params->max);
 
   return 1.0 / (params->max - params->min);
+}
+
+double exp_logpdf(double x, exp_params_t * params)
+{
+  assert(params->rate > 0);
+  assert(x >= 0);
+
+  if (x < 0) return -__DBL_MAX__ / 2;
+
+  return log(params->rate) - x*(params->rate);
 }
