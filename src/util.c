@@ -172,3 +172,11 @@ void show_rusage()
 #endif
 }
 
+FILE * xopen(const char * filename, const char * mode)
+{
+  FILE * out = fopen(filename, mode);
+  if (!out)
+    fatal("Cannot open file %s", opt_outfile);
+
+  return out;
+}

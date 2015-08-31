@@ -30,16 +30,6 @@ typedef struct node_information_score
   int current_species_input; // for finding the alternative mrca
 } score_information;
 
-static double loglikelihood(int edge_count, double edgelen_sum)
-{
-  assert(edge_count >= 0);
-
-  /* TODO: Find out whether edgelen_sum == 0 makes sense */
-  if (edge_count == 0 || edgelen_sum == 0) return 0;
-
-  return edge_count * (log(edge_count) - 1 - log(edgelen_sum));
-}
-
 static void init_tree_data_score(rtree_t * tree)
 {
   if (tree->left)

@@ -23,16 +23,6 @@
 
 static unsigned int species_iter = 0;
 
-static double loglikelihood(int edge_count, double edgelen_sum)
-{
-  assert(edge_count >= 0);
-
-  /* TODO: Find out whether edgelen_sum == 0 makes sense */
-  if (edge_count == 0 || edgelen_sum == 0) return 0;
-  
-  return edge_count * (log(edge_count) - 1 - log(edgelen_sum));
-}
-
 static void dp_recurse(rtree_t * node, int method, prior_t * prior)
 {
   int k,j;
@@ -151,20 +141,10 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
   }
 }
 
-static void print_subtree_leaves(rtree_t * root)
-{
-  if (root->left)
-    print_subtree_leaves(root->left);
-  if (root->right)
-    print_subtree_leaves(root->right);
-
-  if (!root->left && !root->right)
-    fprintf(stdout, "%s\n", root->label);
-}
-
 static void backtrack(rtree_t * node,
                       int index,
-                      bool *warning_minbr)
+                      bool *warning_minbr,
+                      FILE * out)
 
 {
   dp_vector_t * vec = node->vector;
@@ -175,8 +155,8 @@ static void backtrack(rtree_t * node,
 
     if (node->length <= opt_minbr && node->parent) *warning_minbr = true;
 
-    backtrack(node->left, vec[index].vec_left, warning_minbr);
-    backtrack(node->right,vec[index].vec_right,warning_minbr);
+    backtrack(node->left, vec[index].vec_left, warning_minbr, out);
+    backtrack(node->right,vec[index].vec_right,warning_minbr, out);
   }
   else
   {
@@ -185,32 +165,10 @@ static void backtrack(rtree_t * node,
 
     if (!opt_quiet)
     {
-      fprintf(stdout, "\nSpecies %d:\n", species_iter);
-      print_subtree_leaves(node);
+      fprintf(out, "\nSpecies %d:\n", species_iter);
+      rtree_print_tips(node,out);
     }
   }
-}
-
-static void print_null_model(rtree_t * tree)
-{
-  printf("\nSpecies 1:\n");
-  print_subtree_leaves(tree);
-}
-
-static int lrt(double nullmodel_logl,
-               double ptp_logl,
-               unsigned int df,
-               double * pvalue)
-{
-  double diff = 2*(ptp_logl - nullmodel_logl);
-
-  /* http://docs.scipy.org/doc/scipy/reference/generated/scipy.special.chdtr.html */
-  *pvalue = 1 - gsl_cdf_chisq_P(diff,df);
-
-  if ((*pvalue) > opt_pvalue)
-    return 0;
-  
-  return 1;
 }
 
 void dp_ptp(rtree_t * tree, int method, prior_t * prior)
@@ -257,33 +215,39 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   /* output some statistics */
   if (!opt_quiet)
   {
-    printf("Num big enough edges in tree: %d\n",
-      tree->edge_count);
+    fprintf(stdout, 
+           "Number of edges greater than minimum branch length: %d / %d\n", 
+           tree->edge_count,
+           2 * tree->leaves - 2);
     printf("Score Null Model: %.6f\n", tree->coal_logl);
-    printf("Best score found single: %.6f\n", vec[best_index].score_single);
-    printf("Best score found multi: %.6f\n", vec[best_index].score_multi);
+    fprintf(stdout, "Best score for single coalescent rate: %.6f\n",
+                    vec[best_index].score_single);
+    fprintf(stdout, "Best score for multi coalescent rate: %.6f\n",
+                    vec[best_index].score_multi);
   }
 
   /* do a Likelihood Ratio Test (lrt) and return the computed p-value */
   double pvalue = -1;
   int lrt_pass;
-  if (method == PTP_METHOD_MULTI)
-  {
-    lrt_pass = lrt(tree->coal_logl,
-                   vec[best_index].score_multi,
-                   vec[best_index].species_count,
-                   &pvalue);
-  }
-  else
-  {
-    lrt_pass = lrt(tree->coal_logl,
-                   vec[best_index].score_single,
-                   1,
-                   &pvalue);
-  }
+  lrt_pass = lrt(tree->coal_logl,
+                 (method == PTP_METHOD_MULTI) ?
+                   vec[best_index].score_multi : vec[best_index].score_single,
+                 (method == PTP_METHOD_MULTI) ?
+                   vec[best_index].species_count : 1,
+                 &pvalue);
 
   if (!opt_quiet)
-    printf("Computed P-value: %.6f\n", pvalue);
+    fprintf(stdout,"LRT computed p-value: %.6f\n", pvalue);
+
+
+  /* initialize file name */
+  FILE * out = open_file_ext(".txt");
+
+  if (!opt_quiet)
+    fprintf(stdout, "Writing delimitation file %s.txt ...\n", opt_outfile);
+
+  /* write information about delimitation to file */
+  output_info(out, method, tree->coal_logl, max, pvalue, lrt_pass, tree);
 
   /* if LRT passed, then back-track the DP table and print the delimitation,
      otherwise print the null-model (one single species) */
@@ -291,27 +255,30 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   if (lrt_pass)
   {
     bool warning_minbr = false;
-    backtrack(tree, best_index, &warning_minbr);
-    if (!opt_quiet && warning_minbr)
-      printf("WARNING: A speciation edge in the result is too small.\n");
+    backtrack(tree, best_index, &warning_minbr,out);
+    if (warning_minbr)
+      fprintf(stderr,"WARNING: A speciation edge is smaller than the specified "
+                     "minimum branch length.\n");
   }
   else
   {
     species_iter = 1;
     if (!opt_quiet)
     {
-      printf("The Null Model is the preferred one.\n");
-      print_null_model(tree);
+      fprintf(stdout, "LRT failed -- null-model is preferred and printed\n");
+      fprintf(out,"\nSpecies 1:\n");
+      rtree_print_tips(tree,out);
     }
   }
+
   if (!opt_quiet)
-  {
     printf("Number of delimited species: %d\n", species_iter);
-  }
-  if (tree->edge_count == 0 && !opt_quiet)
-  {
-    fprintf(stderr, "WARNING: The tree has no edges > %f. All edges have been ignored. \n", opt_minbr);
-  }
+
+  if (tree->edge_count == 0)
+    fprintf(stderr, "WARNING: The tree has no edges > %f. "
+                    "All edges have been ignored. \n", opt_minbr);
+
+  fclose(out);
 }
 
 void dp_init(rtree_t * tree)
@@ -345,27 +312,6 @@ void dp_free(rtree_t * tree)
 
   if (tree->vector) free(tree->vector);
 }
-
-void dp_set_pernode_spec_edges_silly(rtree_t * root, rtree_t * node)
-{
-  if (!node) return;
-
-  node->spec_edge_count = 0;
-  node->spec_edgelen_sum = 0;
-
-  int num_edges_root = root->edge_count;
-  double sum_edges_root = root->edgelen_sum;
-
-  int num_edges_subtree = node->edge_count;
-  double sum_edges_subtree = node->edgelen_sum;
-
-  node->spec_edge_count = num_edges_root - num_edges_subtree;
-  node->spec_edgelen_sum = sum_edges_root - sum_edges_subtree;
-
-  dp_set_pernode_spec_edges_silly(root, node->left);
-  dp_set_pernode_spec_edges_silly(root, node->right);
-}
-
 
 void dp_set_pernode_spec_edges(rtree_t * node)
 {

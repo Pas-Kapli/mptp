@@ -67,9 +67,14 @@ Visualization options:
 * `--svg_marginbottom`
 * `--svg_inner_radius`
 
+Experimental options:
+
+* `--ks_single`
+* `--ks_multi`
+
 ## Usage example
 
-`./delimit --ptp_multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
+`./delimit --ml_multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
 
 ## License and third party licenses
 
@@ -82,10 +87,13 @@ The code is currently licensed under the GNU Affero General Public License versi
 **arch.c**       | Architecture specific code (Mac/Linux).
 **delimit.c**    | Main file handling command-line parameters and executing corresponding parts.
 **dp.c**         | Single- and multi-rate DP heuristics for solving the PTP problem.
+**knapsack.c**   | Experimental knapsack-based DP heuristic.
 **lca_utree.c**  | Naive LCA computation in unrooted trees.
 **lex_rtree.l**  | Lexical analyzer parsing newick rooted trees.
 **lex_utree.l**  | Lexical analyzer parsing newick unrooted trees.
+**likelihood.c** | Likelihood rated functions.
 **Makefile**     | Makefile.
+**output.c**     | Output related files.
 **parse_rtree.y**| Functions for parsing rooted trees in newick format.
 **parse_utree.y**| Functions for parsing unrooted trees in newick format.
 **priors.c**     | Prior related functions.

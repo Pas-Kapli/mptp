@@ -200,6 +200,8 @@ extern long opt_ml_multi;
 extern long opt_ml_single;
 extern long opt_bayes_multi;
 extern long opt_bayes_single;
+extern long opt_ks_single;
+extern long opt_ks_multi;
 extern long opt_bayes_runs;
 extern long opt_svg;
 extern long opt_svg_width;
@@ -248,6 +250,7 @@ char * xstrndup(const char * s, size_t len);
 long getusec(void);
 void show_rusage();
 int extract2f(char * text, double * a, double * b);
+FILE * xopen(const char * filename, const char * mode);
 
 /* functions in delimit.c */
 
@@ -259,6 +262,8 @@ void show_header(void);
 void cmd_ml_single(void);
 void cmd_ml_multi(void);
 void cmd_score(void);
+void cmd_ks_multi(void);
+void cmd_ks_single(void);
 
 /* functions in parse_rtree.y */
 
@@ -289,6 +294,7 @@ char * rtree_export_newick(rtree_t * root);
 int rtree_query_tipnodes(rtree_t * root, rtree_t ** node_list);
 int rtree_query_innernodes(rtree_t * root, rtree_t ** node_list);
 void rtree_reset_info(rtree_t * root);
+void rtree_print_tips(rtree_t * node, FILE * out);
 int rtree_traverse(rtree_t * root,
                    int (*cbtrav)(rtree_t *),
                    rtree_t ** outbuffer);
@@ -334,3 +340,24 @@ double bin_logpmf(unsigned int k, bin_params_t * params);
 double nbin_logpmf(unsigned int k, nbin_params_t * params);
 double uni_logpdf(double x, uni_params_t * params);
 double exp_logpdf(double x, exp_params_t * params);
+
+/* functions in knapsack.c */
+
+void dp_knapsack(rtree_t * root, int method);
+
+/* functions in likelihood.c */
+
+double loglikelihood(int edge_count, double edgelen_sum);
+int lrt(double nullmodel_logl, double ptp_logl, unsigned int df, double * pvalue);
+
+/* functions in output.c */
+
+void output_info(FILE * out,
+  		 int method,
+		 double nullmodel_logl,
+		 double logl,
+		 double pvalue,
+		 int lrt_result,
+                 rtree_t * root);
+
+FILE * open_file_ext(const char * extension);

@@ -299,3 +299,12 @@ void rtree_reset_info(rtree_t * root)
     root->edgelen_sum += root->right->length;
   }
 }
+
+void rtree_print_tips(rtree_t * node, FILE * out)
+{
+  if (node->left)  rtree_print_tips(node->left,out);
+  if (node->right) rtree_print_tips(node->right,out);
+
+  if (!node->left && !node->right)
+    fprintf(out, "%s\n", node->label);
+}
