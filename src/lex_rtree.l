@@ -73,9 +73,9 @@ static char * append(size_t * dstlen, const char * src, size_t srclen)
 \,                                           return COMMA;
 \"                                           {string_length = 0; BEGIN(quot);}
 \'                                           {string_length = 0; BEGIN(apos);}
-[a-zA-Z\._0-9]*[a-zA-Z_][a-zA-Z\._0-9]*      {rtree_lval.s = xstrndup(rtree_text, rtree_leng); return STRING;}
 [\+|\-]?[0-9]+                               {rtree_lval.d = xstrndup(rtree_text, rtree_leng); return NUMBER;}
 [\+|\-]?[0-9]+\.[0-9]+([e|E][\+|\-]?[0-9]+)? {rtree_lval.d = xstrndup(rtree_text, rtree_leng); return NUMBER;}
+[A-Za-z0-9\'\.\-\_]*                         {rtree_lval.s = xstrndup(rtree_text, rtree_leng); return STRING;}
 [ \t\n\r]                                    ;
 .                                            {fatal("Syntax error (%c)\n", rtree_text[0]);}
 %%
