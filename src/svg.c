@@ -300,7 +300,7 @@ static void svg_rtree_init(rtree_t * root)
 void cmd_svg(rtree_t * root)
 {
   if (!opt_quiet)
-    fprintf(stdout,"Creating SVG file %s.txt ...\n", opt_outfile);
+    fprintf(stdout,"Creating SVG file %s.svg ...\n", opt_outfile);
 
   svg_fp = open_file_ext(".svg");
 
