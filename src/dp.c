@@ -174,15 +174,18 @@ static void backtrack(rtree_t * node,
 void dp_ptp(rtree_t * tree, int method, prior_t * prior)
 {
   int i;
+  int lrt_pass;
+  int species_count;
+  int best_index = 0;
+  double max = 0;
+  double pvalue = -1;
+
 
   /* reset species counter */
   species_iter = 0;
 
   /* fill DP table */
   dp_recurse(tree, method, prior);
-
-  double max = 0;
-  int best_index = 0;
 
   /* obtain best entry in the root DP table */
   dp_vector_t * vec = tree->vector;
@@ -227,8 +230,8 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   }
 
   /* do a Likelihood Ratio Test (lrt) and return the computed p-value */
-  double pvalue = -1;
-  int lrt_pass;
+  species_count = vec[best_index].species_count;
+
   lrt_pass = lrt(tree->coal_logl,
                  (method == PTP_METHOD_MULTI) ?
                    vec[best_index].score_multi : vec[best_index].score_single,
@@ -247,7 +250,14 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
     fprintf(stdout, "Writing delimitation file %s.txt ...\n", opt_outfile);
 
   /* write information about delimitation to file */
-  output_info(out, method, tree->coal_logl, max, pvalue, lrt_pass, tree);
+  output_info(out,
+              method,
+              tree->coal_logl,
+              max,
+              pvalue,
+              lrt_pass,
+              tree,
+              species_count);
 
   /* if LRT passed, then back-track the DP table and print the delimitation,
      otherwise print the null-model (one single species) */

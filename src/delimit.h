@@ -219,6 +219,7 @@ extern char * opt_treefile;
 extern char * opt_outfile;
 extern char * opt_outgroup;
 extern char * opt_scorefile;
+extern char * cmdline;
 extern prior_t * opt_prior;
 
 /* common data */
@@ -358,6 +359,7 @@ void output_info(FILE * out,
 		 double logl,
 		 double pvalue,
 		 int lrt_result,
-                 rtree_t * root);
+                 rtree_t * root,
+                 int species_count);
 
 FILE * open_file_ext(const char * extension);

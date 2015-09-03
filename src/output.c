@@ -35,22 +35,26 @@ FILE * open_file_ext(const char * extension)
 }
 
 void output_info(FILE * out,
-  		 int method,
-		 double nullmodel_logl,
-		 double logl,
-		 double pvalue,
-		 int lrt_result,
-                 rtree_t * root)
+                 int method,
+                 double nullmodel_logl,
+                 double logl,
+                 double pvalue,
+                 int lrt_result,
+                 rtree_t * root,
+                 int species_count)
 {
-  
+  fprintf(out, "Command: %s\n", cmdline);
   fprintf(out, 
           "Number of edges greater than minimum branch length: %d / %d\n", 
            root->edge_count,
            2 * root->leaves - 2);
   fprintf(out, "Null-model score: %.6f\n", nullmodel_logl);
-  fprintf(out, "Best score for %s coalescent rate: %.6f\n", (method == PTP_METHOD_SINGLE) ?
-  								"single" : "multi",
-                                                            logl);
+  fprintf(out,
+          "Best score for %s coalescent rate: %.6f\n", 
+          (method == PTP_METHOD_SINGLE) ?
+            "single" : "multi",
+          logl);
   fprintf(out, "LRT computed p-value: %.6f\n", pvalue);
   fprintf(out, "LRT: %s\n", lrt_result ? "passed" : "failed");
+  fprintf(out, "Number of delimited species: %d\n", species_count);
 }

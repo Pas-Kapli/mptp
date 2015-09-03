@@ -284,7 +284,15 @@ void dp_knapsack(rtree_t * root, int method)
     fprintf(stdout, "Writing delimitation file %s.txt ...\n", opt_outfile);
 
   /* write information about delimitation to file */
-  output_info(out, method, root->coal_logl, score, pvalue, lrt_pass, root);
+  output_info(out,
+              method,
+              root->coal_logl,
+              score,
+              pvalue,
+              lrt_pass,
+              root,
+              lrt_pass ?
+                species_count : 1);
 
   /* if LRT passed, then back-track the DP table and print the delimitation,
      otherwise print the null-model (one single species) */

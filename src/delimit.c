@@ -23,7 +23,7 @@
 
 static char * progname;
 static char progheader[80];
-static char * cmdline;
+char * cmdline;
 
 /* global error message buffer */
 char errmsg[200] = {0};
