@@ -54,7 +54,7 @@ In order to compute the Kassian Score, we used the following trick. In a first s
 \Input{A phylogenetic tree $T$ with edges $E$ and nodes $V$, a node $v$}
 \Output{The number of edges taken until a MRCA node other than $v$ was visited on the path from $v$ to the root of $T$}
 
-\underline{function findPenalty $(T, v)$}\
+\underline{function findPenalty $(T, v)$}\\
 penalty $\gets$ $0$\;
 
 steps $\gets$ $0$\;
@@ -72,7 +72,7 @@ currentNode $\gets$ $v$\;
 \Input{A phylogenetic tree $T$ with edges $E$ and nodes $V$, a set of MRCA nodes $S_1$, a set of MRCA nodes $S_2$}
 \Output{The minimum number of moves needed to transform the given sets of MRCA nodes into each other}
 
-\underline{function computeKassianScore $(T, S_1, S_2)$}\
+\underline{function computeKassianScore $(T, S_1, S_2)$}\\
 
 kassianScore $\gets$ $0$\;
 
