@@ -9,6 +9,8 @@
 \usepackage{amssymb}
 \usepackage{tikz}
 \usepackage[linesnumbered,ruled]{algorithm2e}
+\usepackage{graphicx}
+\usepackage{subfig}
 
 \newcounter{instr}
 \newcommand{\ninstr}{\refstepcounter{instr}\theinstr.}
@@ -30,7 +32,17 @@ An explanation of the Kassian score.
 \end{abstract}
 
 \section{Kassian Score}
-In order to compare the maximum likelihood delimitation model with the known real species assignments, we defined the \emph{Kassian Score}. Given two sets of most recent common ancestors (MRCAs) and a phylogenetic tree, the Kassian Score counts the number of movements in the tree needed to transform the one set of MRCAs into the other. We considered two possible moves. The first move is that a MRCA node can be pushed one layer downwards, turning its children nodes into MRCAs instead. The second move is that a MRCA node can be pulled one layer downwards, turning its parent node into a MRCA instead. Figure TODO shows both possible moves.
+In order to compare the maximum likelihood delimitation model with the known real species assignments, we defined the \emph{Kassian Score}. Given two sets of most recent common ancestors (MRCAs) and a phylogenetic tree, the Kassian Score counts the minimum number of movements in the tree needed to transform the one set of MRCAs into the other. We considered two possible moves. The first move is that a MRCA node can be pushed one layer downwards, turning its children nodes into MRCAs instead. The second move is that a MRCA node can be pulled one layer downwards, turning its parent node into a MRCA instead. Figure~\ref{fig:movements} shows both possible moves.
+
+\begin{figure}[H!]
+\centering
+\subfloat[Before moving the node $b$ upwards in the tree, the nodes $b$ and $c$ are MRCAs. After the upward move, $a$ is the only MRCA in the subtree.]{\includegraphics[scale=0.35]{images/move_up.pdf}} 
+
+\subfloat[Before pushing the node $b$ down in the tree, the nodes $b$ and $c$ are MRCAs. After the downward move, $d$, $e$ and $c$ are the MRCAs in the subtree.]{\includegraphics[scale=0.35]{images/move_down.pdf}} 
+   
+\caption{The possible moves in the Kassian Score. In each movement step, a MRCA node can either be moved one layer up or one layer down in the tree.}
+\label{fig:movements}
+\end{figure}
 
 \paragraph{Computation}
 In order to compute the Kassian Score, we used the following trick. In a first step, we marked all MRCA nodes from either the first set or the second set of MRCAs in the tree. Starting from each marked node, we followed the path from it to the root of the tree, counting the number of edges taken. If we encountered another marked node on our way, the number of edges already taken was added as a penalty to the Kassian Score. Algorithm TODO shows the pseudocode of this approach.
