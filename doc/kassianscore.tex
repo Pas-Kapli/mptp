@@ -1,0 +1,40 @@
+% This is LLNCS.DEM the demonstration file of
+% the LaTeX macro package from Springer-Verlag
+% for Lecture Notes in Computer Science,
+% version 2.4 for LaTeX2e as of 16. April 2010
+%
+\documentclass{llncs}
+%
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage[linesnumbered,ruled]{algorithm2e}
+
+\newcounter{instr}
+\newcommand{\ninstr}{\refstepcounter{instr}\theinstr.}
+
+\begin{document}
+
+\title{Kassian score}
+
+\titlerunning{Kassian score}
+
+%\author{Tom\'{a}\v{s} Flouri\inst{1} \and Paschalia Kapli\inst{1} \and Sarah Lutteropp\inst{1}}
+\authorrunning{Tom\'{a}\v{s} Flouri et al.} % abbreviated author list
+\institute{Heidelberg Institute of Theoretical Studies}
+
+\maketitle
+
+\begin{abstract}
+An explanation of the Kassian score.
+\end{abstract}
+
+\section{Kassian Score}
+In order to compare the maximum likelihood delimitation model with the known real species assignments, we defined the \emph{Kassian Score}. Given two sets of most recent common ancestors (MRCAs) and a phylogenetic tree, the Kassian Score counts the number of movements in the tree needed to transform the one set of MRCAs into the other. We considered two possible moves. The first move is that a MRCA node can be pushed one layer downwards, turning its children nodes into MRCAs instead. The second move is that a MRCA node can be pulled one layer downwards, turning its parent node into a MRCA instead. Figure TODO shows both possible moves.
+
+\paragraph{Computation}
+In order to compute the Kassian Score, we used the following trick. In a first step, we marked all MRCA nodes from either the first set or the second set of MRCAs in the tree. Starting from each marked node, we followed the path from it to the root of the tree, counting the number of edges taken. If we encountered another marked node on our way, the number of edges already taken was added as a penalty to the Kassian Score. Algorithm TODO shows the pseudocode of this approach.
+
+\bibliographystyle{splncs03}
+\bibliography{delimit}
+\end{document}
