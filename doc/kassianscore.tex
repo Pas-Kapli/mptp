@@ -108,6 +108,9 @@ The pseudocode given in Algorithm~\ref{algo:kassianscore} returns a penalty that
 \label{fig:problem}
 \end{figure}
 
+\paragraph{How to fix this:}
+It suffices to consider only downward moves. When we encounter the first other MRCA node on our path from a MRCA node to the root, we need to update our markings (i.e., really do the downward moves!).
+
 \bibliographystyle{splncs03}
 \bibliography{delimit}
 \end{document}
