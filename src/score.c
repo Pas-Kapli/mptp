@@ -232,11 +232,25 @@ static int walk_to_root(rtree_t * starting_node, rtree_t * root)
   rtree_t * current_node = starting_node;
   while(current_node != root)
   {
+    bool is_left_child = false;
+    if (current_node->parent->left == current_node)
+    {
+      is_left_child = true;
+    }
     current_node = current_node->parent;
     steps++;
     if (((score_information*)current_node->data)->marked)
     {
+      ((score_information*)current_node->data)->marked = false;
+      if (is_left_child)
+      {
+        ((score_information*)current_node->right->data)->marked = true;
+      }
+      else {
+        ((score_information*)current_node->left->data)->marked = true;
+      }
       penalty = steps;
+
       break;
     }
   }
