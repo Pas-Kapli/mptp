@@ -98,6 +98,16 @@ kassianScore $\gets$ $0$\;
 \label{algo:kassianscore}
 \end{algorithm}
 
+\section{Problem: The Computation is wrong!}
+The pseudocode given in Algorithm~\ref{algo:kassianscore} returns a penalty that is too high. Consider the example in Figure~\ref{fig:problem}.
+
+\begin{figure}[H!]
+\centering
+\includegraphics[scale=0.5]{images/problem_with_kassian_score.pdf}
+\caption{Assume that we want to transform the MRCA set $S_1 = \{x\}$ into the MRCA set $S_2 = \{y,z\}$. We can do this by moving $x$ downwards, thus having to do only a single movement. The computation from Algorithm~\ref{algo:kassianscore} would return a Kassian Scor of $2$ moves, however.}
+\label{fig:problem}
+\end{figure}
+
 \bibliographystyle{splncs03}
 \bibliography{delimit}
 \end{document}
