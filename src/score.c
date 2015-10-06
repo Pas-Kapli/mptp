@@ -230,40 +230,6 @@ static int walk_to_root(rtree_t * starting_node, rtree_t * root)
       break;
     }
   }
-
-  if (penalty > 0) // actually perform the moves in the tree
-  {
-    current_node = starting_node;
-    while (current_node != root)
-    {
-      bool is_left_child = true;
-      if (current_node->parent->left != current_node)
-      {
-        is_left_child = false;
-      }
-      current_node = current_node->parent;
-      if (is_left_child)
-      {
-        score_information* right_data = 
-          (score_information*) (current_node->right->data);
-        right_data->marked = true;
-      }
-      else
-      {
-        score_information* left_data = 
-          (score_information*) (current_node->left->data);
-        left_data->marked = true;
-      }
-      score_information* current_data = 
-          (score_information*) (current_node->data);
-      if (current_data->marked)
-      {
-        current_data->marked = false;
-        break;
-      }
-    }
-  }
-
   return penalty;
 }
 
