@@ -37,7 +37,8 @@ PROG=delimit
 all: $(PROG)
 
 OBJS=util.o delimit.o parse_rtree.o parse_utree.o lex_rtree.o lex_utree.o \
-     arch.o rtree.o utree.o lca_utree.o dp.o score.o svg.o priors.o
+     arch.o rtree.o utree.o lca_utree.o dp.o score.o svg.o priors.o knapsack.o \
+     likelihood.o output.o
 
 $(PROG): $(OBJS)
 	$(CC) -Wall $(LINKFLAGS) $+ -o $@ $(LIBS)

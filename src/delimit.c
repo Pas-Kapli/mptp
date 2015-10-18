@@ -23,7 +23,7 @@
 
 static char * progname;
 static char progheader[80];
-static char * cmdline;
+char * cmdline;
 
 /* global error message buffer */
 char errmsg[200] = {0};
@@ -43,6 +43,8 @@ long opt_ml_multi;
 long opt_ml_single;
 long opt_bayes_multi;
 long opt_bayes_single;
+long opt_ks_single;
+long opt_ks_multi;
 long opt_bayes_runs;
 long opt_svg;
 long opt_svg_width;
@@ -61,6 +63,16 @@ char * opt_outfile;
 char * opt_outgroup;
 char * opt_scorefile;
 prior_t * opt_prior;
+
+static void dealloc_prior()
+{
+  if (opt_prior) 
+  {
+    if (opt_prior->params)
+      free(opt_prior->params);
+    free(opt_prior);
+  }
+}
 
 static struct option long_options[] =
 {
@@ -89,6 +101,10 @@ static struct option long_options[] =
   {"precision",          required_argument, 0, 0 },  /* 22 */
   {"bayes_multi",        required_argument, 0, 0 },  /* 23 */
   {"bayes_single",       required_argument, 0, 0 },  /* 24 */
+  {"prior_exp",          required_argument, 0, 0 },  /* 25 */
+  {"prior_gamma",        required_argument, 0, 0 },  /* 26 */
+  {"ks_single",          no_argument,       0, 0 },  /* 27 */
+  {"ks_multi",           no_argument,       0, 0 },  /* 28 */
   { 0, 0, 0, 0 }
 };
 
@@ -113,6 +129,8 @@ void args_init(int argc, char ** argv)
   opt_ml_single = 0;
   opt_bayes_multi = 0;
   opt_bayes_single = 0;
+  opt_ks_single = 0;
+  opt_ks_multi = 0;
   opt_scorefile = NULL;
   opt_pvalue = 0.001;
   opt_minbr = 0.0001;
@@ -247,6 +265,37 @@ void args_init(int argc, char ** argv)
         opt_bayes_runs = atoi(optarg);
         break;
 
+      case 25:
+        dealloc_prior();
+
+        opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
+        opt_prior->dist = PRIOR_EXP;
+
+        exp_params_t * exp_params =(exp_params_t *)xmalloc(sizeof(exp_params_t));
+        exp_params->rate = atof(optarg);
+        opt_prior->params = (void *)exp_params;
+        break;
+
+      case 26:
+        dealloc_prior();
+
+        opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
+        opt_prior->dist = PRIOR_GAMMA;
+
+        gamma_params_t * gamma_params = (gamma_params_t *)xmalloc(sizeof(gamma_params_t));
+        if (!extract2f(optarg, &(gamma_params->alpha), &(gamma_params->beta)))
+          fatal("Incorrect format for --prior_gamma");
+        opt_prior->params = (void *)gamma_params;
+        break;
+
+      case 27:
+        opt_ks_single = 1;
+        break;
+
+      case 28:
+        opt_ks_multi = 1;
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -278,6 +327,10 @@ void args_init(int argc, char ** argv)
     commands++;
   if (opt_scorefile)
     commands++;
+  if (opt_ks_single)
+    commands++;
+  if (opt_ks_multi)
+    commands++;
 
   /* if more than one independent command, fail */
   if (commands > 1)
@@ -289,7 +342,6 @@ void args_init(int argc, char ** argv)
     opt_help = 1;
     return;
   }
-
   /* check for mandatory options */
   if (mand_options != mandatory_options_count)
     fatal("Mandatory options are:\n\n%s", mandatory_options_list);
@@ -338,6 +390,9 @@ void cmd_help()
           "  --svg_margintop                Top margin in pixels (default: 20).\n"
           "  --svg_marginbottom             Bottom margin in pixels (default: 20).\n"
           "  --svg_inner_radius             Radius of inner nodes in pixels (default: 0).\n"
+          "Experimental options:\n"
+          "  --ks_single                     Maximum-likelihood PTP with a single lambda for all coalescent (DP knapsack algorithm)\n"
+          "  --ks_multi                      Maximum-likelihood PTP with one lambda per coalescent (DP knapsack algorithm)\n"
          );
 }
 
@@ -370,13 +425,13 @@ static rtree_t * load_tree(void)
     if (!opt_quiet)
       fprintf(stdout, "Loaded rooted tree...\n");
   }
-  
+
   return rtree;
 }
 
 void cmd_ml_multi()
 {
-  
+
   rtree_t * rtree = load_tree();
 
   dp_init(rtree);
@@ -386,9 +441,6 @@ void cmd_ml_multi()
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Writing tree file...\n");
 
   cmd_svg(rtree);
 
@@ -412,8 +464,43 @@ void cmd_ml_single()
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
+  cmd_svg(rtree);
+
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
+
   if (!opt_quiet)
-    fprintf(stdout, "Writing tree file...\n");
+    fprintf(stdout, "Done...\n");
+}
+
+void cmd_ks_single()
+{
+
+  rtree_t * rtree = load_tree();
+
+  dp_knapsack(rtree, PTP_METHOD_SINGLE);
+
+  if (opt_treeshow)
+    rtree_show_ascii(rtree);
+
+  cmd_svg(rtree);
+
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
+
+  if (!opt_quiet)
+    fprintf(stdout, "Done...\n");
+}
+
+void cmd_ks_multi()
+{
+
+  rtree_t * rtree = load_tree();
+
+  dp_knapsack(rtree, PTP_METHOD_MULTI);
+
+  if (opt_treeshow)
+    rtree_show_ascii(rtree);
 
   cmd_svg(rtree);
 
@@ -426,8 +513,6 @@ void cmd_ml_single()
 
 void cmd_score()
 {
-  FILE * out;
-
   /* parse tree */
   if (!opt_quiet)
     fprintf(stdout, "Parsing tree file...\n");
@@ -462,20 +547,7 @@ void cmd_score()
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
-  if (!opt_quiet)
-    fprintf(stdout, "Writing tree file...\n");
-
-  /* export tree structure to newick string */
-  char * newick = rtree_export_newick(rtree);
-
-  /* Write newick to file */
-  out = fopen(opt_outfile, "w");
-  if (!out)
-    fatal("Cannot write to file %s", opt_outfile);
-
-  fprintf(out, "%s", newick);
-  fclose(out);
-  free(newick);
+  cmd_svg(rtree);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
@@ -551,6 +623,17 @@ int main (int argc, char * argv[])
   {
     cmd_score();
   }
+  else if (opt_ks_single)
+  {
+    cmd_ks_single();
+  }
+  else if (opt_ks_multi)
+  {
+    cmd_ks_multi();
+  }
+
+  /* free prior information */
+  dealloc_prior();
 
   free(cmdline);
   return (0);

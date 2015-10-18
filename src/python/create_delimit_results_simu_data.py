@@ -42,13 +42,13 @@ def run_delimit_on_data(input_tree_file, output_delimit_single_minbr_0_file, out
 	except IOError:
 		print "File not found: " + input_tree_file
 
-set_names = ["Ne10000", "Ne100000", "Ne500000", "Ne1000000"]
+set_names = ["Ne1e+05", "Ne1e+06", "Ne5e+05", "Ne10000"]
 
 for set_name in set_names:
 	for i in range(1,101):
-		input_tree_file = "similar_to_GMYC/15-08-2015.16-40/set_BIRTH0.27_" + set_name + "/rooted.RAxML_result.inferred.simulated_set_BIRTH0.27_" + set_name + "_" + str(i) + ".phy"
-		output_delimit_single_minbr_0_file = "similar_to_GMYC_delimit_single_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
-		output_delimit_multi_minbr_0_file = "similar_to_GMYC_delimit_multi_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
-		output_delimit_single_minbr_default_file = "similar_to_GMYC_delimit_single_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
-		output_delimit_multi_minbr_default_file = "similar_to_GMYC_delimit_multi_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		input_tree_file = "SimulB_C_trees/set_" + set_name + "/SimulB_C_tree_set_" + set_name + "." + str(i) + ".txt"
+		output_delimit_single_minbr_0_file = "SimulB_C_delimit_single_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		output_delimit_multi_minbr_0_file = "SimulB_C_delimit_multi_minbr_0/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		output_delimit_single_minbr_default_file = "SimulB_C_delimit_single_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
+		output_delimit_multi_minbr_default_file = "SimulB_C_delimit_multi_minbr_default/set_" + set_name + "/delimit_results_set_" + set_name + "." + str(i) + ".txt"
 		run_delimit_on_data(input_tree_file, output_delimit_single_minbr_0_file, output_delimit_multi_minbr_0_file, output_delimit_single_minbr_default_file, output_delimit_multi_minbr_default_file)

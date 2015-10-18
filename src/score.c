@@ -30,15 +30,11 @@ typedef struct node_information_score
   int current_species_input; // for finding the alternative mrca
 } score_information;
 
-static double loglikelihood(int edge_count, double edgelen_sum)
+typedef struct node_information_score_paschalia
 {
-  assert(edge_count >= 0);
-
-  /* TODO: Find out whether edgelen_sum == 0 makes sense */
-  if (edge_count == 0 || edgelen_sum == 0) return 0;
-  
-  return edge_count * (log(edge_count) - 1 - log(edgelen_sum));
-}
+  bool is_real_mrca;
+  char* current_species_real; // for finding the "real" mrca
+} score_information_p;
 
 static void init_tree_data_score(rtree_t * tree)
 {
@@ -158,6 +154,16 @@ static void retrieve_mrca_nodes(rtree_t * tree,
     if (data_left->current_species_real == data_right->current_species_real)
     {
       data_current->current_species_real = data_left->current_species_real;
+      if (!tree->parent) // root node
+      {
+        if (data_left->current_species_real != -1 ||
+           data_right->current_species_real != -1)
+        {
+          data_current->marked = true;
+          data_current->is_real_mrca = true;
+          (*num_species_real)++;
+        }
+      }
     }
     else
     {
@@ -182,6 +188,16 @@ static void retrieve_mrca_nodes(rtree_t * tree,
     if (data_left->current_species_input == data_right->current_species_input)
     {
       data_current->current_species_input = data_left->current_species_input;
+      if (!tree->parent) // root node
+      {
+        if (data_left->current_species_input != -1 ||
+           data_right->current_species_input != -1)
+        {
+          data_current->marked = true;
+          data_current->is_input_mrca = true;
+          (*num_species_input)++;
+        }
+      }
     }
     else
     {
@@ -202,9 +218,34 @@ static void retrieve_mrca_nodes(rtree_t * tree,
   else if (!tree->left && !tree->right) // leaf node
   {
     char * label = tree->label;
-    char * species_idx_real = strtok(label,".");
 
-    assert(atoi(species_idx_real) <= 30); // TODO: remove this again
+    // species names in Paschalia mode:
+
+    printf("Thing to decode: %s\n", label);
+
+    strtok(label,"_");
+    char* s1 = strtok(NULL,"_");
+    char* s2 = "_";
+    char* s3 = strtok(NULL,"_");
+
+    //printf("%s\n", s1);
+    //printf("%s\n", s3);
+
+    size_t len1 = strlen(s1);
+    size_t len2 = strlen(s2);
+    char * s1s2 = malloc(len1+len2+1);//+1 for the zero-terminator
+    memcpy(s1s2, s1, len1);
+    memcpy(s1s2+len1, s2, len2+1);//+1 to copy the null-terminator
+
+    len1 = strlen(s1s2);
+    len2 = strlen(s3);
+    char * species_idx_real = malloc(len1+len2+1);//+1 for the zero-terminator
+    memcpy(species_idx_real, s1s2, len1);
+    memcpy(species_idx_real+len1, s3, len2+1);//+1 to copy the null-terminator
+
+    printf("%s\n", species_idx_real);
+
+    //assert(atoi(species_idx_real) <= 30); // TODO: remove this again
 
     ((score_information*) tree->data)->current_species_real =
         atoi(species_idx_real);
@@ -222,12 +263,59 @@ static int walk_to_root(rtree_t * starting_node, rtree_t * root)
   rtree_t * current_node = starting_node;
   while(current_node != root)
   {
+    bool is_left_child = false;
+    if (current_node->parent->left == current_node)
+    {
+      is_left_child = true;
+    }
     current_node = current_node->parent;
     steps++;
     if (((score_information*)current_node->data)->marked)
     {
+      ((score_information*)current_node->data)->marked = false;
+      if (is_left_child)
+      {
+        ((score_information*)current_node->right->data)->marked = true;
+      }
+      else {
+        ((score_information*)current_node->left->data)->marked = true;
+      }
       penalty = steps;
+
       break;
+    }
+  }
+  
+  if (penalty > 0) // actually perform the moves in the tree
+  {
+    current_node = starting_node;
+    while (current_node != root)
+    {
+      bool is_left_child = true;
+      if (current_node->parent->left != current_node)
+      {
+        is_left_child = false;
+      }
+      current_node = current_node->parent;
+      if (is_left_child)
+      {
+        score_information* right_data = 
+          (score_information*) (current_node->right->data);
+        right_data->marked = true;
+      }
+      else
+      {
+        score_information* left_data = 
+          (score_information*) (current_node->left->data);
+        left_data->marked = true;
+      }
+      score_information* current_data = 
+          (score_information*) (current_node->data);
+      if (current_data->marked)
+      {
+        current_data->marked = false;
+        break;
+      }
     }
   }
   return penalty;
@@ -314,7 +402,7 @@ static double compute_entropy(rtree_t ** mrca_list,
 static int count_common_taxa(rtree_t * mrca_one, rtree_t * mrca_two)
 {
   // get leaves
-  rtree_t ** leaves_one_list = (rtree_t **)calloc((size_t)(mrca_one->leaves), 
+  rtree_t ** leaves_one_list = (rtree_t **)calloc((size_t)(mrca_one->leaves),
                                                   sizeof(rtree_t));
   rtree_t ** leaves_two_list = (rtree_t **)calloc((size_t)(mrca_two->leaves),
                                                   sizeof(rtree_t));
@@ -407,6 +495,10 @@ static void compute_score(rtree_t * tree,
     num_edges_coalescent += mrca_list[i]->edge_count;
     sum_edges_coalescent += mrca_list[i]->edgelen_sum;
   }
+
+  printf("num_edges_coalescent: %d\n", num_edges_coalescent);
+  printf("edge count: %d\n", tree->edge_count);
+  printf("some number: %d\n", tree->edge_count - num_edges_coalescent);
   speciation = loglikelihood(tree->edge_count - num_edges_coalescent,
                              tree->edgelen_sum - sum_edges_coalescent);
   coalescent_single = loglikelihood(num_edges_coalescent,
@@ -418,7 +510,7 @@ static void compute_score(rtree_t * tree,
 
 void score_delimitation_tree(char * scorefile, rtree_t * tree)
 {
-  rtree_t ** leaves_list = (rtree_t **)calloc((size_t)(tree->leaves), 
+  rtree_t ** leaves_list = (rtree_t **)calloc((size_t)(tree->leaves),
                                               sizeof(rtree_t));
   rtree_query_tipnodes(tree, leaves_list);
 
@@ -431,7 +523,7 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
   int num_species_input = 0;
   retrieve_mrca_nodes(tree, &num_species_real, &num_species_input);
   assert(num_species_real > 0);
-  assert(num_species_real == 30); // TODO: Remove this again
+  //assert(num_species_real == 30); // TODO: Remove this again
   printf("Number of real species: %d\n", num_species_real);
   assert(num_species_input > 0);
   printf("Number of species in input file: %d\n", num_species_input);
@@ -469,4 +561,221 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree)
   free(leaves_list);
   free(mrca_real_list);
   free(mrca_input_list);
+}
+
+static void init_tree_data_score_paschalia(rtree_t * tree)
+{
+  if (tree->left)
+  {
+    init_tree_data_score_paschalia(tree->left);
+  }
+  if (tree->right)
+  {
+    init_tree_data_score_paschalia(tree->right);
+  }
+  score_information_p * info = malloc(sizeof(score_information_p));
+  info->is_real_mrca = false;
+  info->current_species_real = "";
+  tree->data = info;
+}
+
+static void free_tree_data_score_paschalia(rtree_t * tree)
+{
+  if (tree->left)  free_tree_data_score_paschalia(tree->left);
+  if (tree->right) free_tree_data_score_paschalia(tree->right);
+
+  free((score_information_p*) (tree->data));
+
+  tree->data = NULL;
+}
+
+
+static void retrieve_mrca_nodes_paschalia(rtree_t * tree,
+                                int * num_species_real, char * genus_name)
+{
+  // Do a post-order traversal for finding common ancestor nodes.
+  // As long as the current letters are the same, it is the same species.
+  if (tree->left)
+  {
+    retrieve_mrca_nodes_paschalia(tree->left, num_species_real, genus_name);
+  }
+  if (tree->right)
+  {
+    retrieve_mrca_nodes_paschalia(tree->right, num_species_real, genus_name);
+  }
+  if (tree->left && tree->right) // inner node
+  {
+    score_information_p * data_current = (score_information_p*) tree->data;
+    score_information_p * data_left = (score_information_p*) tree->left->data;
+    score_information_p * data_right = (score_information_p*) tree->right->data;
+
+    if (strcmp(data_left->current_species_real, data_right->current_species_real) == 0)
+    {
+      data_current->current_species_real = data_left->current_species_real;
+      if (!tree->parent) // root node
+      {
+        if (strcmp(data_left->current_species_real, "") != 0 ||
+           strcmp(data_right->current_species_real, "") != 0)
+        {
+          data_current->is_real_mrca = true;
+          (*num_species_real)++;
+        }
+      }
+    }
+    else
+    {
+      if (strcmp(data_left->current_species_real, "") != 0)
+      {
+        data_left->is_real_mrca = true;
+        (*num_species_real)++;
+        /*printf("Left: Added real species %d\n", data_left->current_species_real);
+        printf("Left: Right was: %d\n", data_right->current_species_real);*/
+      }
+      if (strcmp(data_right->current_species_real, "") != 0)
+      {
+        data_right->is_real_mrca = true;
+        (*num_species_real)++;
+        /*printf("Right: Added real species %d\n", data_right->current_species_real);
+        printf("Right: Left was: %d\n", data_left->current_species_real);*/
+      }
+    }
+
+  }
+  else if (!tree->left && !tree->right) // leaf node
+  {
+    char * label = tree->label;
+
+    // species names in Paschalia mode:
+
+    //printf("Thing to decode: %s\n", label);
+
+    strtok(label,"_");
+    char* s1 = strtok(NULL,"_");
+
+    if (strcmp(s1, genus_name) == 0)
+    {
+
+      char* s2 = "_";
+      char* s3 = strtok(NULL,"_");
+
+      //printf("%s\n", s1);
+      //printf("%s\n", s3);
+
+      size_t len1 = strlen(s1);
+      size_t len2 = strlen(s2);
+      char * s1s2 = malloc(len1+len2+1);//+1 for the zero-terminator
+      memcpy(s1s2, s1, len1);
+      memcpy(s1s2+len1, s2, len2+1);//+1 to copy the null-terminator
+
+      len1 = strlen(s1s2);
+      len2 = strlen(s3);
+      char * species_idx_real = malloc(len1+len2+1);//+1 for the zero-terminator
+      memcpy(species_idx_real, s1s2, len1);
+      memcpy(species_idx_real+len1, s3, len2+1);//+1 to copy the null-terminator
+
+      //printf("%s\n", species_idx_real);
+
+      ((score_information_p*) tree->data)->current_species_real =
+          species_idx_real;
+    }
+  }
+  else
+  {
+    assert(0); // this should not happen
+  }
+}
+
+static void collect_mrca_nodes_recursive_p(rtree_t * tree,
+                                         rtree_t ** mrca_real_list,
+                                         int * index_real)
+{
+  if (tree->left)
+  {
+    collect_mrca_nodes_recursive_p(tree->left, mrca_real_list,
+      index_real);
+  }
+  if (tree->right)
+  {
+    collect_mrca_nodes_recursive_p(tree->right, mrca_real_list,
+      index_real);
+  }
+
+  score_information_p * data_current = (score_information_p*) tree->data;
+  if (data_current->is_real_mrca)
+  {
+    mrca_real_list[(*index_real)] = tree;
+    (*index_real)++;
+  }
+}
+
+static void collect_mrca_nodes_paschalia(rtree_t * tree,
+                               rtree_t ** mrca_real_list)
+{
+  int index_real = 0;
+  collect_mrca_nodes_recursive_p(tree, mrca_real_list, &index_real);
+}
+
+void retrieve_monophyletic_species(char * treefile, rtree_t * tree) {
+  init_tree_data_score_paschalia(tree);
+  strtok(treefile,".");
+  char * genus_name = strtok(NULL,".");
+  //printf("genus name: %s\n", genus_name);
+  int num_species_real = 0;
+  retrieve_mrca_nodes_paschalia(tree, &num_species_real, genus_name);
+  rtree_t ** mrca_real_list = (rtree_t **)calloc((size_t)num_species_real,
+                                                 sizeof(rtree_t));
+  collect_mrca_nodes_paschalia(tree, mrca_real_list);
+
+  /*printf("These are ALL MRCA nodes in the genus:\n");
+  int i;
+  for (i = 0; i < num_species_real; i++)
+  {
+    score_information_p * data1 =
+      (score_information_p*) (mrca_real_list[i]->data);
+    printf("%s\n", data1->current_species_real);
+  }
+  printf("\n");*/
+
+
+
+  int num_monophyletic_species = 0;
+  int * mono_indices = malloc(sizeof(int) * num_species_real);
+  int i;
+  for (i = 0; i < num_species_real; i++) {
+    bool unique_name = true;
+
+    score_information_p * data1 =
+      (score_information_p*) (mrca_real_list[i]->data);
+    char* name1 = data1->current_species_real;
+    int j;
+    for (j = 0; j < num_species_real; j++) {
+      if (i != j)
+      {
+        char* name2 =
+          ((score_information_p*)(mrca_real_list[j]->data))->current_species_real;
+        if (strcmp(name1, name2) == 0)
+        {
+          unique_name = false;
+          break;
+        }
+      }
+    }
+
+    if (unique_name)
+    {
+      //printf("I claim this name is unique: %s\n", name1);
+      mono_indices[num_monophyletic_species] = i;
+      num_monophyletic_species++;
+    }
+  }
+
+  printf("Found %d monophyletic species in total.\n", num_monophyletic_species);
+  for (i = 0; i < num_monophyletic_species; i++)
+  {
+    int idx = mono_indices[i];
+    score_information_p * data = (score_information_p*) (mrca_real_list[idx]->data);
+    printf("%s\n", data->current_species_real);
+  }
+
+  free_tree_data_score_paschalia(tree);
 }
