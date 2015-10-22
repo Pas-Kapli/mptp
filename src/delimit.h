@@ -126,6 +126,9 @@ typedef struct rtree_s
   /* which process does this node belong to (coalesent or speciation) */
   int event;
 
+  /* slot in which the node resides when doing bayesian analysis */
+  int bayes_slot;
+
   /* dynamic programming vector */
   dp_vector_t * vector;
 
@@ -200,9 +203,11 @@ extern long opt_ml_multi;
 extern long opt_ml_single;
 extern long opt_bayes_multi;
 extern long opt_bayes_single;
+extern long opt_bayes_log;
 extern long opt_ks_single;
 extern long opt_ks_multi;
 extern long opt_bayes_runs;
+extern long opt_seed;
 extern long opt_svg;
 extern long opt_svg_width;
 extern long opt_svg_fontsize;
@@ -363,3 +368,7 @@ void output_info(FILE * out,
                  int species_count);
 
 FILE * open_file_ext(const char * extension);
+
+/* functions in bayes.c */
+
+void bayes(rtree_t * tree, int method, prior_t * prior);

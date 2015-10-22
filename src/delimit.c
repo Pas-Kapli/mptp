@@ -43,9 +43,11 @@ long opt_ml_multi;
 long opt_ml_single;
 long opt_bayes_multi;
 long opt_bayes_single;
+long opt_bayes_log;
 long opt_ks_single;
 long opt_ks_multi;
 long opt_bayes_runs;
+long opt_seed;
 long opt_svg;
 long opt_svg_width;
 long opt_svg_fontsize;
@@ -105,6 +107,8 @@ static struct option long_options[] =
   {"prior_gamma",        required_argument, 0, 0 },  /* 26 */
   {"ks_single",          no_argument,       0, 0 },  /* 27 */
   {"ks_multi",           no_argument,       0, 0 },  /* 28 */
+  {"bayes_log",          required_argument, 0, 0 },  /* 29 */
+  {"seed",               required_argument, 0, 0 },  /* 30 */
   { 0, 0, 0, 0 }
 };
 
@@ -136,6 +140,8 @@ void args_init(int argc, char ** argv)
   opt_minbr = 0.0001;
   opt_precision = 7;
   opt_bayes_runs = 1;
+  opt_bayes_log = 1000;
+  opt_seed = (long)time(NULL);
 
   opt_svg_width = 1920;
   opt_svg_fontsize = 12;
@@ -262,7 +268,7 @@ void args_init(int argc, char ** argv)
 
       case 24:
         opt_bayes_single = 1;
-        opt_bayes_runs = atoi(optarg);
+        opt_bayes_runs = atol(optarg);
         break;
 
       case 25:
@@ -294,6 +300,14 @@ void args_init(int argc, char ** argv)
 
       case 28:
         opt_ks_multi = 1;
+        break;
+
+      case 29:
+        opt_bayes_log = atol(optarg);
+        break;
+
+      case 30:
+        opt_seed = atol(optarg);
         break;
 
       default:
@@ -362,12 +376,14 @@ void cmd_help()
           "  --ml_single                    Maximum-likelihood PTP with a single lambda for all coalescent.\n"
           "  --bayes_multi INT              Bayesian PTP with one lambda per coalescent and INT runs.\n"
           "  --bayes_single INT             Bayesian PTP with a single lambda for all coalescent and INT runs.\n"
+          "  --bayes_log INT                Log every INT sample of the run (default: 1000).\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
           "  --pvalue                       Specify a P-value (default: 0.001)\n"
           "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
           "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
           "  --quiet                        only output warnings and fatal errors to stderr.\n"
           "  --precision                    Precision of decimal part of floating point numbers on output (default: 7).\n"
+          "  --seed                         Seed for pseudo-random number generator.\n"
           "Prior options:\n"
           "  --prior_exp REAL               Rate of exponential prior.\n"
           "  --prior_ln REAL,REAL           Log-normal prior with mean (first param) and standard deviation (second param).\n"
@@ -465,6 +481,25 @@ void cmd_ml_single()
     rtree_show_ascii(rtree);
 
   cmd_svg(rtree);
+
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
+
+  if (!opt_quiet)
+    fprintf(stdout, "Done...\n");
+}
+
+void cmd_bayes_single()
+{
+  rtree_t * rtree = load_tree();
+
+  dp_init(rtree);
+  dp_set_pernode_spec_edges(rtree);
+  bayes(rtree, PTP_METHOD_SINGLE, opt_prior);
+  dp_free(rtree);
+
+  if (opt_treeshow)
+    rtree_show_ascii(rtree);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
@@ -599,6 +634,8 @@ int main (int argc, char * argv[])
 
   show_header();
 
+  srand48(opt_seed);
+
   if (opt_help)
   {
     cmd_help();
@@ -617,7 +654,7 @@ int main (int argc, char * argv[])
   }
   else if (opt_bayes_single)
   {
-    assert(0);
+    cmd_bayes_single();
   }
   else if (opt_scorefile)
   {
