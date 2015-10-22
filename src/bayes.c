@@ -518,10 +518,9 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_crnodes_count / new_snodes_count);
-      a = fmin(a,1);
 
       /* decide whether to accept or reject proposal */
-      if (a <= drand48())
+      if (drand48() <= a)
       {
         /* accept */
         if (i % opt_bayes_log == 0)
@@ -608,14 +607,13 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_snodes_count / new_crnodes_count);
-      a = fmin(a,1);
 
       /* decide whether to accept or reject proposal */
-      if (a <= drand48())
+      if (drand48() <= a)
       {
         /* accept */
         if (i % opt_bayes_log == 0)
-          printf("%ld Log-L %f\n", i, new_logl);
+          printf("%ld Log-L: %f\n", i, new_logl);
           //printf("%d Accepted coalescent with logl %f\n", i, new_logl);
         continue;
       }
@@ -623,7 +621,7 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       {
         /* reject */
         if (i % opt_bayes_log == 0)
-          printf("%ld Log-L %f\n", i, new_logl);
+          printf("%ld Log-L: %f\n", i, new_logl);
           //printf("%d Rejected coalescent with logl %f\n", i, new_logl);
         coal_edgelen_sum -= edgelen_sum_diff;
         coal_edge_count -= edge_count_diff;
