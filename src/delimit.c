@@ -495,44 +495,24 @@ void cmd_ml_single()
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
 }
-void cmd_bayes_multi()
+void cmd_bayes(int method)
 {
   rtree_t * rtree = load_tree();
 
   dp_init(rtree);
   dp_set_pernode_spec_edges(rtree);
-  bayes_multi(rtree, PTP_METHOD_MULTI, opt_prior);
+  bayes(rtree, method, opt_prior);
   dp_free(rtree);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
    
   char * newick = rtree_export_newick(rtree);
-  //printf("%s\n", newick);
-  cmd_svg(rtree);
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
 
-  free(newick);
+  FILE * newick_fp = open_file_ext(".tree");
+  fprintf(newick_fp, "%s\n", newick);
+  fclose(newick_fp);
 
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
-}
-
-void cmd_bayes_single()
-{
-  rtree_t * rtree = load_tree();
-
-  dp_init(rtree);
-  dp_set_pernode_spec_edges(rtree);
-  bayes(rtree, PTP_METHOD_SINGLE, opt_prior);
-  dp_free(rtree);
-
-  if (opt_treeshow)
-    rtree_show_ascii(rtree);
-   
-  char * newick = rtree_export_newick(rtree);
-  //printf("%s\n", newick);
   cmd_svg(rtree);
   /* deallocate tree structure */
   rtree_destroy(rtree);
@@ -685,15 +665,11 @@ int main (int argc, char * argv[])
   }
   else if (opt_bayes_multi)
   {
-    cmd_bayes_multi();
+    cmd_bayes(PTP_METHOD_MULTI);
   }
   else if (opt_bayes_single)
   {
-    cmd_bayes_single();
-  }
-  else if (opt_bayes_multi)
-  {
-    cmd_bayes_multi();
+    cmd_bayes(PTP_METHOD_SINGLE);
   }
   else if (opt_scorefile)
   {

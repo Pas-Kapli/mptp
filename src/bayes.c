@@ -488,11 +488,26 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
   bayes_stats_init(tree);
 
-  /* for single-rate */
-  unsigned int coal_edge_count = tree->edge_count - best_index;
-  unsigned int spec_edge_count = best_index;
-  double spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
-  double coal_edgelen_sum = tree->edgelen_sum - spec_edgelen_sum;
+  unsigned int coal_edge_count = 0;
+  unsigned int spec_edge_count;
+  double spec_edgelen_sum;
+  double coal_edgelen_sum = 0;
+  double coal_score = 0;
+
+  if (method == PTP_METHOD_SINGLE)
+  {
+    coal_edge_count = tree->edge_count - best_index;
+    spec_edge_count = best_index;
+    spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
+    coal_edgelen_sum = tree->edgelen_sum - spec_edgelen_sum;
+  }
+  else
+  {
+    spec_edge_count = best_index;
+    spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
+    coal_score = tree->vector[best_index].score_multi - 
+                      loglikelihood(spec_edge_count, spec_edgelen_sum);
+  }
 
   ml_logl = logl;
 
@@ -542,22 +557,31 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         ++edge_count_diff;
         edgelen_sum_diff += node->right->length;
       }
-
-      coal_edgelen_sum -= edgelen_sum_diff;
-      coal_edge_count -= edge_count_diff;
+      
+      if (method == PTP_METHOD_SINGLE)
+      {
+        coal_edgelen_sum -= edgelen_sum_diff;
+        coal_edge_count -= edge_count_diff;
+      }
       spec_edgelen_sum += edgelen_sum_diff;
       spec_edge_count += edge_count_diff;
 
       /* compute new log-likelihood */
       double new_logl;
-      if (coal_edge_count == 0 || spec_edge_count == 0)
+      if (spec_edge_count == 0 || (method == PTP_METHOD_SINGLE && coal_edge_count == 0))
         new_logl = tree->coal_logl;
       else
       {
-        assert(coal_edge_count > 0);
+        assert((method == PTP_METHOD_MULTI) || (coal_edge_count > 0));
         assert(spec_edge_count > 0);
-        new_logl = loglikelihood(coal_edge_count, coal_edgelen_sum) +
-                   loglikelihood(spec_edge_count, spec_edgelen_sum);
+        if (method == PTP_METHOD_SINGLE)
+          new_logl = loglikelihood(coal_edge_count, coal_edgelen_sum) +
+                     loglikelihood(spec_edge_count, spec_edgelen_sum);
+        else
+          new_logl = coal_score - node->coal_logl + 
+                     node->left->coal_logl + node->right->coal_logl +
+                     loglikelihood(spec_edge_count, spec_edgelen_sum);
+          
       }
 
       if (new_logl > bayes_max_logl)
@@ -570,23 +594,29 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       if (drand48() <= a)
       {
         /* accept */
-        if (i % opt_bayes_log == 0)
-          printf("%ld Log-L: %f\n", i, new_logl);
+        if ((i+1) % opt_bayes_log == 0)
+          printf("%ld Log-L: %f\n", i+1, new_logl);
 
         /* update support values information */
         node->speciation_start = accept_count;
         accept_count++;
         logl = new_logl;
+        if (method == PTP_METHOD_MULTI)
+          coal_score = coal_score - node->coal_logl +
+                       node->left->coal_logl + node->right->coal_logl;
         continue;
       }
       else
       { 
         /* reject */
-        if (i % opt_bayes_log == 0)
-          printf("%ld Log-L: %f\n", i, new_logl);
+        if ((i+1) % opt_bayes_log == 0)
+          printf("%ld Log-L: %f\n", i+1, new_logl);
 
-        coal_edgelen_sum += edgelen_sum_diff;
-        coal_edge_count += edge_count_diff;
+        if (method == PTP_METHOD_SINGLE)
+        {
+          coal_edgelen_sum += edgelen_sum_diff;
+          coal_edge_count += edge_count_diff;
+        }
         spec_edgelen_sum -= edgelen_sum_diff;
         spec_edge_count -= edge_count_diff;
         coalesce(node->bayes_slot);
@@ -629,21 +659,30 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         ++edge_count_diff;
         edgelen_sum_diff += node->right->length;
       }
-      coal_edgelen_sum += edgelen_sum_diff;
-      coal_edge_count += edge_count_diff;
+      if (method == PTP_METHOD_SINGLE)
+      {
+        coal_edgelen_sum += edgelen_sum_diff;
+        coal_edge_count += edge_count_diff;
+      }
       spec_edgelen_sum -= edgelen_sum_diff;
       spec_edge_count -= edge_count_diff;
 
       /* compute new log-likelihood */
       double new_logl;
-      if (coal_edge_count == 0 || spec_edge_count == 0)
+      if (spec_edge_count == 0 || (method == PTP_METHOD_SINGLE && coal_edge_count == 0))
         new_logl = tree->coal_logl;
       else
       {
-        assert(coal_edge_count > 0);
+        assert((method == PTP_METHOD_MULTI) || (coal_edge_count > 0));
         assert(spec_edge_count > 0);
-        new_logl = loglikelihood(coal_edge_count, coal_edgelen_sum) +
-                   loglikelihood(spec_edge_count, spec_edgelen_sum);
+        if (method == PTP_METHOD_SINGLE)
+          new_logl = loglikelihood(coal_edge_count, coal_edgelen_sum) +
+                     loglikelihood(spec_edge_count, spec_edgelen_sum);
+        else
+          new_logl = coal_score - node->left->coal_logl - node->right->coal_logl + 
+                     node->coal_logl +
+                     loglikelihood(spec_edge_count, spec_edgelen_sum);
+
       }
 
       if (new_logl > bayes_max_logl)
@@ -656,8 +695,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       if (drand48() <= a)
       {
         /* accept */
-        if (i % opt_bayes_log == 0)
-          printf("%ld Log-L: %f\n", i, new_logl);
+        if ((i+1) % opt_bayes_log == 0)
+          printf("%ld Log-L: %f\n", i+1, new_logl);
 
         /* update support values information */
         node->speciation_count = node->speciation_count + 
@@ -666,15 +705,22 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         node->speciation_start = -1;
         accept_count++;
         logl = new_logl;
+        if (method == PTP_METHOD_MULTI)
+          coal_score = coal_score - node->left->coal_logl - node->right->coal_logl + 
+                       node->coal_logl;
+
         continue;
       }
       else
       {
         /* reject */
-        if (i % opt_bayes_log == 0)
-          printf("%ld Log-L: %f\n", i, new_logl);
-        coal_edgelen_sum -= edgelen_sum_diff;
-        coal_edge_count -= edge_count_diff;
+        if ((i+1) % opt_bayes_log == 0)
+          printf("%ld Log-L: %f\n", i+1, new_logl);
+        if (method == PTP_METHOD_SINGLE)
+        {
+          coal_edgelen_sum -= edgelen_sum_diff;
+          coal_edge_count -= edge_count_diff;
+        }
         spec_edgelen_sum += edgelen_sum_diff;
         spec_edge_count += edge_count_diff;
         speciate(node->bayes_slot);

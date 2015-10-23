@@ -274,8 +274,7 @@ void cmd_ml_multi(void);
 void cmd_score(void);
 void cmd_ks_multi(void);
 void cmd_ks_single(void);
-void cmd_bayes_single(void);
-void cmd_bayes_multi(void);
+void cmd_bayes(int method);
 
 /* functions in parse_rtree.y */
 
