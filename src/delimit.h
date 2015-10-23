@@ -128,6 +128,9 @@ typedef struct rtree_s
 
   /* slot in which the node resides when doing bayesian analysis */
   int bayes_slot;
+  long speciation_start;
+  long speciation_count;
+  double support;
 
   /* dynamic programming vector */
   dp_vector_t * vector;
@@ -217,6 +220,7 @@ extern long opt_svg_marginright;
 extern long opt_svg_margintop;
 extern long opt_svg_marginbottom;
 extern long opt_svg_inner_radius;
+extern long opt_bayes_startnull;
 extern double opt_svg_legend_ratio;
 extern double opt_pvalue;
 extern double opt_minbr;
@@ -270,6 +274,8 @@ void cmd_ml_multi(void);
 void cmd_score(void);
 void cmd_ks_multi(void);
 void cmd_ks_single(void);
+void cmd_bayes_single(void);
+void cmd_bayes_multi(void);
 
 /* functions in parse_rtree.y */
 
@@ -372,3 +378,7 @@ FILE * open_file_ext(const char * extension);
 /* functions in bayes.c */
 
 void bayes(rtree_t * tree, int method, prior_t * prior);
+
+/* functions in bayes_multi.c */
+
+void bayes_multi(rtree_t * tree, int method, prior_t * prior);

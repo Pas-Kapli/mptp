@@ -57,6 +57,7 @@ long opt_svg_marginright;
 long opt_svg_margintop;
 long opt_svg_marginbottom;
 long opt_svg_inner_radius;
+long opt_bayes_startnull;
 double opt_svg_legend_ratio;
 double opt_pvalue;
 double opt_minbr;
@@ -109,6 +110,7 @@ static struct option long_options[] =
   {"ks_multi",           no_argument,       0, 0 },  /* 28 */
   {"bayes_log",          required_argument, 0, 0 },  /* 29 */
   {"seed",               required_argument, 0, 0 },  /* 30 */
+  {"bayes_startnull",    no_argument,       0, 0 },  /* 31 */ 
   { 0, 0, 0, 0 }
 };
 
@@ -141,6 +143,7 @@ void args_init(int argc, char ** argv)
   opt_precision = 7;
   opt_bayes_runs = 1;
   opt_bayes_log = 1000;
+  opt_bayes_startnull = 0;
   opt_seed = (long)time(NULL);
 
   opt_svg_width = 1920;
@@ -308,6 +311,10 @@ void args_init(int argc, char ** argv)
 
       case 30:
         opt_seed = atol(optarg);
+        break;
+
+      case 31:
+        opt_bayes_startnull = 1;
         break;
 
       default:
@@ -488,6 +495,29 @@ void cmd_ml_single()
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
 }
+void cmd_bayes_multi()
+{
+  rtree_t * rtree = load_tree();
+
+  dp_init(rtree);
+  dp_set_pernode_spec_edges(rtree);
+  bayes_multi(rtree, PTP_METHOD_MULTI, opt_prior);
+  dp_free(rtree);
+
+  if (opt_treeshow)
+    rtree_show_ascii(rtree);
+   
+  char * newick = rtree_export_newick(rtree);
+  //printf("%s\n", newick);
+  cmd_svg(rtree);
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
+
+  free(newick);
+
+  if (!opt_quiet)
+    fprintf(stdout, "Done...\n");
+}
 
 void cmd_bayes_single()
 {
@@ -500,9 +530,14 @@ void cmd_bayes_single()
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
-
+   
+  char * newick = rtree_export_newick(rtree);
+  //printf("%s\n", newick);
+  cmd_svg(rtree);
   /* deallocate tree structure */
   rtree_destroy(rtree);
+
+  free(newick);
 
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
@@ -650,11 +685,15 @@ int main (int argc, char * argv[])
   }
   else if (opt_bayes_multi)
   {
-    assert(0);
+    cmd_bayes_multi();
   }
   else if (opt_bayes_single)
   {
     cmd_bayes_single();
+  }
+  else if (opt_bayes_multi)
+  {
+    cmd_bayes_multi();
   }
   else if (opt_scorefile)
   {
