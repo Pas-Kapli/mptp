@@ -429,11 +429,10 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
   /* TODO: DEBUG variables for checking the max likelihood bayesian runs give.
      Must be removed */
-  double ml_logl = 0;
   double bayes_max_logl = 0;
 
   bayes_init(tree);
-  fprintf(stdout,"Computing intial delimitation...\n");
+  fprintf(stdout,"Computing initial delimitation...\n");
   /* reset species counter */
   
   /* fill DP table */
@@ -509,7 +508,13 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
                       loglikelihood(spec_edge_count, spec_edgelen_sum);
   }
 
-  ml_logl = logl;
+  bayes_max_logl = logl;
+
+  if (opt_bayes_startnull)
+    fprintf(stdout, "Null model log-likelihood: %f\n", logl);
+  else
+    fprintf(stdout, "ML delimitation log-likelihood: %f\n", logl);
+
 
   for (i = 0; i < opt_bayes_runs; ++i)
   {
@@ -732,7 +737,5 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
   /* TODO: DEBUG variables for checking the max likelihood bayesian runs give.
      Must be removed */
-  printf ("ML logl: %f\nMax bayes logl found: %f\n", ml_logl, bayes_max_logl);
-  printf("Acceptance: %ld\n", accept_count);
-  printf("tree->speciation_count: %ld\n", tree->speciation_count);
+  printf ("Maximum log-likelihood observed in bayesian run: %f\n", bayes_max_logl);
 }
