@@ -232,9 +232,12 @@ static void backtrack(rtree_t * node,
     backtrack(node->left, vec[index].vec_left, warning_minbr);
     backtrack(node->right,vec[index].vec_right,warning_minbr);
 
-    /* add to list of speciation nodes */
+    /* add to list of speciation nodes only if its two direct descendents
+       are coalescent roots and also the subtree at node has at least one
+       branch length greater than minbr */
     if ((node->left->event == EVENT_COALESCENT) && 
-        (node->right->event == EVENT_COALESCENT))
+        (node->right->event == EVENT_COALESCENT) &&
+        (node->edge_count))
     {
       node->bayes_slot = snodes_count;
       snodes[snodes_count++] = node;
@@ -245,8 +248,9 @@ static void backtrack(rtree_t * node,
   {
     node->event = EVENT_COALESCENT;
 
-    /* add to list of coalescent roots in case it is not a tip */
-    if (node->left)
+    /* add to list of coalescent roots in case it is not a tip AND if
+       the subtree rooted at node has at least one edge longer than minbr */
+    if (node->edge_count)
     {
       node->bayes_slot = crnodes_count;
       crnodes[crnodes_count++] = node;
@@ -295,6 +299,7 @@ static void speciate(unsigned int r)
       node->parent->right->event == EVENT_COALESCENT)
   {
     assert(node->parent->bayes_slot != -1);
+    assert(node->edge_count);
 
     /* perform the following only if the parent is not the last node
        in the list */
@@ -317,15 +322,17 @@ static void speciate(unsigned int r)
   snodes[snodes_count++] = node;
   node->event = EVENT_SPECIATION;
 
-  /* add left child to coalescent roots unless it is a leaf */
-  if (node->left->left)
+  /* add left child to coalescent roots unless it is a leaf OR the
+     tree rooted at node->left has all branch lengths smaller than minbr */
+  if (node->left->edge_count)
   {
     crnodes[crnodes_count] = node->left;
     node->left->bayes_slot = crnodes_count++;
   }
 
-  /* add right child to coalescent roots unless it is a leaf */
-  if (node->right->left)
+  /* add right child to coalescent roots unless it is a leaf OR the
+     tree rooted at node->right has all branch lengths smaller than minbr */
+  if (node->right->edge_count)
   {
     crnodes[crnodes_count] = node->right;
     node->right->bayes_slot = crnodes_count++;
@@ -356,8 +363,9 @@ static void coalesce(unsigned int r)
   crnodes[crnodes_count++] = node;
   node->event = EVENT_COALESCENT;
 
-  /* remove left child from coalescent roots unless it is a leaf */
-  if (node->left->left)
+  /* remove left child from coalescent roots unless it is a leaf OR the
+     tree rooted at node->left has all branch lengths smaller than minbr */
+  if (node->left->edge_count)
   {
     /* perform the following only if it is not the last node
        in the list */
@@ -376,7 +384,7 @@ static void coalesce(unsigned int r)
   }
 
   /* now do the same for the right child */
-  if (node->right->left)
+  if (node->right->edge_count)
   {
     /* perform the following only if the parent is not the last node
        in the list */
@@ -431,9 +439,21 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
      Must be removed */
   double bayes_max_logl = 0;
 
-  bayes_init(tree);
   fprintf(stdout,"Computing initial delimitation...\n");
-  /* reset species counter */
+
+  /* check whether all edges are smaller or equal than minbr */
+  if (!tree->edge_count)
+  {
+    fprintf(stderr,"WARNING: All branch lengths are smaller or equal to the "
+                   "threshold specified by --minbr. Delimitation equals to "
+                   "the null model\n");
+    tree->support = 1;
+    tree->event = EVENT_COALESCENT;
+
+    return;
+  }
+
+  bayes_init(tree);
   
   /* fill DP table */
   dp_recurse(tree, method, prior);
@@ -480,6 +500,7 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
   else
   {
     tree->event = EVENT_COALESCENT;
+
     crnodes[crnodes_count++] = tree;
     logl = tree->coal_logl;
     best_index = 0;
