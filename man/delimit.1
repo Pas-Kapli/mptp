@@ -1,0 +1,202 @@
+.\" ============================================================================
+.TH delimit 1 "October 30, 2015" "delimit 0.0.1" "USER COMMANDS"
+.\" ============================================================================
+.SH NAME
+delimit \(em species delimitation in phylogenetic trees and visualization.
+.\" ============================================================================
+.SH SYNOPSIS
+.\" left justified, ragged right
+.ad l
+Maximum-likelihood species delimitation:
+.RS
+\fBdelimit\fR \-\-ml_single \-\-tree_file \fInewickfile\fR \-\-output_file
+\fIoutputfile\fR [\fIoptions\fR]
+.PP
+\fBdelimit\fR \-\-ml_single \-\-tree_file \fInewickfile\fR \-\-output_file
+\fIoutputfile\fR [\fIoptions\fR]
+.PP
+.RE
+Bayesian species delimitation:
+.RS
+\fBdelimit\fR \-\-bayes_single \fIpositive integer\fR \-\-bayes_log \fIpositive
+integer\fR \-\-tree_file \fInewickfile\fR \-\-output_file \fIoutputfile\fR
+[\fIoptions\fR]
+.PP
+\fBdelimit\fR \-\-bayes_multi \fIpositive integer\fR \-\-bayes_log \fIpositive
+integer\fR \-\-tree_file \fInewickfile\fR \-\-output_file \fIoutputfile\fR
+[\fIoptions\fR]
+.PP
+.RE
+.\" left and right justified (default)
+.ad b
+.\" ============================================================================
+.SH DESCRIPTION
+Species is one of the fundamental units of comparison in virtually all
+subfields of biology, from systematics to anatomy, development, ecology,
+evolution, genetics and molecular biology. The aim of \fBdelimit\fR is to offer
+an open source tool to infer species boundaries on a a given phylogenetic tree
+based on the Poisson Tree Process (PTP) and the Multiple Poisson Tree Process
+(mPTP) models.
+.PP
+\fBdelimit\fR offers two methods for inferring species delimitation. First, a
+maximum-likelihood based method that uses a dynamic programming approach to
+infer an ML estimate. Second, a bayesian approach for sampling the space of
+possible delimitations providing the user with support values on the tree clades.
+Both approaches are available in two flavours: the PTP and the mPTP model. The
+PTP model is specified by using the \fIsingle\fR switch and the mPTP by using
+\fImulti\fR.
+.\" ============================================================================
+.SS Input
+\fBdelimit\fR input is a newick file that contains one phylogenetic tree, i.e.
+branches are in expected number of substitutions per site.
+.\" ============================================================================
+.SS Options
+\fBdelimit\fR parses a large number of command-line options. For easier
+navigation, options are grouped below by theme.
+.PP
+General options:
+.RS
+.TP 9
+.B \-\-help
+Display help text and exit.
+.TP
+.B \-\-version
+Output version information and exit.
+.TP
+.B \-\-quiet
+Supress all output to stdout except for warnings and fatal error messages.
+.TP
+.BI \-\-tree_file \0filename
+Input newick file that contains a phylogenetic tree. Can be rooted or unrooted.
+.TP
+.BI \-\-output_file \0filename
+Specifies the prefix used for generating output files. For maximum-likelihood
+species delimitation two files will be created. First, \fIfilename\fR.txt that
+contains the actual delimitation and \fIfilename\fR.svg that contains an SVG
+figure of the computed delimitation. For bayesian analyses, a file
+\fIfilename\fR.txt is created that contains the newick tree with supports
+values.
+.TP
+.BI \-\-outgroup\~ "comma-separated list of taxa"
+All computations for species delimitation are carried out on rooted trees. This
+option is used only (and is required) In case an unrooted tree was specified
+with the \-\-tree_file option. \fIdelimit\fR roots the unrooted tree by
+splitting the branch leading to the most recent common ancestor (MRCA) of the
+comma-separated list of taxa into two branches of equal size and introducing a
+new node (the root of the new rooted tree) that connects these two branches.
+.TP
+.BI \-\-min_br \0real
+Any branch lengths in the input tree smaller or equal than \fIreal\fR are
+excluded (ignored) from the computations. In addition, for bayesian analyses,
+subtrees that exclusively consist of branch lengths smaller or equal to
+\fIreal\fR are completely ignored from the proposals (support values for those
+clades are set to 0).
+.TP
+.BI \-\-precision\~ "positive integer"
+Specifies the precision of the decimal part of floating point numbers on output
+(default: 7)
+.RE
+.PP
+.\" ============================================================================
+Maximum-likelihood estimations:
+.PP
+.RS
+Estimating the maximum-likelihood delimitation is triggered by either of two
+options: \-\-ml_single (the PTP model) or \-\-ml_multi (the mPTP model). Note
+that these two methods affect how options \-\- output_file behaves and can be
+controlled using the \-\-min_br switch. Although both methods require an input
+phylogenetic tree that must be rooted, an unrooted tree can be specified in
+conjuction with the option \-\-outgrpoup and \fIdelimit\fR roots it at that
+outgroup (see General options, \-\-outgroup for more info). Note that both
+methods output an SVG depiction of the ML delimitation. See the Visualization
+group of options for more information on adjusting and fine-tuning the SVG
+output.
+.PP
+Both methods first discard branch lengths of size smaller than the size
+specified using the \-\-min_br option. The PTP model then attempts to find a
+connected subgraph of the rooted tree that (a) contains the root, and (b) the
+sum of likelihoods of fitting the edges of that subgraph in one exponential
+distribution and the remaining  edges in another (exponential distribution) is
+maximized. With likelihood we mean the sums of the probability density function
+with the mean defined as the reciprocal of the average of edge lengths in the
+particular distribution.
+.PP
+.TP 9
+.B \-\-ml_single
+Triggers the algorithm for computing an ML estimate of the delimitation using
+the PTP model.
+.TP
+.B \-\-ml_multi
+Triggers the algorithm for computing an ML estimate of the delimitation using
+the mPTP model.
+.RE
+.PP
+.\" ============================================================================
+.SH EXAMPLES
+.PP
+Compute the maximum likelihood estimate using the mPTP model by discarding all
+branches below or equal to 0.0001 
+.PP
+.RS
+\fBdelimit\fR \-\-ml_multi \-\-min_br 0.0001 \-\-tree_file \fInewick.txt\fR
+\-\-output_file \fIout\fR
+.RE
+.PP
+Run a bayesian analysis of 100 million MCMC steps logging every one millionth
+step, using the mPTP model and discarding all branch lengths smaller or equal
+to 0.0001.
+.PP
+.RS
+\fBdelimit\fR \-\-bayes_multi 100000000 \-\-min_br 0.0001 \-\-tree_file
+\fInewick.txt\fR \-\-output_file \fIout\fR \-\-bayes_log 1000000
+.RE
+.PP
+.\"
+.\" ============================================================================
+.SH AUTHORS
+Implementation by Tomas Flouri, Sarah Lutterop and Paschalia Kapli. Additional
+PTP and mPTP model authors include Kassian Kobert, Jiajie Zhang and Alexandros
+Stamatakis.
+.SH REPORTING BUGS
+Submit suggestions and bug-reports at
+<https://github.com/Pas-Kapli/delimitation/issues>, or e-mail Tomas Flouri
+<Tomas.Flouri@h-is.org>.
+.\" ============================================================================
+.SH AVAILABILITY
+Source code and binaries are available at
+<https://github.com/Pas-Kapli/delimitation>.
+.\" ============================================================================
+.SH COPYRIGHT
+Copyright (C) 2015, Tomas Flouri, Sarah Lutterop, Paschalia Kapli
+.PP
+All rights reserved.
+.PP
+Contact: Tomas Flouri <Tomas.Flouri@h-its.org>,
+Scientific Computing, Heidelberg Insititute for Theoretical Studies,
+69118 Heidelberg, Germany
+.PP
+This software is licensed under the terms of the GNU Affero General Public License version 3.
+.PP
+\fBGNU Affero General Public Licsense version 3\fR
+.PP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+.PP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+.PP
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.SH VERSION HISTORY
+New features and important modifications of \fBdelimit\fR (short lived or
+minor bug releases may not be mentioned):
+.RS
+.TP
+.BR v0.0.0\~ "released November 1st, 2015"
+First public release.
+.RE
+.LP
