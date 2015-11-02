@@ -23,7 +23,7 @@
 
 FILE * open_file_ext(const char * extension)
 {
-  char * filename = (char *)xmalloc((strlen(opt_outfile)+5)*sizeof(char));
+  char * filename = (char *)xmalloc((strlen(opt_outfile)+6)*sizeof(char));
   strcpy(filename,opt_outfile);
   strcat(filename,extension);
 
@@ -54,7 +54,9 @@ void output_info(FILE * out,
           (method == PTP_METHOD_SINGLE) ?
             "single" : "multi",
           logl);
+#ifdef HAVE_LIBGSL
   fprintf(out, "LRT computed p-value: %.6f\n", pvalue);
   fprintf(out, "LRT: %s\n", lrt_result ? "passed" : "failed");
+#endif
   fprintf(out, "Number of delimited species: %d\n", species_count);
 }

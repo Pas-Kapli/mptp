@@ -111,6 +111,7 @@ void rtree_show_ascii(rtree_t * tree)
 static char * rtree_export_newick_recursive(rtree_t * root)
 {
   char * newick;
+  char * support;
 
   if (!root) return NULL;
 
@@ -121,10 +122,18 @@ static char * rtree_export_newick_recursive(rtree_t * root)
     char * subtree1 = rtree_export_newick_recursive(root->left);
     char * subtree2 = rtree_export_newick_recursive(root->right);
 
+    if (opt_bayes_single || opt_bayes_multi)
+      asprintf(&support, "%f", root->support);
+
     asprintf(&newick, "(%s,%s)%s:%f", subtree1,
                                       subtree2,
-                                      root->label ? root->label : "",
+                                      (opt_bayes_single || opt_bayes_multi) ? support : "",
+                                      //root->label ? root->label : "",
                                       root->length);
+    
+    if (opt_bayes_single || opt_bayes_multi)
+      free(support);
+
     free(subtree1);
     free(subtree2);
   }
@@ -135,6 +144,7 @@ static char * rtree_export_newick_recursive(rtree_t * root)
 char * rtree_export_newick(rtree_t * root)
 {
   char * newick;
+  char * support;
 
   if (!root) return NULL;
 
@@ -145,10 +155,17 @@ char * rtree_export_newick(rtree_t * root)
     char * subtree1 = rtree_export_newick_recursive(root->left);
     char * subtree2 = rtree_export_newick_recursive(root->right);
 
+    if (opt_bayes_single || opt_bayes_multi)
+      asprintf(&support, "%f", root->support);
+
     asprintf(&newick, "(%s,%s)%s:%f;", subtree1,
                                        subtree2,
-                                       root->label ? root->label : "",
+                                       (opt_bayes_single || opt_bayes_multi) ? support : "",
+                                       //root->label ? root->label : "",
                                        root->length);
+    if (opt_bayes_single || opt_bayes_multi)
+      free(support);
+
     free(subtree1);
     free(subtree2);
   }

@@ -25,7 +25,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <getopt.h>
-#include <x86intrin.h>
 #include <stdlib.h>
 #include <time.h>
 #include <limits.h>
@@ -36,12 +35,19 @@
 #include <sys/resource.h>
 #include <unistd.h>
 #include <stdbool.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#if (defined(HAVE_CONFIG_H) && defined(HAVE_LIBGSL))
 #include <gsl/gsl_cdf.h>
+#endif
 
 /* constants */
 
-#define PROG_NAME "delimit"
-#define PROG_VERSION "v0.0.1"
+#define PROG_NAME PACKAGE
+#define PROG_VERSION PACKAGE_VERSION
 
 #ifdef __APPLE__
 #define PROG_ARCH "macosx_x86_64"
@@ -126,6 +132,12 @@ typedef struct rtree_s
   /* which process does this node belong to (coalesent or speciation) */
   int event;
 
+  /* slot in which the node resides when doing bayesian analysis */
+  int bayes_slot;
+  long speciation_start;
+  long speciation_count;
+  double support;
+
   /* dynamic programming vector */
   dp_vector_t * vector;
 
@@ -200,9 +212,11 @@ extern long opt_ml_multi;
 extern long opt_ml_single;
 extern long opt_bayes_multi;
 extern long opt_bayes_single;
+extern long opt_bayes_log;
 extern long opt_ks_single;
 extern long opt_ks_multi;
 extern long opt_bayes_runs;
+extern long opt_seed;
 extern long opt_svg;
 extern long opt_svg_width;
 extern long opt_svg_fontsize;
@@ -212,6 +226,7 @@ extern long opt_svg_marginright;
 extern long opt_svg_margintop;
 extern long opt_svg_marginbottom;
 extern long opt_svg_inner_radius;
+extern long opt_bayes_startnull;
 extern double opt_svg_legend_ratio;
 extern double opt_pvalue;
 extern double opt_minbr;
@@ -265,6 +280,7 @@ void cmd_ml_multi(void);
 void cmd_score(void);
 void cmd_ks_multi(void);
 void cmd_ks_single(void);
+void cmd_bayes(int method);
 
 /* functions in parse_rtree.y */
 
@@ -363,3 +379,11 @@ void output_info(FILE * out,
                  int species_count);
 
 FILE * open_file_ext(const char * extension);
+
+/* functions in bayes.c */
+
+void bayes(rtree_t * tree, int method, prior_t * prior);
+
+/* functions in bayes_multi.c */
+
+void bayes_multi(rtree_t * tree, int method, prior_t * prior);

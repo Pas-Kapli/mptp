@@ -13,13 +13,25 @@ Pons et al. (2006) and Fujisawa et al. (2013). The new tool should:
 
 ## Compilation instructions
 
-Currently, the code can be compiled using the included Makefile:
+**Cloning the repo** Clone the repo and build the executable and the documentation using
+the following commands.
 
-`make`
+```
+git clone https://github.com/Pas-Kapli/delimitation.git
+cd delimitation
+./autogen.sh
+./configure
+make
+make install  # as root or sudo make install
+```
 
-You will need the [GNU Scientific Library](http://www.gnu.org/software/gsl/),
-[GNU Bison](http://www.gnu.org/software/bison/) and [Flex](http://flex.sourceforge.net/)
-installed on your system. On a Debian-based Linux system, the three packages can be installed
+You will need [GNU Bison](http://www.gnu.org/software/bison/) and
+[Flex](http://flex.sourceforge.net/) installed on your system.  Optionally, you
+will need the [GNU Scientific Library](http://www.gnu.org/software/gsl/) for
+the likelihood ratio test. If it is not available on your system, ratio test
+will be disabled.
+
+On a Debian-based Linux system, the three packages can be installed
 using the command
 
 `sudo apt-get install libgsl0-dev flex bison`

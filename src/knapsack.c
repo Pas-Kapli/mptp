@@ -275,8 +275,15 @@ void dp_knapsack(rtree_t * root, int method)
                    (unsigned int)species_count : 1,
                  &pvalue);
 
+#ifndef HAVE_LIBGSL
+  fprintf(stderr, "WARNING: delimit was not compiled with libgsl. "
+                  "Likelihood ratio test disabled.\n");
+#endif
+
+#ifdef HAVE_LIBGSL
   if (!opt_quiet)
     fprintf(stdout,"LRT computed p-value: %.6f\n", pvalue);
+#endif
 
   FILE * out = open_file_ext(".txt");
 
