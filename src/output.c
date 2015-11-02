@@ -54,7 +54,9 @@ void output_info(FILE * out,
           (method == PTP_METHOD_SINGLE) ?
             "single" : "multi",
           logl);
+#ifdef HAVE_LIBGSL
   fprintf(out, "LRT computed p-value: %.6f\n", pvalue);
   fprintf(out, "LRT: %s\n", lrt_result ? "passed" : "failed");
+#endif
   fprintf(out, "Number of delimited species: %d\n", species_count);
 }

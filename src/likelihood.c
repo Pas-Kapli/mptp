@@ -21,7 +21,6 @@
 
 #include "delimit.h"
 
-
 double loglikelihood(int edge_count, double edgelen_sum)
 {
   assert(edge_count >= 0);
@@ -33,6 +32,7 @@ double loglikelihood(int edge_count, double edgelen_sum)
 
 int lrt(double nullmodel_logl, double ptp_logl, unsigned int df, double * pvalue)
 {
+#ifdef HAVE_LIBGSL
   double diff = 2*(ptp_logl - nullmodel_logl);
 
   /* http://docs.scipy.org/doc/scipy/reference/generated/scipy.special.chdtr.html */
@@ -40,6 +40,7 @@ int lrt(double nullmodel_logl, double ptp_logl, unsigned int df, double * pvalue
 
   if ((*pvalue) > opt_pvalue)
     return 0;
-  
+#endif
+
   return 1;
 }

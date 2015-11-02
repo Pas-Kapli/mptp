@@ -25,7 +25,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <getopt.h>
-#include <x86intrin.h>
 #include <stdlib.h>
 #include <time.h>
 #include <limits.h>
@@ -36,12 +35,19 @@
 #include <sys/resource.h>
 #include <unistd.h>
 #include <stdbool.h>
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#if (defined(HAVE_CONFIG_H) && defined(HAVE_LIBGSL))
 #include <gsl/gsl_cdf.h>
+#endif
 
 /* constants */
 
-#define PROG_NAME "delimit"
-#define PROG_VERSION "v0.0.1"
+#define PROG_NAME PACKAGE
+#define PROG_VERSION PACKAGE_VERSION
 
 #ifdef __APPLE__
 #define PROG_ARCH "macosx_x86_64"
