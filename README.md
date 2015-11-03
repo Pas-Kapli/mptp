@@ -46,6 +46,10 @@ General options:
 * `--tree_show`
 * `--ml_single`
 * `--ml_multi`
+* `--bayes_multi`
+* `--bayes_single`
+* `--bayes_sample`
+* `--bayes_log`
 * `--outgroup`
 * `--min_br`
 * `--pvalue`
@@ -79,11 +83,6 @@ Visualization options:
 * `--svg_marginbottom`
 * `--svg_inner_radius`
 
-Experimental options:
-
-* `--ks_single`
-* `--ks_multi`
-
 ## Usage example
 
 `./delimit --ml_multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
@@ -97,9 +96,9 @@ The code is currently licensed under the GNU Affero General Public License versi
     File         | Description
 -----------------|----------------
 **arch.c**       | Architecture specific code (Mac/Linux).
+**bayes.c**      | Code for Bayesian Single- and multi-rate PTP.
 **delimit.c**    | Main file handling command-line parameters and executing corresponding parts.
 **dp.c**         | Single- and multi-rate DP heuristics for solving the PTP problem.
-**knapsack.c**   | Experimental knapsack-based DP heuristic.
 **lca_utree.c**  | Naive LCA computation in unrooted trees.
 **lex_rtree.l**  | Lexical analyzer parsing newick rooted trees.
 **lex_utree.l**  | Lexical analyzer parsing newick unrooted trees.
