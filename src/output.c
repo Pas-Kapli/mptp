@@ -23,7 +23,7 @@
 
 FILE * open_file_ext(const char * extension)
 {
-  char * filename = (char *)xmalloc((strlen(opt_outfile)+6)*sizeof(char));
+  char * filename = (char *)xmalloc((strlen(opt_outfile)+7)*sizeof(char));
   strcpy(filename,opt_outfile);
   strcat(filename,extension);
 

@@ -15,7 +15,6 @@ bayes.c \
 delimit.c \
 delimit.h \
 dp.c \
-knapsack.c \
 lca_utree.c \
 likelihood.c \
 output.c \

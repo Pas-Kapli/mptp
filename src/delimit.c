@@ -43,10 +43,10 @@ long opt_ml_multi;
 long opt_ml_single;
 long opt_bayes_multi;
 long opt_bayes_single;
-long opt_bayes_log;
-long opt_ks_single;
-long opt_ks_multi;
+long opt_bayes_sample;
 long opt_bayes_runs;
+long opt_bayes_log;
+long opt_bayes_startnull;
 long opt_seed;
 long opt_svg;
 long opt_svg_width;
@@ -57,7 +57,6 @@ long opt_svg_marginright;
 long opt_svg_margintop;
 long opt_svg_marginbottom;
 long opt_svg_inner_radius;
-long opt_bayes_startnull;
 double opt_svg_legend_ratio;
 double opt_pvalue;
 double opt_minbr;
@@ -106,11 +105,10 @@ static struct option long_options[] =
   {"bayes_single",       required_argument, 0, 0 },  /* 24 */
   {"prior_exp",          required_argument, 0, 0 },  /* 25 */
   {"prior_gamma",        required_argument, 0, 0 },  /* 26 */
-  {"ks_single",          no_argument,       0, 0 },  /* 27 */
-  {"ks_multi",           no_argument,       0, 0 },  /* 28 */
-  {"bayes_log",          required_argument, 0, 0 },  /* 29 */
-  {"seed",               required_argument, 0, 0 },  /* 30 */
-  {"bayes_startnull",    no_argument,       0, 0 },  /* 31 */ 
+  {"bayes_sample",       required_argument, 0, 0 },  /* 27 */
+  {"bayes_log",          no_argument,       0, 0 },  /* 28 */
+  {"seed",               required_argument, 0, 0 },  /* 29 */
+  {"bayes_startnull",    no_argument,       0, 0 },  /* 30 */ 
   { 0, 0, 0, 0 }
 };
 
@@ -135,15 +133,14 @@ void args_init(int argc, char ** argv)
   opt_ml_single = 0;
   opt_bayes_multi = 0;
   opt_bayes_single = 0;
-  opt_ks_single = 0;
-  opt_ks_multi = 0;
   opt_scorefile = NULL;
   opt_pvalue = 0.001;
   opt_minbr = 0.0001;
   opt_precision = 7;
   opt_bayes_runs = 1;
-  opt_bayes_log = 1000;
+  opt_bayes_sample = 1000;
   opt_bayes_startnull = 0;
+  opt_bayes_log = 0;
   opt_seed = (long)time(NULL);
 
   opt_svg_width = 1920;
@@ -298,22 +295,18 @@ void args_init(int argc, char ** argv)
         break;
 
       case 27:
-        opt_ks_single = 1;
+        opt_bayes_sample = atol(optarg);
         break;
 
       case 28:
-        opt_ks_multi = 1;
+        opt_bayes_log = 1;
         break;
 
       case 29:
-        opt_bayes_log = atol(optarg);
-        break;
-
-      case 30:
         opt_seed = atol(optarg);
         break;
 
-      case 31:
+      case 30:
         opt_bayes_startnull = 1;
         break;
 
@@ -348,10 +341,6 @@ void args_init(int argc, char ** argv)
     commands++;
   if (opt_scorefile)
     commands++;
-  if (opt_ks_single)
-    commands++;
-  if (opt_ks_multi)
-    commands++;
 
   /* if more than one independent command, fail */
   if (commands > 1)
@@ -383,7 +372,8 @@ void cmd_help()
           "  --ml_single                    Maximum-likelihood PTP with a single lambda for all coalescent.\n"
           "  --bayes_multi INT              Bayesian PTP with one lambda per coalescent and INT runs.\n"
           "  --bayes_single INT             Bayesian PTP with a single lambda for all coalescent and INT runs.\n"
-          "  --bayes_log INT                Log every INT sample of the run (default: 1000).\n"
+          "  --bayes_sample INT             Sample every INT iteration of the run (default: 1000).\n"
+          "  --bayes_log                    Log samples in a file and create an SVG of the log-likelihood landscape.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
           "  --pvalue                       Specify a P-value (default: 0.001)\n"
           "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
@@ -413,9 +403,6 @@ void cmd_help()
           "  --svg_margintop                Top margin in pixels (default: 20).\n"
           "  --svg_marginbottom             Bottom margin in pixels (default: 20).\n"
           "  --svg_inner_radius             Radius of inner nodes in pixels (default: 0).\n"
-          "Experimental options:\n"
-          "  --ks_single                     Maximum-likelihood PTP with a single lambda for all coalescent (DP knapsack algorithm)\n"
-          "  --ks_multi                      Maximum-likelihood PTP with one lambda per coalescent (DP knapsack algorithm)\n"
          );
 }
 
@@ -518,44 +505,6 @@ void cmd_bayes(int method)
   rtree_destroy(rtree);
 
   free(newick);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
-}
-
-void cmd_ks_single()
-{
-
-  rtree_t * rtree = load_tree();
-
-  dp_knapsack(rtree, PTP_METHOD_SINGLE);
-
-  if (opt_treeshow)
-    rtree_show_ascii(rtree);
-
-  cmd_svg(rtree);
-
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
-}
-
-void cmd_ks_multi()
-{
-
-  rtree_t * rtree = load_tree();
-
-  dp_knapsack(rtree, PTP_METHOD_MULTI);
-
-  if (opt_treeshow)
-    rtree_show_ascii(rtree);
-
-  cmd_svg(rtree);
-
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
 
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
@@ -674,14 +623,6 @@ int main (int argc, char * argv[])
   else if (opt_scorefile)
   {
     cmd_score();
-  }
-  else if (opt_ks_single)
-  {
-    cmd_ks_single();
-  }
-  else if (opt_ks_multi)
-  {
-    cmd_ks_multi();
   }
 
   /* free prior information */

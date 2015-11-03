@@ -28,6 +28,16 @@ static int crnodes_count = 0;
 static int snodes_count = 0;
 
 static long accept_count = 0;
+static FILE * fp_log = NULL;
+
+static long species_count = 0;
+
+static long * frequencies = NULL;
+
+static void mcmc_log(double logl, long sc)
+{
+  fprintf(fp_log, "%f,%ld\n", logl, sc);
+}
 
 static void bayes_init(rtree_t * root)
 {
@@ -36,6 +46,13 @@ static void bayes_init(rtree_t * root)
 
   crnodes_count = 0;
   snodes_count = 0;
+
+  frequencies = (long *)xmalloc((root->leaves+1)*sizeof(long));
+  memset(frequencies, 0, (root->leaves+1) * sizeof(long));
+
+  /* open log file */
+  if (opt_bayes_log)
+    fp_log = open_file_ext(".log");
 
 }
 
@@ -71,7 +88,7 @@ static void bayes_stats_init(rtree_t * root)
 
 static void bayes_finalize(rtree_t * root)
 {
-  int i;
+  long i;
 
   /* write support values to all nodes */
 
@@ -93,6 +110,30 @@ static void bayes_finalize(rtree_t * root)
   free(inner_node_list);
   free(crnodes);
   free(snodes);
+
+  if (opt_bayes_log)
+  {
+    if (!opt_quiet)
+      fprintf(stdout, "Log written in %s.log ...\n", opt_outfile);
+
+    fclose(fp_log);
+  }
+
+  FILE * fp_stats = open_file_ext(".stats");
+
+  for (i = 0; i < root->leaves; ++i)
+  {
+    fprintf(fp_stats,
+            "%ld,%f\n",
+            i+1,
+            (frequencies[i+1] / (double)opt_bayes_runs)*100.0);
+  }
+
+  if (!opt_quiet)
+    fprintf(stdout, "Statistics written in %s.stats ...\n", opt_outfile);
+
+  fclose(fp_stats);
+  free(frequencies);
 }
 
 static void dp_recurse(rtree_t * node, int method, prior_t * prior)
@@ -291,7 +332,7 @@ static void speciate(unsigned int r)
        CR  *     *  CR         ->      CR  *     *  S
                 / \                             / \
                /   \                           /   \
-           C  *     *  C                   C  *     *  C
+           C  *     *  C                  CR  *     *  CR
  
   */
   if (node->parent && 
@@ -485,6 +526,7 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       }
     }
   }
+  species_count = vec[best_index].species_count;
 
   if (!opt_bayes_startnull)
   {
@@ -504,6 +546,7 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
     crnodes[crnodes_count++] = tree;
     logl = tree->coal_logl;
     best_index = 0;
+    species_count = 1;
   }
 
   bayes_stats_init(tree);
@@ -616,16 +659,23 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_crnodes_count / new_snodes_count);
 
+      /* update frequencies */
+      frequencies[species_count+1]++;
+
       /* decide whether to accept or reject proposal */
       if (drand48() <= a)
       {
         /* accept */
-        if ((i+1) % opt_bayes_log == 0)
+        if ((i+1) % opt_bayes_sample == 0)
+        {
           printf("%ld Log-L: %f\n", i+1, new_logl);
+          mcmc_log(new_logl,species_count+1);
+        }
 
         /* update support values information */
         node->speciation_start = accept_count;
         accept_count++;
+        species_count++;
         logl = new_logl;
         if (method == PTP_METHOD_MULTI)
           coal_score = coal_score - node->coal_logl +
@@ -635,8 +685,11 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       else
       { 
         /* reject */
-        if ((i+1) % opt_bayes_log == 0)
+        if ((i+1) % opt_bayes_sample == 0)
+        {
           printf("%ld Log-L: %f\n", i+1, new_logl);
+          mcmc_log(new_logl,species_count+1);
+        }
 
         if (method == PTP_METHOD_SINGLE)
         {
@@ -717,12 +770,18 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_snodes_count / new_crnodes_count);
 
+      /* update frequencies */
+      frequencies[species_count-1]++;
+
       /* decide whether to accept or reject proposal */
       if (drand48() <= a)
       {
         /* accept */
-        if ((i+1) % opt_bayes_log == 0)
+        if ((i+1) % opt_bayes_sample == 0)
+        {
           printf("%ld Log-L: %f\n", i+1, new_logl);
+          mcmc_log(new_logl,species_count-1);
+        }
 
         /* update support values information */
         node->speciation_count = node->speciation_count + 
@@ -730,6 +789,7 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
                                 node->speciation_start;
         node->speciation_start = -1;
         accept_count++;
+        species_count--;
         logl = new_logl;
         if (method == PTP_METHOD_MULTI)
           coal_score = coal_score - node->left->coal_logl - node->right->coal_logl + 
@@ -740,8 +800,11 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       else
       {
         /* reject */
-        if ((i+1) % opt_bayes_log == 0)
+        if ((i+1) % opt_bayes_sample == 0)
+        {
           printf("%ld Log-L: %f\n", i+1, new_logl);
+          mcmc_log(new_logl,species_count-1);
+        }
         if (method == PTP_METHOD_SINGLE)
         {
           coal_edgelen_sum -= edgelen_sum_diff;
