@@ -353,8 +353,9 @@ void args_init(int argc, char ** argv)
     return;
   }
   /* check for mandatory options */
-  if (mand_options != mandatory_options_count)
-    fatal("Mandatory options are:\n\n%s", mandatory_options_list);
+  if (!opt_version && !opt_help)
+    if (mand_options != mandatory_options_count)
+      fatal("Mandatory options are:\n\n%s", mandatory_options_list);
 
 }
 
@@ -495,6 +496,10 @@ void cmd_bayes(int method)
     rtree_show_ascii(rtree);
    
   char * newick = rtree_export_newick(rtree);
+
+  if (!opt_quiet)
+    fprintf(stdout, "Creating tree with support values in %s.tree ...\n",
+            opt_outfile);
 
   FILE * newick_fp = open_file_ext(".tree");
   fprintf(newick_fp, "%s\n", newick);

@@ -480,7 +480,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
      Must be removed */
   double bayes_max_logl = 0;
 
-  fprintf(stdout,"Computing initial delimitation...\n");
+  if (!opt_quiet)
+    fprintf(stdout,"Computing initial delimitation...\n");
 
   /* check whether all edges are smaller or equal than minbr */
   if (!tree->edge_count)
@@ -574,10 +575,13 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
   bayes_max_logl = logl;
 
-  if (opt_bayes_startnull)
-    fprintf(stdout, "Null model log-likelihood: %f\n", logl);
-  else
-    fprintf(stdout, "ML delimitation log-likelihood: %f\n", logl);
+  if (!opt_quiet)
+  {
+    if (opt_bayes_startnull)
+      fprintf(stdout, "Null model log-likelihood: %f\n", logl);
+    else
+      fprintf(stdout, "ML delimitation log-likelihood: %f\n", logl);
+  }
 
 
   for (i = 0; i < opt_bayes_runs; ++i)
@@ -668,7 +672,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         /* accept */
         if ((i+1) % opt_bayes_sample == 0)
         {
-          printf("%ld Log-L: %f\n", i+1, new_logl);
+          if (!opt_quiet)
+            printf("%ld Log-L: %f\n", i+1, new_logl);
           mcmc_log(new_logl,species_count+1);
         }
 
@@ -687,7 +692,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         /* reject */
         if ((i+1) % opt_bayes_sample == 0)
         {
-          printf("%ld Log-L: %f\n", i+1, new_logl);
+          if (!opt_quiet)
+            printf("%ld Log-L: %f\n", i+1, new_logl);
           mcmc_log(new_logl,species_count+1);
         }
 
@@ -779,7 +785,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         /* accept */
         if ((i+1) % opt_bayes_sample == 0)
         {
-          printf("%ld Log-L: %f\n", i+1, new_logl);
+          if (!opt_quiet)
+            printf("%ld Log-L: %f\n", i+1, new_logl);
           mcmc_log(new_logl,species_count-1);
         }
 
@@ -802,7 +809,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         /* reject */
         if ((i+1) % opt_bayes_sample == 0)
         {
-          printf("%ld Log-L: %f\n", i+1, new_logl);
+          if (!opt_quiet)
+            printf("%ld Log-L: %f\n", i+1, new_logl);
           mcmc_log(new_logl,species_count-1);
         }
         if (method == PTP_METHOD_SINGLE)
@@ -817,9 +825,10 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
     }
   }
 
-  bayes_finalize(tree);
-
   /* TODO: DEBUG variables for checking the max likelihood bayesian runs give.
      Must be removed */
-  printf ("Maximum log-likelihood observed in bayesian run: %f\n", bayes_max_logl);
+  if (!opt_quiet)
+    printf ("Maximum log-likelihood observed in bayesian run: %f\n", bayes_max_logl);
+  bayes_finalize(tree);
+
 }

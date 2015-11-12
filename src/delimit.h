@@ -19,6 +19,8 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
+#define _GNU_SOURCE
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
