@@ -36,7 +36,8 @@ static long * frequencies = NULL;
 
 static void mcmc_log(double logl, long sc)
 {
-  fprintf(fp_log, "%f,%ld\n", logl, sc);
+  if (opt_bayes_log)
+    fprintf(fp_log, "%f,%ld\n", logl, sc);
 }
 
 static void bayes_init(rtree_t * root)
@@ -258,6 +259,46 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
   }
 }
 
+static void backtrack_random(rtree_t * node,
+                             bool *warning_minbr)
+
+{
+
+  node->bayes_slot = -1;
+
+  if (node->event == EVENT_SPECIATION)
+  {
+    if (node->length <= opt_minbr && node->parent) *warning_minbr = true;
+
+    backtrack_random(node->left,  warning_minbr);
+    backtrack_random(node->right, warning_minbr);
+
+    /* add to list of speciation nodes only if its two direct descendents
+       are coalescent roots and also the subtree at node has at least one
+       branch length greater than minbr */
+    if ((node->left->event == EVENT_COALESCENT) && 
+        (node->right->event == EVENT_COALESCENT) &&
+        (node->edge_count))
+    {
+      node->bayes_slot = snodes_count;
+      snodes[snodes_count++] = node;
+    }
+
+  }
+  else
+  {
+    
+    node->event = EVENT_COALESCENT;
+
+    /* add to list of coalescent roots in case it is not a tip AND if
+       the subtree rooted at node has at least one edge longer than minbr */
+    if (node->edge_count)
+    {
+      node->bayes_slot = crnodes_count;
+      crnodes[crnodes_count++] = node;
+    }
+  }
+}
 
 static void backtrack(rtree_t * node,
                       int index,
@@ -534,8 +575,61 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
   }
   species_count = vec[best_index].species_count;
 
-  if (!opt_bayes_startnull)
+  unsigned int coal_edge_count = 0;
+  unsigned int spec_edge_count;
+  double spec_edgelen_sum;
+  double coal_edgelen_sum = 0;
+  double coal_score = 0;
+
+  if (opt_bayes_startnull && opt_bayes_startrandom)
   {
+    fatal("Cannot specify --bayes_startnull and --bayes_startrandom together");
+  }
+  else if (opt_bayes_startnull)
+  {
+    tree->event = EVENT_COALESCENT;
+
+    crnodes[crnodes_count++] = tree;
+    logl = tree->coal_logl;
+    best_index = 0;
+    species_count = 1;
+
+    /* set parameters */
+    coal_edge_count = tree->edge_count;
+    spec_edge_count = 0;
+    spec_edgelen_sum = 0;
+    coal_edgelen_sum = tree->edgelen_sum;
+    coal_score = tree->coal_logl;
+
+    /* log log-likelihood at step 0 */
+    if (!opt_bayes_burnin)
+      mcmc_log(logl,species_count);
+
+
+  }
+  else if (opt_bayes_startrandom)
+  {
+    bool warning_minbr = false;
+    logl = random_delimitation(tree,
+                               &species_count, 
+                               &coal_edge_count, 
+                               &coal_edgelen_sum, 
+                               &spec_edge_count, 
+                               &spec_edgelen_sum, 
+                               &coal_score);
+    printf("Species count: %ld\n", species_count);
+    backtrack_random(tree, &warning_minbr);
+    if (warning_minbr)
+      fprintf(stderr,"WARNING: A speciation edge is smaller than the specified "
+                     "minimum branch length.\n");
+
+    /* log log-likelihood at step 0 */
+    if (!opt_bayes_burnin)
+      mcmc_log(logl,species_count);
+  }
+  else
+  {
+    /* ML starting delimitation */
     bool warning_minbr = false;
     backtrack(tree, best_index, &warning_minbr);
     if (warning_minbr)
@@ -549,41 +643,25 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
     if (!opt_bayes_burnin)
       mcmc_log(logl,species_count);
   }
-  else
-  {
-    tree->event = EVENT_COALESCENT;
-
-    crnodes[crnodes_count++] = tree;
-    logl = tree->coal_logl;
-    best_index = 0;
-    species_count = 1;
-
-    /* log log-likelihood at step 0 */
-    if (!opt_bayes_burnin)
-      mcmc_log(logl,species_count);
-  }
 
   bayes_stats_init(tree);
 
-  unsigned int coal_edge_count = 0;
-  unsigned int spec_edge_count;
-  double spec_edgelen_sum;
-  double coal_edgelen_sum = 0;
-  double coal_score = 0;
-
-  if (method == PTP_METHOD_SINGLE)
+  if (!opt_bayes_startnull && !opt_bayes_startrandom)
   {
-    coal_edge_count = tree->edge_count - best_index;
-    spec_edge_count = best_index;
-    spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
-    coal_edgelen_sum = tree->edgelen_sum - spec_edgelen_sum;
-  }
-  else
-  {
-    spec_edge_count = best_index;
-    spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
-    coal_score = tree->vector[best_index].score_multi - 
-                      loglikelihood(spec_edge_count, spec_edgelen_sum);
+    if (method == PTP_METHOD_SINGLE)
+    {
+      coal_edge_count = tree->edge_count - best_index;
+      spec_edge_count = best_index;
+      spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
+      coal_edgelen_sum = tree->edgelen_sum - spec_edgelen_sum;
+    }
+    else
+    {
+      spec_edge_count = best_index;
+      spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
+      coal_score = tree->vector[best_index].score_multi - 
+                        loglikelihood(spec_edge_count, spec_edgelen_sum);
+    }
   }
 
   bayes_max_logl = logl;

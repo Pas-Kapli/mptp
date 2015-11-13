@@ -180,7 +180,7 @@ static void rtree_traverse_recursive(rtree_t * node,
 {
   if (!node->left)
   {
-    if (cbtrav(node))
+    if (!cbtrav(node))
     {
       outbuffer[*index] = node;
       *index = *index + 1;
@@ -188,12 +188,23 @@ static void rtree_traverse_recursive(rtree_t * node,
     return;
   }
   if (!cbtrav(node))
+  {
+    outbuffer[*index] = node;
+    *index = *index + 1;
     return;
-  rtree_traverse_recursive(node->left, cbtrav, index, outbuffer);
-  rtree_traverse_recursive(node->right, cbtrav, index, outbuffer);
+  }
 
-  outbuffer[*index] = node;
-  *index = *index + 1;
+  if (drand48() >= 0.5)
+  {
+    rtree_traverse_recursive(node->left, cbtrav, index, outbuffer);
+    rtree_traverse_recursive(node->right, cbtrav, index, outbuffer);
+  }
+  else
+  {
+    rtree_traverse_recursive(node->right, cbtrav, index, outbuffer);
+    rtree_traverse_recursive(node->left, cbtrav, index, outbuffer);
+  }
+
 }
 
 int rtree_traverse(rtree_t * root,
@@ -204,7 +215,7 @@ int rtree_traverse(rtree_t * root,
 
   if (!root->left) return -1;
 
-  /* we will traverse an unrooted tree in the following way
+  /* we will traverse an rooted tree in the following way
       
            root
             /\

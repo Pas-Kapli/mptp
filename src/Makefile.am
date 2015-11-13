@@ -19,6 +19,7 @@ lca_utree.c \
 likelihood.c \
 output.c \
 priors.c \
+random.c \
 rtree.c \
 score.c \
 svg.c \

@@ -47,6 +47,7 @@ long opt_bayes_sample;
 long opt_bayes_runs;
 long opt_bayes_log;
 long opt_bayes_startnull;
+long opt_bayes_startrandom;
 long opt_bayes_burnin;
 long opt_seed;
 long opt_svg;
@@ -111,6 +112,7 @@ static struct option long_options[] =
   {"seed",               required_argument, 0, 0 },  /* 29 */
   {"bayes_startnull",    no_argument,       0, 0 },  /* 30 */ 
   {"bayes_burnin",       required_argument, 0, 0 },  /* 31 */
+  {"bayes_startrandom",  no_argument,       0, 0 },  /* 32 */
   { 0, 0, 0, 0 }
 };
 
@@ -142,6 +144,7 @@ void args_init(int argc, char ** argv)
   opt_bayes_runs = 1;
   opt_bayes_sample = 1000;
   opt_bayes_startnull = 0;
+  opt_bayes_startrandom = 0;
   opt_bayes_log = 0;
   opt_bayes_burnin = 0;
   opt_seed = (long)time(NULL);
@@ -317,6 +320,10 @@ void args_init(int argc, char ** argv)
         opt_bayes_burnin = atol(optarg);
         break;
 
+      case 32:
+        opt_bayes_startrandom = 1;
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -469,6 +476,31 @@ void cmd_ml_multi()
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
 }
+
+//void cmd_random()
+//{
+//
+//  rtree_t * rtree = load_tree();
+//
+//  //dp_init(rtree);
+//  //dp_set_pernode_spec_edges(rtree);
+//  //dp_ptp(rtree, PTP_METHOD_MULTI, opt_prior);
+//  //dp_free(rtree);
+//
+//  
+//  random_delimitation(rtree);
+//
+//  if (opt_treeshow)
+//    rtree_show_ascii(rtree);
+//
+//  cmd_svg(rtree);
+//
+//  /* deallocate tree structure */
+//  rtree_destroy(rtree);
+//
+//  if (!opt_quiet)
+//    fprintf(stdout, "Done...\n");
+//}
 
 void cmd_ml_single()
 {
@@ -637,6 +669,10 @@ int main (int argc, char * argv[])
   {
     cmd_score();
   }
+//  else if (opt_bayes_startrandom)
+//  {
+//    cmd_random();
+//  }
 
   /* free prior information */
   dealloc_prior();

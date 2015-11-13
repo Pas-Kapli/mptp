@@ -147,6 +147,9 @@ typedef struct rtree_s
 
   /* auxialiary data */
   void * data;
+
+  /* for generating random delimitations */
+  int max_species_count;
 } rtree_t;
 
 
@@ -220,6 +223,7 @@ extern long opt_bayes_sample;
 extern long opt_bayes_runs;
 extern long opt_bayes_log;
 extern long opt_bayes_startnull;
+extern long opt_bayes_startrandom;
 extern long opt_bayes_burnin;
 extern long opt_seed;
 extern long opt_svg;
@@ -393,3 +397,13 @@ void bayes_multi(rtree_t * tree, int method, prior_t * prior);
 /* functions in svg_landscape.c */
 
 void svg_landscape(double bayes_min_log, double bayes_max_logl);
+
+/* functions in random.c */
+
+double random_delimitation(rtree_t * root,
+                           long * delimited_species,
+                           unsigned int * coal_edge_count,
+                           double * coal_edgelen_sum,
+                           unsigned int * spec_edge_count,
+                           double * spec_edgelen_sum,
+                           double * coal_score);

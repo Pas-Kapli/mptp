@@ -51,6 +51,8 @@ General options:
 * `--bayes_sample`
 * `--bayes_log`
 * `--bayes_burnin`
+* `--bayes_startnull`
+* `--bayes_startrandom`
 * `--outgroup`
 * `--min_br`
 * `--pvalue`
@@ -109,6 +111,7 @@ The code is currently licensed under the GNU Affero General Public License versi
 **parse_rtree.y**   | Functions for parsing rooted trees in newick format.
 **parse_utree.y**   | Functions for parsing unrooted trees in newick format.
 **priors.c**        | Prior related functions.
+**random.c**        | Functions for creating a random delimitation.
 **rtree.c**         | Rooted tree manipulation functions.
 **score.c**         | Computation of NMI and Kassian score.
 **svg.c**           | SVG visualization of delimited tree.
