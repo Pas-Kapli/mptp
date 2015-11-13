@@ -47,6 +47,7 @@ long opt_bayes_sample;
 long opt_bayes_runs;
 long opt_bayes_log;
 long opt_bayes_startnull;
+long opt_bayes_burnin;
 long opt_seed;
 long opt_svg;
 long opt_svg_width;
@@ -109,6 +110,7 @@ static struct option long_options[] =
   {"bayes_log",          no_argument,       0, 0 },  /* 28 */
   {"seed",               required_argument, 0, 0 },  /* 29 */
   {"bayes_startnull",    no_argument,       0, 0 },  /* 30 */ 
+  {"bayes_burnin",       required_argument, 0, 0 },  /* 31 */
   { 0, 0, 0, 0 }
 };
 
@@ -141,6 +143,7 @@ void args_init(int argc, char ** argv)
   opt_bayes_sample = 1000;
   opt_bayes_startnull = 0;
   opt_bayes_log = 0;
+  opt_bayes_burnin = 0;
   opt_seed = (long)time(NULL);
 
   opt_svg_width = 1920;
@@ -310,6 +313,10 @@ void args_init(int argc, char ** argv)
         opt_bayes_startnull = 1;
         break;
 
+      case 31:
+        opt_bayes_burnin = atol(optarg);
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -375,6 +382,7 @@ void cmd_help()
           "  --bayes_single INT             Bayesian PTP with a single lambda for all coalescent and INT runs.\n"
           "  --bayes_sample INT             Sample every INT iteration of the run (default: 1000).\n"
           "  --bayes_log                    Log samples in a file and create an SVG of the log-likelihood landscape.\n"
+          "  --bayes_burnin INT             Do not log mcmc steps below threshold.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
           "  --pvalue                       Specify a P-value (default: 0.001)\n"
           "  --min_br                       Specify minimum branch length (default: 0.0001)\n"

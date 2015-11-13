@@ -93,26 +93,27 @@ The code is currently licensed under the GNU Affero General Public License versi
 
 ## Code
 
-    File         | Description
------------------|----------------
-**arch.c**       | Architecture specific code (Mac/Linux).
-**bayes.c**      | Code for Bayesian Single- and multi-rate PTP.
-**delimit.c**    | Main file handling command-line parameters and executing corresponding parts.
-**dp.c**         | Single- and multi-rate DP heuristics for solving the PTP problem.
-**lca_utree.c**  | Naive LCA computation in unrooted trees.
-**lex_rtree.l**  | Lexical analyzer parsing newick rooted trees.
-**lex_utree.l**  | Lexical analyzer parsing newick unrooted trees.
-**likelihood.c** | Likelihood rated functions.
-**Makefile**     | Makefile.
-**output.c**     | Output related files.
-**parse_rtree.y**| Functions for parsing rooted trees in newick format.
-**parse_utree.y**| Functions for parsing unrooted trees in newick format.
-**priors.c**     | Prior related functions.
-**rtree.c**      | Rooted tree manipulation functions.
-**score.c**      | Computation of NMI and Kassian score.
-**svg.c**        | SVG visualization.
-**util.c**       | Various common utility functions.
-**utree.c**      | Unrooted tree manipulation functions.
+    File            | Description
+--------------------|----------------
+**arch.c**          | Architecture specific code (Mac/Linux).
+**bayes.c**         | Code for Bayesian Single- and multi-rate PTP.
+**delimit.c**       | Main file handling command-line parameters and executing corresponding parts.
+**dp.c**            | Single- and multi-rate DP heuristics for solving the PTP problem.
+**lca_utree.c**     | Naive LCA computation in unrooted trees.
+**lex_rtree.l**     | Lexical analyzer parsing newick rooted trees.
+**lex_utree.l**     | Lexical analyzer parsing newick unrooted trees.
+**likelihood.c**    | Likelihood rated functions.
+**Makefile**        | Makefile.
+**output.c**        | Output related files.
+**parse_rtree.y**   | Functions for parsing rooted trees in newick format.
+**parse_utree.y**   | Functions for parsing unrooted trees in newick format.
+**priors.c**        | Prior related functions.
+**rtree.c**         | Rooted tree manipulation functions.
+**score.c**         | Computation of NMI and Kassian score.
+**svg.c**           | SVG visualization of delimited tree.
+**svg_landscape.c** | SVG visualization of likelihood landscape.
+**util.c**          | Various common utility functions.
+**utree.c**         | Unrooted tree manipulation functions.
 
 ## The team
 

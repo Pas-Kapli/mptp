@@ -22,5 +22,6 @@ priors.c \
 rtree.c \
 score.c \
 svg.c \
+svg_landscape.c \
 util.c \
 utree.c

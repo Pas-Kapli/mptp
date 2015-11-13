@@ -346,7 +346,7 @@ static void svg_rtree_init(rtree_t * root)
           "stroke-width=\"1\" />\n",
           opt_svg_marginleft, 
           opt_svg_margintop + legend_spacing, 
-          svg_width - opt_svg_marginleft - opt_svg_marginright,
+          opt_svg_width - opt_svg_marginleft - opt_svg_marginright,
           svg_height - opt_svg_margintop - legend_spacing - opt_svg_marginbottom);
   */
   

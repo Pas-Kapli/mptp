@@ -86,12 +86,14 @@ static void bayes_stats_init(rtree_t * root)
   free(inner_node_list);
 }
 
-static void bayes_finalize(rtree_t * root)
+static void bayes_finalize(rtree_t * root, double bayes_min_logl, double bayes_max_logl)
 {
   long i;
 
-  /* write support values to all nodes */
+  if (!opt_quiet)
+    printf ("Maximum log-likelihood observed in bayesian run: %f\n", bayes_max_logl);
 
+  /* write support values to all nodes */
   rtree_t ** inner_node_list = (rtree_t **)xmalloc((root->leaves-1) *
                                                    sizeof(rtree_t *));
   rtree_query_innernodes(root, inner_node_list);
@@ -117,6 +119,8 @@ static void bayes_finalize(rtree_t * root)
       fprintf(stdout, "Log written in %s.log ...\n", opt_outfile);
 
     fclose(fp_log);
+    
+    svg_landscape(bayes_min_logl, bayes_max_logl);
   }
 
   FILE * fp_stats = open_file_ext(".stats");
@@ -479,6 +483,7 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
   /* TODO: DEBUG variables for checking the max likelihood bayesian runs give.
      Must be removed */
   double bayes_max_logl = 0;
+  double bayes_min_logl = 0;
 
   if (!opt_quiet)
     fprintf(stdout,"Computing initial delimitation...\n");
@@ -539,6 +544,10 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
     logl = (method == PTP_METHOD_MULTI) ? 
                 vec[best_index].score_multi : vec[best_index].score_single;
+    
+    /* log log-likelihood at step 0 */
+    if (!opt_bayes_burnin)
+      mcmc_log(logl,species_count);
   }
   else
   {
@@ -548,6 +557,10 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
     logl = tree->coal_logl;
     best_index = 0;
     species_count = 1;
+
+    /* log log-likelihood at step 0 */
+    if (!opt_bayes_burnin)
+      mcmc_log(logl,species_count);
   }
 
   bayes_stats_init(tree);
@@ -574,6 +587,7 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
   }
 
   bayes_max_logl = logl;
+  bayes_min_logl = logl;
 
   if (!opt_quiet)
   {
@@ -659,6 +673,10 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
       if (new_logl > bayes_max_logl)
         bayes_max_logl = new_logl;
+      if (i+1 < opt_bayes_burnin)
+        bayes_min_logl = bayes_max_logl;
+      else if (new_logl < bayes_min_logl)
+        bayes_min_logl = new_logl;
 
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_crnodes_count / new_snodes_count);
@@ -674,7 +692,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         {
           if (!opt_quiet)
             printf("%ld Log-L: %f\n", i+1, new_logl);
-          mcmc_log(new_logl,species_count+1);
+          if (i+1 >= opt_bayes_burnin)
+            mcmc_log(new_logl,species_count+1);
         }
 
         /* update support values information */
@@ -694,7 +713,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         {
           if (!opt_quiet)
             printf("%ld Log-L: %f\n", i+1, new_logl);
-          mcmc_log(new_logl,species_count+1);
+          if (i+1 >= opt_bayes_burnin)
+            mcmc_log(new_logl,species_count+1);
         }
 
         if (method == PTP_METHOD_SINGLE)
@@ -772,6 +792,10 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
       if (new_logl > bayes_max_logl)
         bayes_max_logl = new_logl;
+      if (i+1 < opt_bayes_burnin)
+        bayes_min_logl = bayes_max_logl;
+      else if (new_logl < bayes_min_logl)
+        bayes_min_logl = new_logl;
 
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_snodes_count / new_crnodes_count);
@@ -787,7 +811,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         {
           if (!opt_quiet)
             printf("%ld Log-L: %f\n", i+1, new_logl);
-          mcmc_log(new_logl,species_count-1);
+          if (i+1 >= opt_bayes_burnin)
+            mcmc_log(new_logl,species_count-1);
         }
 
         /* update support values information */
@@ -811,7 +836,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         {
           if (!opt_quiet)
             printf("%ld Log-L: %f\n", i+1, new_logl);
-          mcmc_log(new_logl,species_count-1);
+          if (i+1 >= opt_bayes_burnin)
+            mcmc_log(new_logl,species_count-1);
         }
         if (method == PTP_METHOD_SINGLE)
         {
@@ -827,8 +853,6 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
   /* TODO: DEBUG variables for checking the max likelihood bayesian runs give.
      Must be removed */
-  if (!opt_quiet)
-    printf ("Maximum log-likelihood observed in bayesian run: %f\n", bayes_max_logl);
-  bayes_finalize(tree);
+  bayes_finalize(tree, bayes_min_logl, bayes_max_logl);
 
 }

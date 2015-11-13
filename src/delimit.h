@@ -57,6 +57,8 @@
 #define PROG_ARCH "linux_x86_64"
 #endif
 
+#define LINEALLOC 2048
+
 #define EVENT_SPECIATION 0
 #define EVENT_COALESCENT 1
 
@@ -218,6 +220,7 @@ extern long opt_bayes_sample;
 extern long opt_bayes_runs;
 extern long opt_bayes_log;
 extern long opt_bayes_startnull;
+extern long opt_bayes_burnin;
 extern long opt_seed;
 extern long opt_svg;
 extern long opt_svg_width;
@@ -386,3 +389,7 @@ void bayes(rtree_t * tree, int method, prior_t * prior);
 /* functions in bayes_multi.c */
 
 void bayes_multi(rtree_t * tree, int method, prior_t * prior);
+
+/* functions in svg_landscape.c */
+
+void svg_landscape(double bayes_min_log, double bayes_max_logl);
