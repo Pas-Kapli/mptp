@@ -50,6 +50,7 @@ General options:
 * `--bayes_single`
 * `--bayes_sample`
 * `--bayes_log`
+* `--bayes_burnin`
 * `--outgroup`
 * `--min_br`
 * `--pvalue`
