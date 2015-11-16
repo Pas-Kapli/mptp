@@ -320,7 +320,9 @@ void rtree_reset_info(rtree_t * root);
 void rtree_print_tips(rtree_t * node, FILE * out);
 int rtree_traverse(rtree_t * root,
                    int (*cbtrav)(rtree_t *),
+                   struct drand48_data * rstate,
                    rtree_t ** outbuffer);
+rtree_t * rtree_clone(rtree_t * root);
 
 /* functions in parse_rtree.y */
 
@@ -384,11 +386,14 @@ void output_info(FILE * out,
                  rtree_t * root,
                  int species_count);
 
-FILE * open_file_ext(const char * extension);
+FILE * open_file_ext(const char * extension, long seed);
 
 /* functions in bayes.c */
 
-void bayes(rtree_t * tree, int method, prior_t * prior);
+void bayes(rtree_t * tree,
+           int method,
+           prior_t * prior,
+           struct drand48_data * rstate);
 
 /* functions in bayes_multi.c */
 
@@ -406,4 +411,6 @@ double random_delimitation(rtree_t * root,
                            double * coal_edgelen_sum,
                            unsigned int * spec_edge_count,
                            double * spec_edgelen_sum,
-                           double * coal_score);
+                           double * coal_score,
+                           struct drand48_data * rstate);
+

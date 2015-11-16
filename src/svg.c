@@ -361,9 +361,19 @@ static void svg_rtree_init(rtree_t * root)
 void cmd_svg(rtree_t * root)
 {
   if (!opt_quiet)
-    fprintf(stdout,"Creating SVG file %s.svg ...\n", opt_outfile);
+  {
+    if (opt_bayes_single || opt_bayes_multi)
+      fprintf(stdout,
+              "Creating SVG file %s.%ld.svg ...\n",
+              opt_outfile,
+              opt_seed);
+    else
+      fprintf(stdout,
+              "Creating SVG file %s.svg ...\n",
+              opt_outfile);
+  }
 
-  svg_fp = open_file_ext(".svg");
+  svg_fp = open_file_ext("svg", opt_seed);
 
   svg_rtree_init(root);
 

@@ -176,8 +176,11 @@ char * rtree_export_newick(rtree_t * root)
 static void rtree_traverse_recursive(rtree_t * node,
                                      int (*cbtrav)(rtree_t *),
                                      int * index,
+                                     struct drand48_data * rstate,
                                      rtree_t ** outbuffer)
 {
+  double rand_double = 0;
+
   if (!node->left)
   {
     if (!cbtrav(node))
@@ -194,21 +197,23 @@ static void rtree_traverse_recursive(rtree_t * node,
     return;
   }
 
-  if (drand48() >= 0.5)
+  drand48_r(rstate, &rand_double);
+  if (rand_double >= 0.5)
   {
-    rtree_traverse_recursive(node->left, cbtrav, index, outbuffer);
-    rtree_traverse_recursive(node->right, cbtrav, index, outbuffer);
+    rtree_traverse_recursive(node->left, cbtrav, index, rstate, outbuffer);
+    rtree_traverse_recursive(node->right, cbtrav, index, rstate, outbuffer);
   }
   else
   {
-    rtree_traverse_recursive(node->right, cbtrav, index, outbuffer);
-    rtree_traverse_recursive(node->left, cbtrav, index, outbuffer);
+    rtree_traverse_recursive(node->right, cbtrav, index, rstate, outbuffer);
+    rtree_traverse_recursive(node->left, cbtrav, index, rstate, outbuffer);
   }
 
 }
 
 int rtree_traverse(rtree_t * root,
                    int (*cbtrav)(rtree_t *),
+                   struct drand48_data * rstate,
                    rtree_t ** outbuffer)
 {
   int index = 0;
@@ -225,7 +230,7 @@ int rtree_traverse(rtree_t * root,
      at each node the callback function is called to decide whether we
      are going to traversing the subtree rooted at the specific node */
 
-  rtree_traverse_recursive(root, cbtrav, &index, outbuffer);
+  rtree_traverse_recursive(root, cbtrav, &index, rstate, outbuffer);
   return index;
 }
 
@@ -335,4 +340,22 @@ void rtree_print_tips(rtree_t * node, FILE * out)
 
   if (!node->left && !node->right)
     fprintf(out, "%s\n", node->label);
+}
+
+
+rtree_t * rtree_clone(rtree_t * root)
+{
+  if (!root) return NULL;
+
+  /* clone root */
+  rtree_t * clone = (rtree_t *)xmalloc(sizeof(rtree_t));
+  memcpy(clone,root,sizeof(rtree_t));
+  if (root->label)
+    clone->label = xstrdup(root->label);
+
+  /* clone the two subtrees */
+  clone->left  = rtree_clone(root->left);
+  clone->right = rtree_clone(root->right);
+
+  return clone;
 }

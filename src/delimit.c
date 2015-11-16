@@ -525,11 +525,16 @@ void cmd_ml_single()
 }
 void cmd_bayes(int method)
 {
+  struct drand48_data rstate;
+
   rtree_t * rtree = load_tree();
+
+  /* init random number generator */
+  srand48_r(opt_seed, &rstate);
 
   dp_init(rtree);
   dp_set_pernode_spec_edges(rtree);
-  bayes(rtree, method, opt_prior);
+  bayes(rtree, method, opt_prior, &rstate);
   dp_free(rtree);
 
   if (opt_treeshow)
@@ -538,10 +543,12 @@ void cmd_bayes(int method)
   char * newick = rtree_export_newick(rtree);
 
   if (!opt_quiet)
-    fprintf(stdout, "Creating tree with support values in %s.tree ...\n",
-            opt_outfile);
+    fprintf(stdout,
+            "Creating tree with support values in %s.%ld.tree ...\n",
+            opt_outfile,
+            opt_seed);
 
-  FILE * newick_fp = open_file_ext(".tree");
+  FILE * newick_fp = open_file_ext("tree", opt_seed);
   fprintf(newick_fp, "%s\n", newick);
   fclose(newick_fp);
 

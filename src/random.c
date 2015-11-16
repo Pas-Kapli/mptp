@@ -1,11 +1,35 @@
+/*
+    Copyright (C) 2015 Tomas Flouri, Sarah Lutteropp
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+    Contact: Tomas Flouri <Tomas.Flouri@h-its.org>,
+    Heidelberg Institute for Theoretical Studies,
+    Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
+*/
+
 #include "delimit.h"
 
 static long min_species;
 static long max_species;
 static long species_count;
+static struct drand48_data * g_rstate;
 
 static int cb_node_select(rtree_t * node)
 {
+  double rand_double = 0;
+
   if (!node->edge_count) return 0;
 
   /* check if not selecting node is possible */
@@ -27,7 +51,8 @@ static int cb_node_select(rtree_t * node)
   }
 
   /* otherwise, we just throw a coin and select one of the two cases */
-  if (drand48() >= 0.5)
+  drand48_r(g_rstate, &rand_double);
+  if (rand_double >= 0.5)
   {
     /* don't select */
     node->event = EVENT_SPECIATION;
@@ -47,24 +72,30 @@ double random_delimitation(rtree_t * root,
                            double * coal_edgelen_sum,
                            unsigned int * spec_edge_count,
                            double * spec_edgelen_sum,
-                           double * coal_score)
+                           double * coal_score,
+                           struct drand48_data * rstate)
 {
-  long i;
-  double logl = 0;
   int edge_count = 0;
+  long i;
+  long rand_long = 0;
+  double logl = 0;
   double edgelen_sum = 0;
 
   /* initialize */
   min_species = 1;
   max_species = root->max_species_count;
+  g_rstate = rstate;
 
 
-  species_count = (lrand48() % root->max_species_count) + 1;
+  lrand48_r(rstate, &rand_long);
+  species_count = (rand_long % root->max_species_count) + 1;
+  printf("Species_count: %ld\n", species_count);
 
   rtree_t ** inner_node_list =  (rtree_t **)xmalloc(species_count *
                                                     sizeof(rtree_t *));
 
-  long count = rtree_traverse(root, cb_node_select, inner_node_list);
+  long count = rtree_traverse(root, cb_node_select, rstate, inner_node_list);
+  printf ("count: %ld\n", count);
 
   for (i = 0; i < count; ++i)
   {

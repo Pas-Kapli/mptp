@@ -250,7 +250,7 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
 #endif
 
   /* initialize file name */
-  FILE * out = open_file_ext(".txt");
+  FILE * out = open_file_ext("txt", opt_seed);
 
   if (!opt_quiet)
     fprintf(stdout, "Writing delimitation file %s.txt ...\n", opt_outfile);

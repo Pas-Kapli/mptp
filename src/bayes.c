@@ -53,8 +53,21 @@ static void bayes_init(rtree_t * root)
 
   /* open log file */
   if (opt_bayes_log)
-    fp_log = open_file_ext(".log");
+    fp_log = open_file_ext("log", opt_seed);
+}
 
+static void init_null(rtree_t * root)
+{
+  int i;
+
+  rtree_t ** inner_node_list = (rtree_t **)xmalloc((root->leaves-1) *
+                                                   sizeof(rtree_t *));
+  rtree_query_innernodes(root, inner_node_list);
+
+  /* start bayes analysis from null model */
+  for (i = 0; i < root->leaves - 1; ++i)
+    inner_node_list[i]->event = EVENT_COALESCENT;
+  free(inner_node_list);
 }
 
 static void bayes_stats_init(rtree_t * root)
@@ -65,24 +78,15 @@ static void bayes_stats_init(rtree_t * root)
                                                    sizeof(rtree_t *));
   rtree_query_innernodes(root, inner_node_list);
 
-  /* start bayes analysis from null model */
-  if (opt_bayes_startnull)
-    for (i = 0; i < root->leaves - 1; ++i)
-    {
-      inner_node_list[i]->event = EVENT_COALESCENT;
+  for (i = 0; i < root->leaves - 1; ++i)
+  {
+    if (inner_node_list[i]->event == EVENT_COALESCENT)
       inner_node_list[i]->speciation_start = -1;
-      inner_node_list[i]->speciation_count = 0;
-    }
-  else  /* or from ML delimitation */
-    for (i = 0; i < root->leaves - 1; ++i)
-    {
-      if (inner_node_list[i]->event == EVENT_COALESCENT)
-        inner_node_list[i]->speciation_start = -1;
-      else
-        inner_node_list[i]->speciation_start = 0;
+    else
+      inner_node_list[i]->speciation_start = 0;
 
-      inner_node_list[i]->speciation_count = 0;
-    }
+    inner_node_list[i]->speciation_count = 0;
+  }
 
   free(inner_node_list);
 }
@@ -117,25 +121,28 @@ static void bayes_finalize(rtree_t * root, double bayes_min_logl, double bayes_m
   if (opt_bayes_log)
   {
     if (!opt_quiet)
-      fprintf(stdout, "Log written in %s.log ...\n", opt_outfile);
+      fprintf(stdout, "Log written in %s.%ld.log ...\n", opt_outfile, opt_seed);
 
     fclose(fp_log);
     
     svg_landscape(bayes_min_logl, bayes_max_logl);
   }
 
-  FILE * fp_stats = open_file_ext(".stats");
+  FILE * fp_stats = open_file_ext("stats", opt_seed);
 
   for (i = 0; i < root->leaves; ++i)
   {
     fprintf(fp_stats,
             "%ld,%f\n",
             i+1,
-            (frequencies[i+1] / (double)opt_bayes_runs)*100.0);
+            (frequencies[i+1]/(double)(opt_bayes_runs-opt_bayes_burnin))*100.0);
   }
 
   if (!opt_quiet)
-    fprintf(stdout, "Statistics written in %s.stats ...\n", opt_outfile);
+    fprintf(stdout,
+            "Statistics written in %s.%ld.stats ...\n",
+            opt_outfile,
+            opt_seed);
 
   fclose(fp_stats);
   free(frequencies);
@@ -514,15 +521,15 @@ static void coalesce(unsigned int r)
   }
 }
 
-void bayes(rtree_t * tree, int method, prior_t * prior)
+void bayes(rtree_t * tree, int method, prior_t * prior, struct drand48_data * rstate)
 {
-  long i;
   int best_index = 0;
+  long i;
+  long rand_long = 0;
+  double rand_double = 0;
   double max = 0;
   double logl = 0;
 
-  /* TODO: DEBUG variables for checking the max likelihood bayesian runs give.
-     Must be removed */
   double bayes_max_logl = 0;
   double bayes_min_logl = 0;
 
@@ -600,6 +607,9 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
     spec_edgelen_sum = 0;
     coal_edgelen_sum = tree->edgelen_sum;
     coal_score = tree->coal_logl;
+    
+    /* set all nodes to coalescent */
+    init_null(tree);
 
     /* log log-likelihood at step 0 */
     if (!opt_bayes_burnin)
@@ -616,7 +626,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
                                &coal_edgelen_sum, 
                                &spec_edge_count, 
                                &spec_edgelen_sum, 
-                               &coal_score);
+                               &coal_score,
+                               rstate);
     printf("Species count: %ld\n", species_count);
     backtrack_random(tree, &warning_minbr);
     if (warning_minbr)
@@ -644,8 +655,6 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       mcmc_log(logl,species_count);
   }
 
-  bayes_stats_init(tree);
-
   if (!opt_bayes_startnull && !opt_bayes_startrandom)
   {
     if (method == PTP_METHOD_SINGLE)
@@ -671,6 +680,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
   {
     if (opt_bayes_startnull)
       fprintf(stdout, "Null model log-likelihood: %f\n", logl);
+    else if (opt_bayes_startrandom)
+      fprintf(stdout, "Random delimitation log-likelihood: %f\n", logl);
     else
       fprintf(stdout, "ML delimitation log-likelihood: %f\n", logl);
   }
@@ -678,9 +689,14 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
   for (i = 0; i < opt_bayes_runs; ++i)
   {
+
+    if (opt_bayes_burnin == i)
+      bayes_stats_init(tree);
+
     /* throw a coin to decide whether to convert a coalescent root to a
        speciation or the other way round */
-    int speciation = (drand48() >= 0.5) ? 1 : 0;
+    drand48_r(rstate, &rand_double);
+    int speciation = (rand_double >= 0.5) ? 1 : 0;
 
     if ((speciation && crnodes_count) || (snodes_count == 0))
     {
@@ -693,7 +709,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
 
 
       /* select a coalescent root, split it into two coalescent nodes */
-      unsigned int r = (unsigned int)(lrand48() % crnodes_count);
+      lrand48_r(rstate, &rand_long);
+      unsigned int r = (unsigned int)(rand_long % crnodes_count);
       rtree_t * node = crnodes[r];
 
       /* store the count of crnodes for the Hasting ratio */
@@ -760,10 +777,12 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       double a = exp(new_logl - logl) * (old_crnodes_count / new_snodes_count);
 
       /* update frequencies */
-      frequencies[species_count+1]++;
+      if (i >= opt_bayes_burnin)
+        frequencies[species_count+1]++;
 
       /* decide whether to accept or reject proposal */
-      if (drand48() <= a)
+      drand48_r(rstate, &rand_double);
+      if (rand_double <= a)
       {
         /* accept */
         if ((i+1) % opt_bayes_sample == 0)
@@ -775,7 +794,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         }
 
         /* update support values information */
-        node->speciation_start = accept_count;
+        if (i >= opt_bayes_burnin)
+          node->speciation_start = accept_count;
         accept_count++;
         species_count++;
         logl = new_logl;
@@ -814,7 +834,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
                   /   \                      /   \
              CR  *     *  CR             C  *     *  C         */
 
-      unsigned int r = (unsigned int)(lrand48() % snodes_count);
+      lrand48_r(rstate, &rand_long);
+      unsigned int r = (unsigned int)(rand_long % snodes_count);
       rtree_t * node = snodes[r];
 
       /* store the count of snodes for the Hastings ratio */
@@ -879,10 +900,12 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
       double a = exp(new_logl - logl) * (old_snodes_count / new_crnodes_count);
 
       /* update frequencies */
-      frequencies[species_count-1]++;
+      if (i >= opt_bayes_burnin)
+        frequencies[species_count-1]++;
 
       /* decide whether to accept or reject proposal */
-      if (drand48() <= a)
+      drand48_r(rstate, &rand_double);
+      if (rand_double <= a)
       {
         /* accept */
         if ((i+1) % opt_bayes_sample == 0)
@@ -894,10 +917,13 @@ void bayes(rtree_t * tree, int method, prior_t * prior)
         }
 
         /* update support values information */
-        node->speciation_count = node->speciation_count + 
-                                accept_count - 
-                                node->speciation_start;
-        node->speciation_start = -1;
+        if (i >= opt_bayes_burnin)
+        {
+          node->speciation_count = node->speciation_count + 
+                                  accept_count - 
+                                  node->speciation_start;
+          node->speciation_start = -1;
+        }
         accept_count++;
         species_count--;
         logl = new_logl;

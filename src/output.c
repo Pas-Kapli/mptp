@@ -21,11 +21,13 @@
 
 #include "delimit.h"
 
-FILE * open_file_ext(const char * extension)
+FILE * open_file_ext(const char * extension, long seed)
 {
-  char * filename = (char *)xmalloc((strlen(opt_outfile)+10)*sizeof(char));
-  strcpy(filename,opt_outfile);
-  strcat(filename,extension);
+  char * filename = NULL;
+  if (opt_bayes_single || opt_bayes_multi)
+    asprintf(&filename, "%s.%ld.%s", opt_outfile, seed, extension);
+  else
+    asprintf(&filename, "%s.%s", opt_outfile, extension);
 
   FILE * out = xopen(filename,"w");
 

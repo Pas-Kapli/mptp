@@ -32,22 +32,33 @@ static long canvas_x1 = 130;
 static long canvas_x2 = 730;
 static long canvas_y1 = 10;
 static long canvas_y2 = 360;
-static double radius = 2;
+static int radius = 4;
+static int radius_mouseover = 10;
+
+static int color_index = 2;
+static char * const color10[] =
+  { "#1f77b4", "#ff7f0e",
+    "#2ca02c", "#d62728",
+    "#9467bd", "#8c564b",
+    "#e377c2", "#7f7f7f",
+    "#bcbd22", "#17becf"
+  };
 
 static void svg_header(FILE * svg_fp)
 {
 
-  fprintf(svg_fp,"<svg class=\"graph\" version=\"1.1\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns=\"http://www.w3.org/2000/svg\">");
-  fprintf(svg_fp,"<style type=\"text/css\">");
+  fprintf(svg_fp,"<svg class=\"graph\" version=\"1.1\" "
+                 "xmlns:xlink=\"http://www.w3.org/1999/xlink\" "
+                 "xmlns=\"http://www.w3.org/2000/svg\">\n");
+  fprintf(svg_fp,"<style type=\"text/css\">\n");
   fprintf(svg_fp,"<![CDATA[\n"
                  "svg.graph {\n"
                  " height: 500px;\n"
                  " width: 800px;\n"
-                 " background: #b2e9e4;\n"
+                 " background: #f8f8f8;\n"
                  "}\n\n"
                  "svg.graph .grid {\n"
-                 " stroke: white;\n"
-                 " stroke-dasharray: 1 2;\n"
+                 " stroke: #e5e5e5;\n"
                  " stroke-width: 1;\n"
                  "}\n\n"
                  "svg.graph .points {\n"
@@ -69,7 +80,7 @@ static void svg_header(FILE * svg_fp)
                  "}\n\n"
                  "svg.graph .labels {\n"
                  " font-family: Arial;\n"
-                 " font-size: 14px;\n"
+                 " font-size: 12px;\n"
                  " kerning: 1;\n"
                  "}\n"
                  "svg.graph .labels.x-labels {\n"
@@ -113,9 +124,8 @@ static void out_svg(FILE * svg_fp, double min_logl, double max_logl)
   fprintf(svg_fp, "<g class=\"surfaces\">\n");
   
   /* open data points file */
-  char * filename = (char *)xmalloc((strlen(opt_outfile)+10)*sizeof(char));
-  strcpy(filename,opt_outfile);
-  strcat(filename,".log");
+  char * filename;
+  asprintf(&filename, "%s.%ld.%s", opt_outfile, opt_seed, "log");
   FILE * fp = xopen(filename,"r");
   free(filename);
 
@@ -140,9 +150,13 @@ static void out_svg(FILE * svg_fp, double min_logl, double max_logl)
 
     /* print point */
     fprintf(svg_fp,
-            "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"%s\" "
-            "stroke=\"%s\" />\n",
-            x, y, radius, "#000000", "#000000");
+            "<circle cx=\"%f\" cy=\"%f\" r=\"%d\" fill=\"%s\" stroke=\"%s\" fill-opacity=\".5\" >\n" 
+            "<animate attributeName=\"r\" begin=\"mouseover\" dur=\"0.2\" fill=\"freeze\" from=\"%d\" to=\"%d\" />\n"
+            "<animate attributeName=\"fill-opacity\" begin=\"mouseover\" dur=\"0.2\" fill=\"freeze\" from=\".5\" to=\"1\" />\n"
+            "<animate attributeName=\"r\" begin=\"mouseout\" dur=\"0.2\" fill=\"freeze\" to=\"%d\" />\n"
+            "<animate attributeName=\"fill-opacity\" begin=\"mouseout\" dur=\"0.2\" fill=\"freeze\" to=\".5\" />\n"
+            "</circle>\n",
+            x, y, radius, color10[color_index], color10[color_index], radius, radius_mouseover, radius);
 
     ++i;
 
@@ -156,7 +170,7 @@ void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
   double scale = (max_logl - min_logl) * 1.1;
   int i;
 
-  /* define class usage */
+  /* bring gridlines to front */
   fprintf(svg_fp,"<use class=\"grid double\" xlink:href=\"#xGrid\" style=\"\"></use>\n");
   fprintf(svg_fp,"<use class=\"grid double\" xlink:href=\"#yGrid\" style=\"\"></use>\n");
 
@@ -191,7 +205,11 @@ void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
 
 void svg_landscape(double bayes_min_logl, double bayes_max_logl)
 {
-  FILE * svg_fp = open_file_ext(".logl.svg");
+  FILE * svg_fp = open_file_ext("logl.svg", opt_seed);
+  if (!opt_quiet)
+    fprintf(stdout,
+            "Creating log-likelihood visualization in %s.%ld.logl.svg ...\n",
+            opt_outfile, opt_seed);
 
   svg_header(svg_fp);
   out_svg(svg_fp, bayes_min_logl, bayes_max_logl);
