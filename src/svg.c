@@ -37,6 +37,8 @@ static double canvas_width;
 static char * const speciation_color = "#31a354";
 static char * const coalesence_color = "#ff0000";
 
+static int tip_occ = 0;
+
 typedef struct coord_s 
 {
   double x;
@@ -70,6 +72,13 @@ static void svg_circle(double cx, double cy, double r, const char * color)
           "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"%s\" "
           "stroke=\"%s\" />\n",
           cx, cy, r, color, color);
+  /* animation effect 
+  fprintf(svg_fp, "<animate attributeName=\"r\" begin=\"mouseover\" dur=\"0.2\" fill=\"freeze\" from=\"%ld\" to=\"%ld\" />\n",
+          (long)r, (long)r+5);
+  fprintf(svg_fp, "<animate attributeName=\"r\" begin=\"mouseout\" dur=\"0.2\" fill=\"freeze\" to=\"%ld\" />\n</circle>\n",
+          (long)r);
+  */
+                
 }
 
 static void svg_text(double x, double y, long fontsize, const char * text)
@@ -109,7 +118,6 @@ static void svg_rtree_plot(rtree_t * node)
 {
   char * current_color;
   double y;
-  static int tip_occ = 0;
   double stroke_width = 3;
 
   /* traverse tree in post-order */
@@ -358,22 +366,26 @@ static void svg_rtree_init(rtree_t * root)
 }
 
 
-void cmd_svg(rtree_t * root)
+void cmd_svg(rtree_t * root, long seed)
 {
+
+  /* reset tip occurrence */
+  tip_occ = 0;
+
   if (!opt_quiet)
   {
     if (opt_bayes_single || opt_bayes_multi)
       fprintf(stdout,
-              "Creating SVG file %s.%ld.svg ...\n",
+              "Creating SVG delimitation file %s.%ld.svg ...\n",
               opt_outfile,
-              opt_seed);
+              seed);
     else
       fprintf(stdout,
-              "Creating SVG file %s.svg ...\n",
+              "Creating SVG delimitation file %s.svg ...\n",
               opt_outfile);
   }
 
-  svg_fp = open_file_ext("svg", opt_seed);
+  svg_fp = open_file_ext("svg", seed);
 
   svg_rtree_init(root);
 

@@ -47,6 +47,7 @@ static void bayes_init(rtree_t * root, long seed)
 
   crnodes_count = 0;
   snodes_count = 0;
+  accept_count = 0;
 
   frequencies = (long *)xmalloc((root->leaves+1)*sizeof(long));
   memset(frequencies, 0, (root->leaves+1) * sizeof(long));

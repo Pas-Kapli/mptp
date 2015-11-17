@@ -114,7 +114,7 @@ void multichain(rtree_t * root, int method, prior_t * prior)
     fprintf(newick_fp, "%s\n", newick);
     fclose(newick_fp);
 
-    cmd_svg(trees[i]);
+    cmd_svg(trees[i], seeds[i]);
 
     free(newick);
   }

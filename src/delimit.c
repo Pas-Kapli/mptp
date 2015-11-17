@@ -476,7 +476,7 @@ void cmd_ml_multi()
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
-  cmd_svg(rtree);
+  cmd_svg(rtree, opt_seed);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
@@ -515,7 +515,7 @@ void cmd_ml_single()
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
-  cmd_svg(rtree);
+  cmd_svg(rtree, opt_seed);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
@@ -569,7 +569,7 @@ void cmd_bayes(int method)
   fprintf(newick_fp, "%s\n", newick);
   fclose(newick_fp);
 
-  cmd_svg(rtree);
+  cmd_svg(rtree, opt_seed);
   /* deallocate tree structure */
   rtree_destroy(rtree);
 
@@ -615,7 +615,7 @@ void cmd_score()
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
-  cmd_svg(rtree);
+  cmd_svg(rtree, opt_seed);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);

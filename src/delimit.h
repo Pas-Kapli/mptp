@@ -354,7 +354,7 @@ void score_delimitation_tree(char * scorefile, rtree_t * tree);
 
 /* functions in svg.c */
 
-void cmd_svg(rtree_t * rtree);
+void cmd_svg(rtree_t * rtree, long seed);
 
 /* functions in priors.c */
 
