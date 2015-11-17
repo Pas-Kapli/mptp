@@ -127,8 +127,6 @@ static void bayes_finalize(rtree_t * root,
       fprintf(stdout, "Log written in %s.%ld.log ...\n", opt_outfile, seed);
 
     fclose(fp_log);
-    
-    //svg_landscape(bayes_min_logl, bayes_max_logl, seed);
   }
 
   FILE * fp_stats = open_file_ext("stats", seed);

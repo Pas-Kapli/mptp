@@ -21,6 +21,31 @@
 
 #include "delimit.h"
 
+static void extract_support_recursive(rtree_t * node,
+                                      int * index,
+                                      double * outbuffer)
+{
+  if (!node->edge_count) return;
+
+  outbuffer[*index] = node->support;
+  *index = *index + 1;
+
+  extract_support_recursive(node->left,  index, outbuffer);
+  extract_support_recursive(node->right, index, outbuffer);
+}
+
+/* recursively extract support values from a tree into an array */
+static int extract_support(rtree_t * root, double * outbuffer)
+{
+  int index = 0;
+
+  if (!root->edge_count) return -1;
+
+  extract_support_recursive(root, &index, outbuffer);
+
+  return index;
+}
+
 void multichain(rtree_t * root, int method, prior_t * prior)
 {
   long i;
@@ -37,13 +62,15 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   for (i = 1; i < opt_bayes_chains; ++i)
     trees[i] = rtree_clone(root, NULL);
 
+  /* allocate memory for storing min and max logl for each chain */
   bayes_min_logl = (double *)xmalloc(opt_bayes_chains * sizeof(double));
   bayes_max_logl = (double *)xmalloc(opt_bayes_chains * sizeof(double));
 
+  /* reset to zero */
   memset(bayes_min_logl, 0, opt_bayes_chains * sizeof(double));
   memset(bayes_max_logl, 0, opt_bayes_chains * sizeof(double));
 
-  /* generate a seed for each run */
+  /* generate one seed for each run */
   seeds = (long *)xmalloc(opt_bayes_chains * sizeof(long));
   for (i = 0; i < opt_bayes_chains; ++i)
     seeds[i] = lrand48();
@@ -51,19 +78,30 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   /* initialize states for random number generators */
   rstates = (struct drand48_data *)xmalloc(opt_bayes_chains *
                                            sizeof(struct drand48_data));
+  
+  /* initialize a pseudo-random number generator for each chain */
   for (i = 0; i < opt_bayes_chains; ++i)
     srand48_r(seeds[i], rstates+i);
 
+  /* execute each chain sequentially  */
   for (i = 0; i < opt_bayes_chains; ++i)
   {
-    assert(trees[i]->parent == NULL);
     dp_init(trees[i]);
     dp_set_pernode_spec_edges(trees[i]);
-    bayes(trees[i], method, prior, rstates+i, seeds[i], bayes_min_logl+i, bayes_max_logl+i);
+    bayes(trees[i],
+          method,
+          prior,
+          rstates+i,
+          seeds[i],
+          bayes_min_logl+i,
+          bayes_max_logl+i);
     dp_free(trees[i]);
+
+    /* print SVG log-likelihood landscape of current chain given its
+       generated seed */
     svg_landscape(bayes_min_logl[i], bayes_max_logl[i], seeds[i]);
     
-    /* output tree with support values */
+    /* output SVG tree with support values for current chain */
     char * newick = rtree_export_newick(trees[i]);
 
     if (!opt_quiet)
@@ -81,6 +119,7 @@ void multichain(rtree_t * root, int method, prior_t * prior)
     free(newick);
   }
 
+  /* compute the min and max log-l values among all chains */
   double min_logl = bayes_min_logl[0];
   double max_logl = bayes_min_logl[0];
   for (i = 1; i < opt_bayes_chains; ++i)
@@ -89,16 +128,58 @@ void multichain(rtree_t * root, int method, prior_t * prior)
     if (bayes_max_logl[i] > max_logl) max_logl = bayes_max_logl[i];
   }
 
+  /* generate the SVG log-likelihood landscape for all chains combined */
   if (!opt_quiet)
     fprintf(stdout, "\nPreparing overall log-likelihood landscape ...\n");
   svg_landscape_combined(min_logl, max_logl, opt_bayes_chains, seeds);
 
+  /* free min and max logl arrays */
   free(bayes_min_logl);
   free(bayes_max_logl);
 
-  /* deallocate all cloned trees (except from the original) */
+  /* allocate memory for support values */
+  double ** support = (double **)xmalloc(opt_bayes_chains * sizeof(double *));
+  int support_count = 0;
   for (i = 0; i < opt_bayes_chains; ++i)
+  {
+    support[i] = (double *)xmalloc(trees[i]->leaves * sizeof(double));
+    support_count = extract_support(trees[i], support[i]); 
     rtree_destroy(trees[i]);
+  }
+
+  /* compute the standard deviation of each support value given the chains,
+     and then compute a consensus average standard deviation for all support
+     values */
+  double mean, var, stdev, avg_stdev = 0;
+  for (i = 0; i < support_count; ++i)
+  {
+    int j;
+    mean = var = stdev = 0;
+    for (j = 0; j < opt_bayes_chains; ++j)
+      mean += support[j][i];
+
+    mean /= opt_bayes_chains;
+
+    for (j = 0; j < opt_bayes_chains; ++j)
+      var += (mean - support[j][i])*(mean - support[j][i]);
+
+    var /= opt_bayes_chains;
+    stdev = sqrt(var);
+
+    avg_stdev += stdev;
+  }
+  avg_stdev /= support_count;
+
+  if (!opt_quiet)
+    printf("Average standard deviation of support values among chains: %f\n",
+           avg_stdev);
+
+  /* deallocate support values array */
+  for (i = 0; i < opt_bayes_chains; ++i)
+    free(support[i]);
+  free(support);
+
+  /* deallocate all cloned trees (except from the original) */
   free(rstates);
   free(seeds);
   free(trees);
