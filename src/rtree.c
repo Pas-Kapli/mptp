@@ -343,19 +343,21 @@ void rtree_print_tips(rtree_t * node, FILE * out)
 }
 
 
-rtree_t * rtree_clone(rtree_t * root)
+rtree_t * rtree_clone(rtree_t * node, rtree_t * parent)
 {
-  if (!root) return NULL;
+  if (!node) return NULL;
 
-  /* clone root */
+  /* clone node */
   rtree_t * clone = (rtree_t *)xmalloc(sizeof(rtree_t));
-  memcpy(clone,root,sizeof(rtree_t));
-  if (root->label)
-    clone->label = xstrdup(root->label);
+  memcpy(clone,node,sizeof(rtree_t));
+  clone->parent = parent;
+
+  if (node->label)
+    clone->label = xstrdup(node->label);
 
   /* clone the two subtrees */
-  clone->left  = rtree_clone(root->left);
-  clone->right = rtree_clone(root->right);
+  clone->left  = rtree_clone(node->left, clone);
+  clone->right = rtree_clone(node->right, clone);
 
   return clone;
 }

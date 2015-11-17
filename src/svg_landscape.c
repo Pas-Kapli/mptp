@@ -36,6 +36,7 @@ static int radius = 4;
 static int radius_mouseover = 10;
 
 static int color_index = 2;
+
 static char * const color10[] =
   { "#1f77b4", "#ff7f0e",
     "#2ca02c", "#d62728",
@@ -115,17 +116,17 @@ static void svg_header(FILE * svg_fp)
                   "  <line x1=\"103\" x2=\"730\" y1=\"301\" y2=\"301\"></line>\n"
                   "  <line x1=\"103\" x2=\"730\" y1=\"360\" y2=\"360\"></line>\n"
                   "</g>\n");
+  fprintf(svg_fp, "<g class=\"surfaces\">\n");
 }
 
-static void out_svg(FILE * svg_fp, double min_logl, double max_logl)
+static void out_svg(FILE * svg_fp, double min_logl, double max_logl, long seed)
 {
   
   double scale = (max_logl - min_logl) * 1.1;
-  fprintf(svg_fp, "<g class=\"surfaces\">\n");
   
   /* open data points file */
   char * filename;
-  asprintf(&filename, "%s.%ld.%s", opt_outfile, opt_seed, "log");
+  asprintf(&filename, "%s.%ld.%s", opt_outfile, seed, "log");
   FILE * fp = xopen(filename,"r");
   free(filename);
 
@@ -162,7 +163,6 @@ static void out_svg(FILE * svg_fp, double min_logl, double max_logl)
 
   }
   fclose(fp);
-  fprintf(svg_fp, "</g>\n");
 }
   
 void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
@@ -170,6 +170,7 @@ void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
   double scale = (max_logl - min_logl) * 1.1;
   int i;
 
+  fprintf(svg_fp, "</g>\n");
   /* bring gridlines to front */
   fprintf(svg_fp,"<use class=\"grid double\" xlink:href=\"#xGrid\" style=\"\"></use>\n");
   fprintf(svg_fp,"<use class=\"grid double\" xlink:href=\"#yGrid\" style=\"\"></use>\n");
@@ -203,16 +204,41 @@ void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
   fprintf(svg_fp,"</svg>\n");
 }
 
-void svg_landscape(double bayes_min_logl, double bayes_max_logl)
+void svg_landscape(double bayes_min_logl, double bayes_max_logl, long seed)
 {
-  FILE * svg_fp = open_file_ext("logl.svg", opt_seed);
+  FILE * svg_fp = open_file_ext("logl.svg", seed);
   if (!opt_quiet)
     fprintf(stdout,
             "Creating log-likelihood visualization in %s.%ld.logl.svg ...\n",
+            opt_outfile, seed);
+
+  svg_header(svg_fp);
+  out_svg(svg_fp, bayes_min_logl, bayes_max_logl, seed);
+  svg_footer(svg_fp, bayes_min_logl, bayes_max_logl);
+
+  fclose(svg_fp);
+}
+
+void svg_landscape_combined(double bayes_min_logl,
+                            double bayes_max_logl,
+                            long runs,
+                            long *seed)
+{
+  long i;
+  FILE * svg_fp = open_file_ext("logl.svg", opt_seed);
+  if (!opt_quiet)
+    fprintf(stdout,
+            "Overall log-likelihood visualization in %s.%ld.logl.svg ...\n",
             opt_outfile, opt_seed);
 
   svg_header(svg_fp);
-  out_svg(svg_fp, bayes_min_logl, bayes_max_logl);
+
+  for (i = 0; i < runs; ++i)
+  {
+    color_index = i % 10;
+    out_svg(svg_fp, bayes_min_logl, bayes_max_logl, seed[i]);
+  }
+
   svg_footer(svg_fp, bayes_min_logl, bayes_max_logl);
 
   fclose(svg_fp);

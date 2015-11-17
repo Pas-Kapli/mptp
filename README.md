@@ -53,6 +53,7 @@ General options:
 * `--bayes_burnin`
 * `--bayes_startnull`
 * `--bayes_startrandom`
+* `--bayes_chains`
 * `--outgroup`
 * `--min_br`
 * `--pvalue`

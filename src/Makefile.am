@@ -17,6 +17,7 @@ delimit.h \
 dp.c \
 lca_utree.c \
 likelihood.c \
+multichain.c \
 output.c \
 priors.c \
 random.c \

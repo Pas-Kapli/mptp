@@ -225,6 +225,7 @@ extern long opt_bayes_log;
 extern long opt_bayes_startnull;
 extern long opt_bayes_startrandom;
 extern long opt_bayes_burnin;
+extern long opt_bayes_chains;
 extern long opt_seed;
 extern long opt_svg;
 extern long opt_svg_width;
@@ -287,6 +288,7 @@ void cmd_ml_single(void);
 void cmd_ml_multi(void);
 void cmd_score(void);
 void cmd_bayes(int method);
+void cmd_multichain(int method);
 
 /* functions in parse_rtree.y */
 
@@ -322,7 +324,7 @@ int rtree_traverse(rtree_t * root,
                    int (*cbtrav)(rtree_t *),
                    struct drand48_data * rstate,
                    rtree_t ** outbuffer);
-rtree_t * rtree_clone(rtree_t * root);
+rtree_t * rtree_clone(rtree_t * node, rtree_t * parent);
 
 /* functions in parse_rtree.y */
 
@@ -393,7 +395,10 @@ FILE * open_file_ext(const char * extension, long seed);
 void bayes(rtree_t * tree,
            int method,
            prior_t * prior,
-           struct drand48_data * rstate);
+           struct drand48_data * rstate,
+           long seed,
+           double * bayes_min_logl,
+           double * bayes_max_logl);
 
 /* functions in bayes_multi.c */
 
@@ -401,7 +406,8 @@ void bayes_multi(rtree_t * tree, int method, prior_t * prior);
 
 /* functions in svg_landscape.c */
 
-void svg_landscape(double bayes_min_log, double bayes_max_logl);
+void svg_landscape(double bayes_min_log, double bayes_max_logl, long seed);
+void svg_landscape_combined(double bayes_min_log, double bayes_max_logl, long runs, long * seed);
 
 /* functions in random.c */
 
@@ -414,3 +420,6 @@ double random_delimitation(rtree_t * root,
                            double * coal_score,
                            struct drand48_data * rstate);
 
+/* functions in multichain.c */
+
+void multichain(rtree_t * root, int method, prior_t * prior);

@@ -49,6 +49,7 @@ long opt_bayes_log;
 long opt_bayes_startnull;
 long opt_bayes_startrandom;
 long opt_bayes_burnin;
+long opt_bayes_chains;
 long opt_seed;
 long opt_svg;
 long opt_svg_width;
@@ -113,6 +114,7 @@ static struct option long_options[] =
   {"bayes_startnull",    no_argument,       0, 0 },  /* 30 */ 
   {"bayes_burnin",       required_argument, 0, 0 },  /* 31 */
   {"bayes_startrandom",  no_argument,       0, 0 },  /* 32 */
+  {"bayes_chains",       required_argument, 0, 0 },  /* 33 */
   { 0, 0, 0, 0 }
 };
 
@@ -147,6 +149,7 @@ void args_init(int argc, char ** argv)
   opt_bayes_startrandom = 0;
   opt_bayes_log = 0;
   opt_bayes_burnin = 0;
+  opt_bayes_chains = 0;
   opt_seed = (long)time(NULL);
 
   opt_svg_width = 1920;
@@ -324,6 +327,10 @@ void args_init(int argc, char ** argv)
         opt_bayes_startrandom = 1;
         break;
 
+      case 33:
+        opt_bayes_chains = atol(optarg);
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -390,6 +397,7 @@ void cmd_help()
           "  --bayes_sample INT             Sample every INT iteration of the run (default: 1000).\n"
           "  --bayes_log                    Log samples in a file and create an SVG of the log-likelihood landscape.\n"
           "  --bayes_burnin INT             Do not log mcmc steps below threshold.\n"
+          "  --bayes_chains INT             Run multiple chains.\n"
           "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
           "  --pvalue                       Specify a P-value (default: 0.001)\n"
           "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
@@ -477,30 +485,22 @@ void cmd_ml_multi()
     fprintf(stdout, "Done...\n");
 }
 
-//void cmd_random()
-//{
-//
-//  rtree_t * rtree = load_tree();
-//
-//  //dp_init(rtree);
-//  //dp_set_pernode_spec_edges(rtree);
-//  //dp_ptp(rtree, PTP_METHOD_MULTI, opt_prior);
-//  //dp_free(rtree);
-//
-//  
-//  random_delimitation(rtree);
-//
-//  if (opt_treeshow)
-//    rtree_show_ascii(rtree);
-//
-//  cmd_svg(rtree);
-//
-//  /* deallocate tree structure */
-//  rtree_destroy(rtree);
-//
-//  if (!opt_quiet)
-//    fprintf(stdout, "Done...\n");
-//}
+void cmd_multichain(int method)
+{
+  rtree_t * rtree = load_tree();
+
+  /* init random number generator */
+  srand48(opt_seed);
+
+  multichain(rtree, method, opt_prior);
+
+  if (opt_treeshow)
+    rtree_show_ascii(rtree);
+   
+  if (!opt_quiet)
+    fprintf(stdout, "Done...\n");
+
+}
 
 void cmd_ml_single()
 {
@@ -523,9 +523,19 @@ void cmd_ml_single()
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
 }
+
 void cmd_bayes(int method)
 {
   struct drand48_data rstate;
+  double bayes_min_logl = 0;
+  double bayes_max_logl = 0;
+
+  if (opt_bayes_chains)
+  {
+    cmd_multichain(method);
+    return;
+  }
+
 
   rtree_t * rtree = load_tree();
 
@@ -534,8 +544,15 @@ void cmd_bayes(int method)
 
   dp_init(rtree);
   dp_set_pernode_spec_edges(rtree);
-  bayes(rtree, method, opt_prior, &rstate);
+  bayes(rtree,
+        method,
+        opt_prior,
+        &rstate,
+        opt_seed,
+        &bayes_min_logl,
+        &bayes_max_logl);
   dp_free(rtree);
+  svg_landscape(bayes_min_logl, bayes_max_logl, opt_seed);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
@@ -676,10 +693,6 @@ int main (int argc, char * argv[])
   {
     cmd_score();
   }
-//  else if (opt_bayes_startrandom)
-//  {
-//    cmd_random();
-//  }
 
   /* free prior information */
   dealloc_prior();

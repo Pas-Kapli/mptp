@@ -89,13 +89,11 @@ double random_delimitation(rtree_t * root,
 
   lrand48_r(rstate, &rand_long);
   species_count = (rand_long % root->max_species_count) + 1;
-  printf("Species_count: %ld\n", species_count);
 
   rtree_t ** inner_node_list =  (rtree_t **)xmalloc(species_count *
                                                     sizeof(rtree_t *));
 
   long count = rtree_traverse(root, cb_node_select, rstate, inner_node_list);
-  printf ("count: %ld\n", count);
 
   for (i = 0; i < count; ++i)
   {

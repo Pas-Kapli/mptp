@@ -40,7 +40,7 @@ static void mcmc_log(double logl, long sc)
     fprintf(fp_log, "%f,%ld\n", logl, sc);
 }
 
-static void bayes_init(rtree_t * root)
+static void bayes_init(rtree_t * root, long seed)
 {
   crnodes = (rtree_t **)xmalloc(root->leaves*sizeof(rtree_t *));
   snodes = (rtree_t **)xmalloc(root->leaves*sizeof(rtree_t *));
@@ -53,7 +53,7 @@ static void bayes_init(rtree_t * root)
 
   /* open log file */
   if (opt_bayes_log)
-    fp_log = open_file_ext("log", opt_seed);
+    fp_log = open_file_ext("log", seed);
 }
 
 static void init_null(rtree_t * root)
@@ -91,7 +91,10 @@ static void bayes_stats_init(rtree_t * root)
   free(inner_node_list);
 }
 
-static void bayes_finalize(rtree_t * root, double bayes_min_logl, double bayes_max_logl)
+static void bayes_finalize(rtree_t * root,
+                           double bayes_min_logl,
+                           double bayes_max_logl,
+                           long seed)
 {
   long i;
 
@@ -121,14 +124,14 @@ static void bayes_finalize(rtree_t * root, double bayes_min_logl, double bayes_m
   if (opt_bayes_log)
   {
     if (!opt_quiet)
-      fprintf(stdout, "Log written in %s.%ld.log ...\n", opt_outfile, opt_seed);
+      fprintf(stdout, "Log written in %s.%ld.log ...\n", opt_outfile, seed);
 
     fclose(fp_log);
     
-    svg_landscape(bayes_min_logl, bayes_max_logl);
+    //svg_landscape(bayes_min_logl, bayes_max_logl, seed);
   }
 
-  FILE * fp_stats = open_file_ext("stats", opt_seed);
+  FILE * fp_stats = open_file_ext("stats", seed);
 
   for (i = 0; i < root->leaves; ++i)
   {
@@ -142,7 +145,7 @@ static void bayes_finalize(rtree_t * root, double bayes_min_logl, double bayes_m
     fprintf(stdout,
             "Statistics written in %s.%ld.stats ...\n",
             opt_outfile,
-            opt_seed);
+            seed);
 
   fclose(fp_stats);
   free(frequencies);
@@ -521,7 +524,13 @@ static void coalesce(unsigned int r)
   }
 }
 
-void bayes(rtree_t * tree, int method, prior_t * prior, struct drand48_data * rstate)
+void bayes(rtree_t * tree,
+           int method,
+           prior_t * prior,
+           struct drand48_data * rstate,
+           long seed,
+           double * bayes_min_logl,
+           double * bayes_max_logl)
 {
   int best_index = 0;
   long i;
@@ -530,8 +539,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior, struct drand48_data * rs
   double max = 0;
   double logl = 0;
 
-  double bayes_max_logl = 0;
-  double bayes_min_logl = 0;
+  *bayes_max_logl = 0;
+  *bayes_min_logl = 0;
 
   if (!opt_quiet)
     fprintf(stdout,"Computing initial delimitation...\n");
@@ -548,7 +557,7 @@ void bayes(rtree_t * tree, int method, prior_t * prior, struct drand48_data * rs
     return;
   }
 
-  bayes_init(tree);
+  bayes_init(tree, seed);
   
   /* fill DP table */
   dp_recurse(tree, method, prior);
@@ -628,7 +637,6 @@ void bayes(rtree_t * tree, int method, prior_t * prior, struct drand48_data * rs
                                &spec_edgelen_sum, 
                                &coal_score,
                                rstate);
-    printf("Species count: %ld\n", species_count);
     backtrack_random(tree, &warning_minbr);
     if (warning_minbr)
       fprintf(stderr,"WARNING: A speciation edge is smaller than the specified "
@@ -673,8 +681,8 @@ void bayes(rtree_t * tree, int method, prior_t * prior, struct drand48_data * rs
     }
   }
 
-  bayes_max_logl = logl;
-  bayes_min_logl = logl;
+  *bayes_max_logl = logl;
+  *bayes_min_logl = logl;
 
   if (!opt_quiet)
   {
@@ -766,12 +774,12 @@ void bayes(rtree_t * tree, int method, prior_t * prior, struct drand48_data * rs
           
       }
 
-      if (new_logl > bayes_max_logl)
-        bayes_max_logl = new_logl;
+      if (new_logl > *bayes_max_logl)
+        *bayes_max_logl = new_logl;
       if (i+1 < opt_bayes_burnin)
-        bayes_min_logl = bayes_max_logl;
-      else if (new_logl < bayes_min_logl)
-        bayes_min_logl = new_logl;
+        *bayes_min_logl = *bayes_max_logl;
+      else if (new_logl < *bayes_min_logl)
+        *bayes_min_logl = new_logl;
 
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_crnodes_count / new_snodes_count);
@@ -889,12 +897,12 @@ void bayes(rtree_t * tree, int method, prior_t * prior, struct drand48_data * rs
 
       }
 
-      if (new_logl > bayes_max_logl)
-        bayes_max_logl = new_logl;
+      if (new_logl > *bayes_max_logl)
+        *bayes_max_logl = new_logl;
       if (i+1 < opt_bayes_burnin)
-        bayes_min_logl = bayes_max_logl;
-      else if (new_logl < bayes_min_logl)
-        bayes_min_logl = new_logl;
+        *bayes_min_logl = *bayes_max_logl;
+      else if (new_logl < *bayes_min_logl)
+        *bayes_min_logl = new_logl;
 
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_snodes_count / new_crnodes_count);
@@ -957,6 +965,6 @@ void bayes(rtree_t * tree, int method, prior_t * prior, struct drand48_data * rs
 
   /* TODO: DEBUG variables for checking the max likelihood bayesian runs give.
      Must be removed */
-  bayes_finalize(tree, bayes_min_logl, bayes_max_logl);
+  bayes_finalize(tree, *bayes_min_logl, *bayes_max_logl, seed);
 
 }
