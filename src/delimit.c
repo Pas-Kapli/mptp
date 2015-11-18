@@ -552,7 +552,9 @@ void cmd_bayes(int method)
         &bayes_min_logl,
         &bayes_max_logl);
   dp_free(rtree);
-  svg_landscape(bayes_min_logl, bayes_max_logl, opt_seed);
+
+  if (opt_bayes_log)
+    svg_landscape(bayes_min_logl, bayes_max_logl, opt_seed);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);

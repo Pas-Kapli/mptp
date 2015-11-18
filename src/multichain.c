@@ -99,7 +99,8 @@ void multichain(rtree_t * root, int method, prior_t * prior)
 
     /* print SVG log-likelihood landscape of current chain given its
        generated seed */
-    svg_landscape(bayes_min_logl[i], bayes_max_logl[i], seeds[i]);
+    if (opt_bayes_log)
+      svg_landscape(bayes_min_logl[i], bayes_max_logl[i], seeds[i]);
     
     /* output SVG tree with support values for current chain */
     char * newick = rtree_export_newick(trees[i]);
@@ -129,9 +130,10 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   }
 
   /* generate the SVG log-likelihood landscape for all chains combined */
-  if (!opt_quiet)
+  if (!opt_quiet && opt_bayes_log)
     fprintf(stdout, "\nPreparing overall log-likelihood landscape ...\n");
-  svg_landscape_combined(min_logl, max_logl, opt_bayes_chains, seeds);
+  if (opt_bayes_log)
+    svg_landscape_combined(min_logl, max_logl, opt_bayes_chains, seeds);
 
   /* free min and max logl arrays */
   free(bayes_min_logl);
