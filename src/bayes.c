@@ -92,6 +92,29 @@ static void bayes_stats_init(rtree_t * root)
   free(inner_node_list);
 }
 
+static void conf_interval(long leaves, double * mean, double * error_margin)
+{
+  long i;
+  long n = opt_bayes_runs - opt_bayes_burnin;
+  double stdev = 0;
+
+  *mean = 0;
+  *error_margin = 0;
+
+  /* compute mean */
+  for (i = 1; i <= leaves; ++i)
+    *mean += frequencies[i]*i;
+  *mean /= n;
+
+  /* compute standard deviation */
+  for (i = 1; i <= leaves; ++i)
+    stdev += frequencies[i]*(i - *mean)*(i - *mean);
+  stdev = sqrt(stdev/n);
+
+  /* compute error margin for 95% */
+  *error_margin = 1.96 * stdev / sqrt(n);
+}
+
 static void bayes_finalize(rtree_t * root,
                            double bayes_min_logl,
                            double bayes_max_logl,
@@ -132,13 +155,26 @@ static void bayes_finalize(rtree_t * root,
 
   FILE * fp_stats = open_file_ext("stats", seed);
 
-  for (i = 0; i < root->leaves; ++i)
+  for (i = 1; i <= root->leaves; ++i)
   {
     fprintf(fp_stats,
             "%ld,%f\n",
-            i+1,
-            (frequencies[i+1]/(double)(opt_bayes_runs-opt_bayes_burnin))*100.0);
+            i,
+            (frequencies[i]/(double)(opt_bayes_runs-opt_bayes_burnin))*100.0);
   }
+
+  /* compute confidence interval */
+  double mean, error_margin;
+  conf_interval(root->leaves, &mean, &error_margin);
+
+  /* print confidence interval on screen and in file */
+  if (!opt_quiet)
+    fprintf(stdout,"95%% confidence interval on number of species: <%f , %f>\n",
+           mean - error_margin,
+           mean + error_margin);
+  fprintf(fp_stats,"95%% confidence interval on number of species: <%f , %f>\n",
+         mean - error_margin,
+         mean + error_margin);
 
   if (!opt_quiet)
     fprintf(stdout,
