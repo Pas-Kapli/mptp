@@ -106,13 +106,24 @@ static void conf_interval(long leaves, double * mean, double * error_margin)
     *mean += frequencies[i]*i;
   *mean /= n;
 
+  long mean_rounded = round(*mean);
+  long sum_freq = frequencies[mean_rounded];
+  long j = 0;
+  while(sum_freq/(double) n < 0.95) 
+  {
+    j++;
+    if (mean_rounded-j > 0) sum_freq += frequencies[mean_rounded - j];
+    if (mean_rounded+j <= leaves) sum_freq += frequencies[mean_rounded + j];
+  }
+  *error_margin = j;
+
   /* compute standard deviation */
-  for (i = 1; i <= leaves; ++i)
+  /*for (i = 1; i <= leaves; ++i)
     stdev += frequencies[i]*(i - *mean)*(i - *mean);
-  stdev = sqrt(stdev/n);
+  stdev = sqrt(stdev/(n-1));*/
 
   /* compute error margin for 95% */
-  *error_margin = 1.96 * stdev / sqrt(n);
+  //*error_margin = 1.96 * stdev / sqrt(n);
 }
 
 static void bayes_finalize(rtree_t * root,
