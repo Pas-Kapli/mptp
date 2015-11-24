@@ -234,6 +234,46 @@ int rtree_traverse(rtree_t * root,
   return index;
 }
 
+static void rtree_traverse_postorder_recursive(rtree_t * node,
+                                               int (*cbtrav)(rtree_t *),
+                                               int * index,
+                                               rtree_t ** outbuffer)
+{
+  if (!node) return;
+
+  rtree_traverse_postorder_recursive(node->left,  cbtrav, index, outbuffer);
+  rtree_traverse_postorder_recursive(node->right, cbtrav, index, outbuffer);
+
+  if (cbtrav(node))
+  {
+    outbuffer[*index] = node;
+    *index = *index + 1;
+  }
+}
+
+
+int rtree_traverse_postorder(rtree_t * root,
+                             int (*cbtrav)(rtree_t *),
+                             rtree_t ** outbuffer)
+{
+  int index = 0;
+
+  if (!root->left) return -1;
+
+  /* we will traverse an unrooted tree in the following way
+
+           root
+            /\
+           /  \
+        left   right
+
+     at each node the callback function is called to decide whether to
+     place the node in the list */
+
+  rtree_traverse_postorder_recursive(root, cbtrav, &index, outbuffer);
+  return index;
+}
+
 static void rtree_query_tipnodes_recursive(rtree_t * node,
                                            rtree_t ** node_list,
                                            int * index)

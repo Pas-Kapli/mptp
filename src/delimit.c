@@ -33,6 +33,7 @@ static const char mandatory_options_count = 2;
 static const char * mandatory_options_list = " --tree_file --output_file";
 
 /* options */
+int pll_errno;
 int opt_quiet;
 int opt_precision;
 int opt_svg_showlegend;
@@ -67,6 +68,7 @@ char * opt_treefile;
 char * opt_outfile;
 char * opt_outgroup;
 char * opt_scorefile;
+char * opt_pdist_file;
 prior_t * opt_prior;
 
 static void dealloc_prior()
@@ -92,7 +94,7 @@ static struct option long_options[] =
   {"outgroup",           required_argument, 0, 0 },  /*  8 */
   {"score",              required_argument, 0, 0 },  /*  9 */
   {"pvalue",             required_argument, 0, 0 },  /* 10 */
-  {"min_br",             required_argument, 0, 0 },  /* 11 */
+  {"minbr",              required_argument, 0, 0 },  /* 11 */
   {"svg_width",          required_argument, 0, 0 },  /* 12 */
   {"svg_fontsize",       required_argument, 0, 0 },  /* 13 */
   {"svg_tipspacing",     required_argument, 0, 0 },  /* 14 */
@@ -115,6 +117,7 @@ static struct option long_options[] =
   {"bayes_burnin",       required_argument, 0, 0 },  /* 31 */
   {"bayes_startrandom",  no_argument,       0, 0 },  /* 32 */
   {"bayes_chains",       required_argument, 0, 0 },  /* 33 */
+  {"minbr_auto",         required_argument, 0, 0 },  /* 34 */
   { 0, 0, 0, 0 }
 };
 
@@ -134,6 +137,7 @@ void args_init(int argc, char ** argv)
   opt_treefile = NULL;
   opt_outfile = NULL;
   opt_outgroup = NULL;
+  opt_pdist_file = NULL;
   opt_quiet = 0;
   opt_ml_multi = 0;
   opt_ml_single = 0;
@@ -331,6 +335,11 @@ void args_init(int argc, char ** argv)
         opt_bayes_chains = atol(optarg);
         break;
 
+      case 34:
+        free(opt_pdist_file);
+        opt_pdist_file = optarg;
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -362,6 +371,8 @@ void args_init(int argc, char ** argv)
     commands++;
   if (opt_scorefile)
     commands++;
+  if (opt_pdist_file)
+    commands++;
 
   /* if more than one independent command, fail */
   if (commands > 1)
@@ -387,46 +398,47 @@ void cmd_help()
   fprintf(stderr,
           "\n"
           "General options:\n"
-          "  --help                         display help information.\n"
-          "  --version                      display version information.\n"
-          "  --tree_show                    display an ASCII version of the tree.\n"
-          "  --ml_multi                     Maximum-likelihood PTP with one lambda per coalescent.\n"
-          "  --ml_single                    Maximum-likelihood PTP with a single lambda for all coalescent.\n"
-          "  --bayes_multi INT              Bayesian PTP with one lambda per coalescent and INT runs.\n"
-          "  --bayes_single INT             Bayesian PTP with a single lambda for all coalescent and INT runs.\n"
-          "  --bayes_sample INT             Sample every INT iteration of the run (default: 1000).\n"
-          "  --bayes_log                    Log samples in a file and create an SVG of the log-likelihood landscape.\n"
-          "  --bayes_burnin INT             Do not log mcmc steps below threshold.\n"
-          "  --bayes_chains INT             Run multiple chains.\n"
-          "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
-          "  --pvalue                       Specify a P-value (default: 0.001)\n"
-          "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
-          "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
-          "  --quiet                        only output warnings and fatal errors to stderr.\n"
-          "  --precision                    Precision of decimal part of floating point numbers on output (default: 7).\n"
-          "  --seed                         Seed for pseudo-random number generator.\n"
+          "  --help                    display help information.\n"
+          "  --version                 display version information.\n"
+          "  --tree_show               display an ASCII version of the tree.\n"
+          "  --ml_multi                Maximum-likelihood with one lambda per coalescent.\n"
+          "  --ml_single               Maximum-likelihood with one lambda for all coalescent.\n"
+          "  --bayes_multi INT         Bayesian with own lambda per coalescent (INT runs).\n"
+          "  --bayes_single INT        Bayesian with one lambda for all coalescent (INT steps).\n"
+          "  --bayes_sample INT        Sample every INT iteration (default: 1000).\n"
+          "  --bayes_log               Log samples and create SVG plot of log-likelihoods.\n"
+          "  --bayes_burnin INT        Ignore all MCMC steps below threshold.\n"
+          "  --bayes_chains INT        Run multiple chains.\n"
+          "  --score                   Compare given species delimitation with optimal one induced by the tree.\n"
+          "  --pvalue                  Set p-value for LRT (default: 0.001)\n"
+          "  --minbr REAL              Set minimum branch length (default: 0.0001)\n"
+          "  --minbr_auto FILENAME     Detect minimum branch length from FASTA p-distances\n"
+          "  --outgroup TAXON          If input tree is unrooted, use TAXON as outgroup (default: taxon with longest branch).\n"
+          "  --quiet                   only output warnings and fatal errors to stderr.\n"
+          "  --precision               Precision of decimal part of floating point numbers on output (default: 7).\n"
+          "  --seed                    Seed for pseudo-random number generator.\n"
           "Prior options:\n"
-          "  --prior_exp REAL               Rate of exponential prior.\n"
-          "  --prior_ln REAL,REAL           Log-normal prior with mean (first param) and standard deviation (second param).\n"
-          "  --prior_uni REAL,REAL          Uniform prior with minimum (first param) and maximum (second param) bounds.\n"
-          "  --prior_bin INT,REAL           Binomial prior with number of trials (first param) and success probability (second param).\n"
-          "  --prior_nbin INT,REAL          Negative binomial prior with number of failures (first param) and success probability (second param).\n"
-          "  --prior_gamma REAL,REAL        Gamma distribution with shape (first param) and rate (second param).\n"
-          "  --prior_beta REAL,REAL         Beta distribution with alpha shape (first param) and beta shape (second param).\n"
+          "  --prior_exp REAL          Rate of exponential prior.\n"
+          "  --prior_ln REAL,REAL      Log-normal prior with mean (first param) and standard deviation (second param).\n"
+          "  --prior_uni REAL,REAL     Uniform prior with minimum (first param) and maximum (second param) bounds.\n"
+          "  --prior_bin INT,REAL      Binomial prior with number of trials (first param) and success probability (second param).\n"
+          "  --prior_nbin INT,REAL     Negative binomial prior with number of failures (first param) and success probability (second param).\n"
+          "  --prior_gamma REAL,REAL   Gamma distribution with shape (first param) and rate (second param).\n"
+          "  --prior_beta REAL,REAL    Beta distribution with alpha shape (first param) and beta shape (second param).\n"
           "Input and output options:\n"
-          "  --tree_file FILENAME           tree file in newick format.\n"
-          "  --output_file FILENAME         output file name.\n"
+          "  --tree_file FILENAME      tree file in newick format.\n"
+          "  --output_file FILENAME    output file name.\n"
           "Visualization options:\n"
-          "  --svg_width INT                Width of the resulting SVG image in pixels (default: 1920).\n"
-          "  --svg_fontsize INT             Size of font in SVG image. (default: 12)\n"
-          "  --svg_tipspacing INT           Vertical space between taxa in SVG image (default: 20).\n"
-          "  --svg_legend_ratio <0..1>      Ratio of the total tree length to be displayed as legend line.\n"
-          "  --svg_nolegend                 Hides the legend.\n"
-          "  --svg_marginleft               Left margin in pixels (default: 20).\n"
-          "  --svg_marginright              Right margin in pixels (default: 20).\n"
-          "  --svg_margintop                Top margin in pixels (default: 20).\n"
-          "  --svg_marginbottom             Bottom margin in pixels (default: 20).\n"
-          "  --svg_inner_radius             Radius of inner nodes in pixels (default: 0).\n"
+          "  --svg_width INT           Width of SVG tree in pixels (default: 1920).\n"
+          "  --svg_fontsize INT        Size of font in SVG image. (default: 12)\n"
+          "  --svg_tipspacing INT      Vertical space between taxa in SVG tree (default: 20).\n"
+          "  --svg_legend_ratio <0..1> Ratio of total tree length to be displayed as legend line.\n"
+          "  --svg_nolegend            Hides legend.\n"
+          "  --svg_marginleft          Left margin in pixels (default: 20).\n"
+          "  --svg_marginright         Right margin in pixels (default: 20).\n"
+          "  --svg_margintop           Top margin in pixels (default: 20).\n"
+          "  --svg_marginbottom        Bottom margin in pixels (default: 20).\n"
+          "  --svg_inner_radius        Radius of inner nodes in pixels (default: 0).\n"
          );
 }
 
@@ -697,6 +709,10 @@ int main (int argc, char * argv[])
   else if (opt_scorefile)
   {
     cmd_score();
+  }
+  else if (opt_pdist_file)
+  {
+    cmd_auto();
   }
 
   /* free prior information */

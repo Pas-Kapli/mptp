@@ -11,12 +11,15 @@ AM_LFLAGS = -o lex.yy.c
 
 __top_builddir__bin_delimit_LDADD = libparse_utree.a libparse_rtree.a
 __top_builddir__bin_delimit_SOURCES = arch.c \
+auto.c \
 bayes.c \
 delimit.c \
 delimit.h \
 dp.c \
+fasta.c \
 lca_utree.c \
 likelihood.c \
+maps.c \
 multichain.c \
 output.c \
 priors.c \

@@ -99,6 +99,8 @@ input: OPAR subtree COMMA subtree CPAR optional_label optional_length SEMICOLON
   tree->max_species_count = 1;
   if (tree->edge_count > 0)
     tree->max_species_count = $2->max_species_count + $4->max_species_count;
+
+  tree->mark = 0;
 };
 
 subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
@@ -131,6 +133,7 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->max_species_count = 1;
   if ($$->edge_count > 0)
     $$->max_species_count = $2->max_species_count + $4->max_species_count;
+  $$->mark = 0;
 }
        | label optional_length
 {
@@ -146,6 +149,7 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->edgelen_sum = 0;
 
   $$->max_species_count = 1;
+  $$->mark = 0;
 
   free($2);
 };

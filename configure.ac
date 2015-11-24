@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([delimit], [0.0.6], [Tomas.Flouri@h-its.org])
+AC_INIT([delimit], [0.0.7], [Tomas.Flouri@h-its.org])
 AM_INIT_AUTOMAKE([subdir-objects])
 AC_LANG([C])
 AC_CONFIG_SRCDIR([src/delimit.c])

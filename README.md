@@ -100,14 +100,17 @@ The code is currently licensed under the GNU Affero General Public License versi
     File            | Description
 --------------------|----------------
 **arch.c**          | Architecture specific code (Mac/Linux).
+**auto.c**          | Code for auto-detecting minimum branch length.
 **bayes.c**         | Code for Bayesian Single- and multi-rate PTP.
 **delimit.c**       | Main file handling command-line parameters and executing corresponding parts.
 **dp.c**            | Single- and multi-rate DP heuristics for solving the PTP problem.
+**fasta.c**         | Code for reading FASTA files.
 **lca_utree.c**     | Naive LCA computation in unrooted trees.
 **lex_rtree.l**     | Lexical analyzer parsing newick rooted trees.
 **lex_utree.l**     | Lexical analyzer parsing newick unrooted trees.
 **likelihood.c**    | Likelihood rated functions.
 **Makefile**        | Makefile.
+**maps.c**          | Character mapping arrays for converting sequences to the internal representation.
 **output.c**        | Output related files.
 **parse_rtree.y**   | Functions for parsing rooted trees in newick format.
 **parse_utree.y**   | Functions for parsing unrooted trees in newick format.

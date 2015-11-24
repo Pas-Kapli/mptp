@@ -22,6 +22,7 @@
 #define _GNU_SOURCE
 
 #include <assert.h>
+#include <search.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -56,6 +57,17 @@
 #else
 #define PROG_ARCH "linux_x86_64"
 #endif
+
+#define PLL_FAILURE  0
+#define PLL_SUCCESS  1
+#define PLL_LINEALLOC 2048
+#define PLL_ERROR_FILE_OPEN              1
+#define PLL_ERROR_FILE_SEEK              2
+#define PLL_ERROR_FILE_EOF               3
+#define PLL_ERROR_FASTA_ILLEGALCHAR      4
+#define PLL_ERROR_FASTA_UNPRINTABLECHAR  5
+#define PLL_ERROR_FASTA_INVALIDHEADER    6
+#define PLL_ERROR_MEM_ALLOC              7
 
 #define LINEALLOC 2048
 
@@ -150,6 +162,11 @@ typedef struct rtree_s
 
   /* for generating random delimitations */
   int max_species_count;
+
+  /* mark */
+  int mark;
+  char * sequence;
+
 } rtree_t;
 
 
@@ -202,6 +219,18 @@ typedef struct exp_params_s
   double rate;
 } exp_params_t;
 
+typedef struct pll_fasta
+{
+  FILE * fp;
+  char line[LINEALLOC];
+  const unsigned int * chrstatus;
+  long no;
+  long filesize;
+  long lineno;
+  long stripped_count;
+  long stripped[256];
+} pll_fasta_t;
+
 /* macros */
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -243,12 +272,17 @@ extern char * opt_treefile;
 extern char * opt_outfile;
 extern char * opt_outgroup;
 extern char * opt_scorefile;
+extern char * opt_pdist_file;
 extern char * cmdline;
 extern prior_t * opt_prior;
 
 /* common data */
 
 extern char errmsg[200];
+
+extern int pll_errno;
+extern const unsigned int pll_map_nt[256];
+extern const unsigned int pll_map_fasta[256];
 
 extern long mmx_present;
 extern long sse_present;
@@ -325,6 +359,9 @@ int rtree_traverse(rtree_t * root,
                    struct drand48_data * rstate,
                    rtree_t ** outbuffer);
 rtree_t * rtree_clone(rtree_t * node, rtree_t * parent);
+int rtree_traverse_postorder(rtree_t * root,
+                             int (*cbtrav)(rtree_t *),
+                             rtree_t ** outbuffer);
 
 /* functions in parse_rtree.y */
 
@@ -423,3 +460,24 @@ double random_delimitation(rtree_t * root,
 /* functions in multichain.c */
 
 void multichain(rtree_t * root, int method, prior_t * prior);
+
+/* functions in fasta.c */
+
+pll_fasta_t * pll_fasta_open(const char * filename,
+                                        const unsigned int * map);
+
+int pll_fasta_getnext(pll_fasta_t * fd, char ** head,
+                                 long * head_len,  char ** seq,
+                                 long * seq_len, long * seqno);
+
+void pll_fasta_close(pll_fasta_t * fd);
+
+long pll_fasta_getfilesize(pll_fasta_t * fd);
+
+long pll_fasta_getfilepos(pll_fasta_t * fd);
+
+int pll_fasta_rewind(pll_fasta_t * fd);
+
+/* functions in auto.c */
+
+void cmd_auto(void);
