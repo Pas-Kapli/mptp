@@ -21,6 +21,22 @@
 
 #include "delimit.h"
 
+double mlsupport_avg(int * mlsupport, double * support, int count)
+{
+  int i;
+  double sum = 0;
+
+  for (i = 0; i < count; ++i)
+  {
+    if (mlsupport[i] == EVENT_SPECIATION)
+      sum += support[i];
+    else
+      sum += 1 - support[i];
+  }
+
+  return sum / count;
+}
+
 static void extract_support_recursive(rtree_t * node,
                                       int * index,
                                       double * outbuffer)
@@ -46,10 +62,35 @@ static int extract_support(rtree_t * root, double * outbuffer)
   return index;
 }
 
+static void extract_events_recursive(rtree_t * node,
+                                     int * index,
+                                     int * outbuffer)
+{
+  if (!node->edge_count) return;
+
+  outbuffer[*index] = node->event;
+  *index = *index + 1;
+
+  extract_events_recursive(node->left,  index, outbuffer);
+  extract_events_recursive(node->right, index, outbuffer);
+}
+
+static int extract_events(rtree_t * root, int * outbuffer)
+{
+  int index = 0;
+
+  if (!root->edge_count) return -1;
+
+  extract_events_recursive(root, &index, outbuffer);
+
+  return index;
+}
+
 void multichain(rtree_t * root, int method, prior_t * prior)
 {
   long i;
   long * seeds;
+  rtree_t * mltree;
   rtree_t ** trees;
   struct drand48_data * rstates;
   double * bayes_min_logl;
@@ -61,6 +102,7 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   /* clone trees in order to have one independent tree per run */
   for (i = 1; i < opt_bayes_chains; ++i)
     trees[i] = rtree_clone(root, NULL);
+  mltree = rtree_clone(root,NULL);
 
   /* allocate memory for storing min and max logl for each chain */
   bayes_min_logl = (double *)xmalloc(opt_bayes_chains * sizeof(double));
@@ -88,6 +130,8 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   {
     dp_init(trees[i]);
     dp_set_pernode_spec_edges(trees[i]);
+    if (!opt_quiet)
+      fprintf(stdout, "\nBayesian run %ld...\n", i);
     bayes(trees[i],
           method,
           prior,
@@ -148,6 +192,27 @@ void multichain(rtree_t * root, int method, prior_t * prior)
     support_count = extract_support(trees[i], support[i]); 
     rtree_destroy(trees[i]);
   }
+
+  /* compute ML tree */
+  dp_init(mltree);
+  dp_set_pernode_spec_edges(mltree);
+  dp_ptp(mltree, method, opt_prior);
+  int * mlsupport  = (int *)xmalloc(mltree->leaves * sizeof(int));
+  if (support_count != extract_events(mltree, mlsupport))
+    fatal("Internal error");
+
+  for (i = 0; i < opt_bayes_chains; ++i)
+  {
+    printf("ML average support based on chain %ld : %.17f\n",
+           seeds[i],
+           mlsupport_avg(mlsupport, support[i], support_count));
+  }
+
+  dp_free(mltree);
+  rtree_destroy(mltree);
+  free(mlsupport);
+
+
 
   /* compute the standard deviation of each support value given the chains,
      and then compute a consensus average standard deviation for all support

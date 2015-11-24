@@ -148,7 +148,7 @@ void args_init(int argc, char ** argv)
   opt_bayes_startnull = 0;
   opt_bayes_startrandom = 0;
   opt_bayes_log = 0;
-  opt_bayes_burnin = 0;
+  opt_bayes_burnin = 1;
   opt_bayes_chains = 0;
   opt_seed = (long)time(NULL);
 
@@ -529,6 +529,9 @@ void cmd_bayes(int method)
   struct drand48_data rstate;
   double bayes_min_logl = 0;
   double bayes_max_logl = 0;
+
+  if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
+    fatal("--opt_bayes_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
 
   if (opt_bayes_chains)
   {

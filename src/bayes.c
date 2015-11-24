@@ -84,7 +84,7 @@ static void bayes_stats_init(rtree_t * root)
     if (inner_node_list[i]->event == EVENT_COALESCENT)
       inner_node_list[i]->speciation_start = -1;
     else
-      inner_node_list[i]->speciation_start = 0;
+      inner_node_list[i]->speciation_start = opt_bayes_burnin-1;
 
     inner_node_list[i]->speciation_count = 0;
   }
@@ -95,8 +95,7 @@ static void bayes_stats_init(rtree_t * root)
 static void conf_interval(long leaves, double * mean, double * error_margin)
 {
   long i;
-  long n = opt_bayes_runs - opt_bayes_burnin;
-  double stdev = 0;
+  long n = opt_bayes_runs - opt_bayes_burnin + 1;
 
   *mean = 0;
   *error_margin = 0;
@@ -116,14 +115,6 @@ static void conf_interval(long leaves, double * mean, double * error_margin)
     if (mean_rounded+j <= leaves) sum_freq += frequencies[mean_rounded + j];
   }
   *error_margin = j;
-
-  /* compute standard deviation */
-  /*for (i = 1; i <= leaves; ++i)
-    stdev += frequencies[i]*(i - *mean)*(i - *mean);
-  stdev = sqrt(stdev/(n-1));*/
-
-  /* compute error margin for 95% */
-  //*error_margin = 1.96 * stdev / sqrt(n);
 }
 
 static void bayes_finalize(rtree_t * root,
@@ -145,11 +136,11 @@ static void bayes_finalize(rtree_t * root,
   {
     if (inner_node_list[i]->speciation_start != -1)
       inner_node_list[i]->speciation_count = inner_node_list[i]->speciation_count +
-                                             accept_count - 
+                                             opt_bayes_runs - 
                                              inner_node_list[i]->speciation_start;
 
     inner_node_list[i]->support = inner_node_list[i]->speciation_count / 
-                                  (double)accept_count;
+                                  (double)(opt_bayes_runs-opt_bayes_burnin+1);
   }
 
   free(inner_node_list);
@@ -171,7 +162,7 @@ static void bayes_finalize(rtree_t * root,
     fprintf(fp_stats,
             "%ld,%f\n",
             i,
-            (frequencies[i]/(double)(opt_bayes_runs-opt_bayes_burnin))*100.0);
+            (frequencies[i]/(double)(opt_bayes_runs-opt_bayes_burnin+1))*100.0);
   }
 
   /* compute confidence interval */
@@ -667,7 +658,7 @@ void bayes(rtree_t * tree,
     init_null(tree);
 
     /* log log-likelihood at step 0 */
-    if (!opt_bayes_burnin)
+    if (opt_bayes_burnin == 1)
       mcmc_log(logl,species_count);
 
 
@@ -689,7 +680,7 @@ void bayes(rtree_t * tree,
                      "minimum branch length.\n");
 
     /* log log-likelihood at step 0 */
-    if (!opt_bayes_burnin)
+    if (opt_bayes_burnin == 1)
       mcmc_log(logl,species_count);
   }
   else
@@ -705,7 +696,7 @@ void bayes(rtree_t * tree,
                 vec[best_index].score_multi : vec[best_index].score_single;
     
     /* log log-likelihood at step 0 */
-    if (!opt_bayes_burnin)
+    if (opt_bayes_burnin == 1)
       mcmc_log(logl,species_count);
   }
 
@@ -740,12 +731,22 @@ void bayes(rtree_t * tree,
       fprintf(stdout, "ML delimitation log-likelihood: %f\n", logl);
   }
 
+  if (opt_bayes_burnin == 1)
+    frequencies[species_count]++;
 
-  for (i = 0; i < opt_bayes_runs; ++i)
+  if (opt_bayes_sample == 1)
+  {
+    if (!opt_quiet)
+      printf("1 Log-L: %f\n", logl);
+  }
+
+  bayes_stats_init(tree);
+
+  for (i = 1; i < opt_bayes_runs; ++i)
   {
 
-    if (opt_bayes_burnin == i)
-      bayes_stats_init(tree);
+    //if (opt_bayes_burnin == i)
+    //  bayes_stats_init(tree);
 
     /* throw a coin to decide whether to convert a coalescent root to a
        speciation or the other way round */
@@ -831,7 +832,7 @@ void bayes(rtree_t * tree,
       double a = exp(new_logl - logl) * (old_crnodes_count / new_snodes_count);
 
       /* update frequencies */
-      if (i >= opt_bayes_burnin)
+      if (i+1 >= opt_bayes_burnin)
         frequencies[species_count+1]++;
 
       /* decide whether to accept or reject proposal */
@@ -848,8 +849,9 @@ void bayes(rtree_t * tree,
         }
 
         /* update support values information */
-        if (i >= opt_bayes_burnin)
-          node->speciation_start = accept_count;
+        if (i+1 >= opt_bayes_burnin)
+          node->speciation_start = i;
+
         accept_count++;
         species_count++;
         logl = new_logl;
@@ -868,6 +870,9 @@ void bayes(rtree_t * tree,
           if (i+1 >= opt_bayes_burnin)
             mcmc_log(new_logl,species_count+1);
         }
+
+        if (i+1 >= opt_bayes_burnin)
+          node->speciation_count++;
 
         if (method == PTP_METHOD_SINGLE)
         {
@@ -954,7 +959,7 @@ void bayes(rtree_t * tree,
       double a = exp(new_logl - logl) * (old_snodes_count / new_crnodes_count);
 
       /* update frequencies */
-      if (i >= opt_bayes_burnin)
+      if (i+1 >= opt_bayes_burnin)
         frequencies[species_count-1]++;
 
       /* decide whether to accept or reject proposal */
@@ -971,13 +976,13 @@ void bayes(rtree_t * tree,
         }
 
         /* update support values information */
-        if (i >= opt_bayes_burnin)
+        if (i+1 >= opt_bayes_burnin)
         {
           node->speciation_count = node->speciation_count + 
-                                  accept_count - 
-                                  node->speciation_start;
+                                   i - node->speciation_start;
           node->speciation_start = -1;
         }
+
         accept_count++;
         species_count--;
         logl = new_logl;
@@ -1005,6 +1010,10 @@ void bayes(rtree_t * tree,
         spec_edgelen_sum += edgelen_sum_diff;
         spec_edge_count += edge_count_diff;
         speciate(node->bayes_slot);
+        if (i+1 >= opt_bayes_burnin)
+        {
+          node->speciation_count--;
+        }
       }
     }
   }
