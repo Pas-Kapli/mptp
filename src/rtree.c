@@ -274,6 +274,22 @@ int rtree_traverse_postorder(rtree_t * root,
   return index;
 }
 
+static int rtree_height_recursive(rtree_t * node)
+{
+  if (!node) return 1;
+
+  int a = rtree_height_recursive(node->left);
+  int b = rtree_height_recursive(node->right);
+
+  return MAX(a,b)+1;
+}
+
+
+int rtree_height(rtree_t * root)
+{
+  return rtree_height_recursive(root); 
+}
+
 static void rtree_query_tipnodes_recursive(rtree_t * node,
                                            rtree_t ** node_list,
                                            int * index)
@@ -400,4 +416,252 @@ rtree_t * rtree_clone(rtree_t * node, rtree_t * parent)
   clone->right = rtree_clone(node->right, clone);
 
   return clone;
+}
+
+rtree_t ** rtree_tipstring_nodes(rtree_t * root,
+                                 char * tipstring,
+                                 unsigned int * tiplist_count)
+{
+  size_t i;
+  unsigned int k;
+  unsigned int commas_count = 0;
+
+  char * taxon;
+  unsigned int taxon_len;
+
+  ENTRY * found = NULL;
+
+  for (i = 0; i < strlen(tipstring); ++i)
+    if (tipstring[i] == ',')
+      commas_count++;
+  
+  rtree_t ** node_list = (rtree_t **)xmalloc(root->leaves * sizeof(rtree_t *));
+  rtree_query_tipnodes(root, node_list);
+
+  rtree_t ** out_node_list = (rtree_t **)xmalloc((commas_count+1) *
+                                                   sizeof(rtree_t *));
+
+  /* create a hashtable of tip labels */
+  hcreate(2 * root->leaves);
+
+  for (i = 0; i < (unsigned int)(root->leaves); ++i)
+  {
+    ENTRY entry;
+    entry.key  = node_list[i]->label;
+    entry.data = node_list[i];
+    hsearch(entry,ENTER);
+  }
+
+  char * s = tipstring;
+  
+  k = 0;
+  while (*s)
+  {
+    /* get next tip */
+    taxon_len = strcspn(s, ",");
+    if (!taxon_len)
+      fatal("Erroneous prune list format (double comma)/taxon missing");
+
+    taxon = strndup(s, taxon_len);
+
+    /* search tip in hash table */
+    ENTRY query;
+    query.key = taxon;
+    found = NULL;
+    found = hsearch(query,FIND);
+    
+    if (!found)
+      fatal("Taxon %s in does not appear in the tree", taxon);
+
+    /* store pointer in output list */
+    out_node_list[k++] = (rtree_t *)(found->data);
+
+    /* free tip label, and move to the beginning of next tip if available */
+    free(taxon);
+    s += taxon_len;
+    if (*s == ',') 
+      s += 1;
+  }
+
+  /* kill the hash table */
+  hdestroy();
+
+  free(node_list);
+
+  /* return number of tips in the list */
+  *tiplist_count = commas_count + 1;
+
+  /* return tip node list */
+  return out_node_list;
+}
+
+/* fill path with nodes of the path tip to root */
+static void fill_path(rtree_t ** path, int * path_len, rtree_t * tip)
+{
+  int i = 0;
+
+  while (tip)
+  {
+    path[i++] = tip;
+    tip = tip->parent;
+  }
+
+  *path_len = i;
+}
+
+rtree_t * rtree_lca(rtree_t * root,
+                    rtree_t ** tip_nodes,
+                    unsigned int count)
+{
+  unsigned int i;
+  rtree_t *** path;
+
+  assert(count >= 2);
+
+  /* allocate path arrays for count tip nodes */
+  path = (rtree_t ***)xmalloc((size_t)count *
+                                  sizeof(rtree_t **));
+  int * path_len = (int *)xmalloc((size_t)count * sizeof(int));
+
+  /* for each tip node fill corresponding path array with all nodes 
+     in the path to the root node and store the length of the path  */
+  for (i = 0; i < count; ++i)
+  {
+    path[i] = (rtree_t **)xmalloc((size_t)(rtree_height(root)) *
+                                  sizeof(rtree_t *));
+    
+    fill_path(path[i], &(path_len[i]), tip_nodes[i]);
+  }
+
+  /* find the LCA using a breadth-first-search traversal starting from the root.
+     Since all paths start at the root, the LCA is the parent of nodes that
+     differ in the paths when encountered for the first time */
+  rtree_t * lca = NULL;
+  while (!lca)
+  {
+    for (i = 0; i < count; ++i)
+      --path_len[i];
+
+    for (i = 1; i < count; ++i)
+    {
+      if (path[i-1][path_len[i-1]] != path[i][path_len[i]])
+      {
+        lca = path[i][path_len[i]+1];
+        break;
+      }
+    }
+  }
+
+  /* free allocated memory */
+  for (i = 0; i < count; ++i)
+    free(path[i]);
+  free(path);
+  free(path_len);
+
+  return lca;
+}
+
+rtree_t * get_outgroup_lca(rtree_t * root)
+{
+  unsigned int og_tips_count;
+  rtree_t * og_root;
+  rtree_t ** og_tips;
+
+
+  og_tips = rtree_tipstring_nodes(root,
+                                  opt_outgroup,
+                                  &og_tips_count);
+
+  og_root = rtree_lca(root, og_tips, og_tips_count);
+
+  return og_root;
+}
+
+rtree_t * rtree_crop(rtree_t * root, rtree_t * crop_root)
+{
+  /* check if the selected subtree can be cropped */
+  if (root->leaves - crop_root->leaves < 2)
+    return NULL;
+
+  /* subtree can be cropped, distinguish between two cases: */
+  
+  if (crop_root->parent == root)
+  {
+
+    /* Case 1:
+
+          root                              
+         *
+        / \                               A
+     A *   * crop_root     ---->          *
+          / \
+         *   *
+           
+       in this case the subtree rooted at crop_root is cropped, the root node is
+       eliminated and subtree rooted at A becomes the new tree
+    */
+
+    rtree_t * new_root;
+
+    if (root->left == crop_root)
+    {
+      new_root = root->right;
+      root->right = NULL;
+    }
+    else
+    {
+      new_root = root->left;
+      root->left = NULL;
+    }
+
+    rtree_destroy(root);
+
+    new_root->parent = NULL;
+    return new_root;
+  }
+
+  /* Case 2:
+
+        root                              
+       *
+      / \
+   A *   -
+          \                               root
+           * B             ---->         *
+          / \                           / \
+       C *   * crop_root             A *   - 
+            / \                             \
+           *   *                             * C
+         
+     in this case the subtree rooted at crop_root is cropped, the root node is
+     eliminated and subtree rooted at A becomes the new tree
+  */
+
+  rtree_t * b = crop_root->parent;
+  rtree_t * c;
+
+  /* get C and break the link between B and C */
+  if (b->left == crop_root)
+  {
+    c = b->right;
+    b->right = NULL;
+  }
+  else
+  {
+    c = b->left;
+    b->left = NULL;
+  }
+
+  /* link the parent of B with C from both directions */
+  c->parent = b->parent;
+  if (b->parent->left == b)
+    b->parent->left = c;
+  else
+    b->parent->right = c;
+
+  rtree_destroy(b);
+
+  return root;
+
+  
 }

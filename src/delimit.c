@@ -52,6 +52,7 @@ long opt_bayes_startrandom;
 long opt_bayes_burnin;
 long opt_bayes_chains;
 long opt_seed;
+long opt_crop;
 long opt_svg;
 long opt_svg_width;
 long opt_svg_fontsize;
@@ -118,6 +119,7 @@ static struct option long_options[] =
   {"bayes_startrandom",  no_argument,       0, 0 },  /* 32 */
   {"bayes_chains",       required_argument, 0, 0 },  /* 33 */
   {"minbr_auto",         required_argument, 0, 0 },  /* 34 */
+  {"outgroup_crop",      no_argument,       0, 0 },  /* 35 */
   { 0, 0, 0, 0 }
 };
 
@@ -155,6 +157,7 @@ void args_init(int argc, char ** argv)
   opt_bayes_burnin = 1;
   opt_bayes_chains = 0;
   opt_seed = (long)time(NULL);
+  opt_crop = 0;
 
   opt_svg_width = 1920;
   opt_svg_fontsize = 12;
@@ -340,6 +343,10 @@ void args_init(int argc, char ** argv)
         opt_pdist_file = optarg;
         break;
 
+      case 35:
+        opt_crop = 1;
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -470,9 +477,30 @@ static rtree_t * load_tree(void)
   {
     if (!opt_quiet)
       fprintf(stdout, "Loaded rooted tree...\n");
+
+    if (opt_crop)
+    {
+      if (!opt_outgroup)
+        fatal("--outgroup must be specified when using --outgroup_crop.");
+
+      /* get LCA of outgroup */
+      rtree_t * og_root = get_outgroup_lca(rtree);
+
+      /* crop outgroup from tree */
+      rtree = rtree_crop(rtree,og_root);
+      if (!rtree)
+        fatal("Cropping the outgroup leads to less than two tips.");
+    }
   }
 
   return rtree;
+}
+
+void cmd_auto()
+{
+  rtree_t * rtree = load_tree();
+
+  detect_min_bl(rtree);
 }
 
 void cmd_ml_multi()

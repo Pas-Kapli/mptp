@@ -55,6 +55,7 @@ General options:
 * `--bayes_startrandom`
 * `--bayes_chains`
 * `--outgroup`
+* `--outgroup_crop`
 * `--min_br`
 * `--pvalue`
 * `--precision`

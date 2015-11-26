@@ -237,9 +237,8 @@ static int all_pairwise_dist(rtree_t ** tip_node_list, int tip_list_count, int s
   return 0;
 }
 
-void cmd_auto()
+void detect_min_bl(rtree_t * rtree)
 {
-  FILE * out;
   rtree_t ** inner_node_list;
   rtree_t ** tip_node_list = NULL;
   int inner_list_count = 0;
@@ -248,18 +247,6 @@ void cmd_auto()
   char ** seqdata = NULL;
   char ** headers = NULL;
   int seqlen = 0;
-
-  /* attempt to open output file */
-  out = opt_outfile ?
-          xopen(opt_outfile,"w") : stdout;
-
-  /* parse tree */
-  if (!opt_quiet)
-    fprintf(stdout, "Parsing tree file...\n");
-
-  rtree_t * rtree = rtree_parse_newick(opt_treefile);
-  if (!rtree)
-    fatal("Error: --minbr_auto is only implemented for rooted trees");
 
   /* for p-distance computation load an alignment from a FASTA file and map
      the sequences to the tree tips */
@@ -280,8 +267,6 @@ void cmd_auto()
 
   /* destroy hash table */
   hdestroy();
-    
-
 
   /* get inner nodes that are roots of of the largest short subtrees. Short are
      such subtrees where all branch lengths within them are less or equal to
@@ -348,10 +333,4 @@ void cmd_auto()
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
-  
-  if (opt_outfile)
-    fclose(out);
 }

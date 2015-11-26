@@ -256,6 +256,7 @@ extern long opt_bayes_startrandom;
 extern long opt_bayes_burnin;
 extern long opt_bayes_chains;
 extern long opt_seed;
+extern long opt_crop;
 extern long opt_svg;
 extern long opt_svg_width;
 extern long opt_svg_fontsize;
@@ -323,6 +324,7 @@ void cmd_ml_multi(void);
 void cmd_score(void);
 void cmd_bayes(int method);
 void cmd_multichain(int method);
+void cmd_auto(void);
 
 /* functions in parse_rtree.y */
 
@@ -362,6 +364,15 @@ rtree_t * rtree_clone(rtree_t * node, rtree_t * parent);
 int rtree_traverse_postorder(rtree_t * root,
                              int (*cbtrav)(rtree_t *),
                              rtree_t ** outbuffer);
+rtree_t ** rtree_tipstring_nodes(rtree_t * root,
+                                 char * tipstring,
+                                 unsigned int * tiplist_count);
+rtree_t * get_outgroup_lca(rtree_t * root);
+rtree_t * rtree_lca(rtree_t * root,
+                    rtree_t ** tip_nodes,
+                    unsigned int count);
+rtree_t * rtree_crop(rtree_t * root, rtree_t * crop_root);
+int rtree_height(rtree_t * root);
 
 /* functions in parse_rtree.y */
 
@@ -480,4 +491,4 @@ int pll_fasta_rewind(pll_fasta_t * fd);
 
 /* functions in auto.c */
 
-void cmd_auto(void);
+void detect_min_bl(rtree_t * rtree);
