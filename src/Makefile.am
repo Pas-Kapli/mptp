@@ -17,7 +17,6 @@ delimit.c \
 delimit.h \
 dp.c \
 fasta.c \
-lca_utree.c \
 likelihood.c \
 maps.c \
 multichain.c \

@@ -106,7 +106,6 @@ The code is currently licensed under the GNU Affero General Public License versi
 **delimit.c**       | Main file handling command-line parameters and executing corresponding parts.
 **dp.c**            | Single- and multi-rate DP heuristics for solving the PTP problem.
 **fasta.c**         | Code for reading FASTA files.
-**lca_utree.c**     | Naive LCA computation in unrooted trees.
 **lex_rtree.l**     | Lexical analyzer parsing newick rooted trees.
 **lex_utree.l**     | Lexical analyzer parsing newick unrooted trees.
 **likelihood.c**    | Likelihood rated functions.
