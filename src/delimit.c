@@ -470,7 +470,39 @@ static rtree_t * load_tree(void)
       fprintf(stdout, "Converting to rooted tree...\n");
     }
 
-    rtree = utree_convert_rtree(utree, tip_count);
+    /* if outgroup was not specified, get the node with the longest branch */
+    utree_t * og_root = NULL;
+
+    /* if outgroup was not specified, get the tip with the longest branch */
+    if (!opt_outgroup)
+    {
+      og_root = utree_longest_branchtip(utree, tip_count);
+      assert(og_root);
+      fprintf(stdout, 
+              "Selected %s as outgroup based on longest tip-branch criterion\n",
+              og_root->label);
+    }
+    else
+    {
+      /* get LCA of out group */
+      og_root = utree_outgroup_lca(utree, tip_count);
+      if (!og_root)
+      {
+        utree_destroy(utree);
+        fatal("Outgroup must be a single tip or a list of all tips of a subtree");
+      }
+    }
+
+    
+    if (opt_crop)
+    {
+      rtree = utree_crop(og_root);
+    }
+    else
+    {
+      rtree = utree_convert_rtree(og_root);
+    }
+
     utree_destroy(utree);
   }
   else
@@ -626,33 +658,8 @@ void cmd_bayes(int method)
 
 void cmd_score()
 {
-  /* parse tree */
-  if (!opt_quiet)
-    fprintf(stdout, "Parsing tree file...\n");
 
-  rtree_t * rtree = rtree_parse_newick(opt_treefile);
-
-  if (!rtree)
-  {
-    int tip_count;
-    utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
-    if (!utree)
-      fatal("Tree is neither unrooted nor rooted. Go fix your tree.");
-
-    if (!opt_quiet)
-    {
-      fprintf(stdout, "Loaded unrooted tree...\n");
-      fprintf(stdout, "Converting to rooted tree...\n");
-    }
-
-    rtree = utree_convert_rtree(utree, tip_count);
-    utree_destroy(utree);
-  }
-  else
-  {
-    if (!opt_quiet)
-      fprintf(stdout, "Loaded rooted tree...\n");
-  }
+  rtree_t * rtree = load_tree();
 
   /* TODO: Sarah's score function should be called here */
   score_delimitation_tree(opt_scorefile, rtree);

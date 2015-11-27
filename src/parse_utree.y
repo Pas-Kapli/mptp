@@ -155,6 +155,10 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->next->height       = $$->height;
   $$->next->next->height = $$->height;
 
+  $$->mark               = 0;
+  $$->next->mark         = 0;
+  $$->next->next->mark   = 0;
+
   free($7);
 
   $$->next->length       = $2->length;
@@ -169,6 +173,7 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->length = $2 ? atof($2) : 0;
   $$->next   = NULL;
   $$->height = 0;
+  $$->mark   = 0;
   tip_cnt++;
   free($2);
 };

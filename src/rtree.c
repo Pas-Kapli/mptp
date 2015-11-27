@@ -407,6 +407,7 @@ rtree_t * rtree_clone(rtree_t * node, rtree_t * parent)
   rtree_t * clone = (rtree_t *)xmalloc(sizeof(rtree_t));
   memcpy(clone,node,sizeof(rtree_t));
   clone->parent = parent;
+  clone->data = NULL;
 
   if (node->label)
     clone->label = xstrdup(node->label);
@@ -659,9 +660,9 @@ rtree_t * rtree_crop(rtree_t * root, rtree_t * crop_root)
   else
     b->parent->right = c;
 
+  c->length += b->length;
+
   rtree_destroy(b);
 
   return root;
-
-  
 }

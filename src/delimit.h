@@ -123,6 +123,10 @@ typedef struct utree_s
   struct utree_s * back;
 
   void * data;
+
+  /* for finding the lca */
+  int mark;
+
 } utree_t;
 
 typedef struct rtree_s
@@ -343,10 +347,17 @@ void utree_show_ascii(utree_t * tree);
 char * utree_export_newick(utree_t * root);
 int utree_query_tipnodes(utree_t * root, utree_t ** node_list);
 int utree_query_innernodes(utree_t * root, utree_t ** node_list);
-rtree_t * utree_convert_rtree(utree_t * root, int tip_count);
+rtree_t * utree_convert_rtree(utree_t * root);
 int utree_traverse(utree_t * root,
                    int (*cbtrav)(utree_t *),
                    utree_t ** outbuffer);
+utree_t * utree_longest_branchtip(utree_t * node, int tip_count);
+utree_t * utree_lca(utree_t * root,
+                    utree_t ** tip_nodes,
+                    unsigned int count,
+                    unsigned int tip_count);
+utree_t * utree_outgroup_lca(utree_t * root, unsigned int tip_count);
+rtree_t * utree_crop(utree_t * lca);
 
 /* functions in rtree.c */
 
