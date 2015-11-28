@@ -330,7 +330,4 @@ void detect_min_bl(rtree_t * rtree)
   }
   free(seqdata);
   free(headers);
-
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
 }

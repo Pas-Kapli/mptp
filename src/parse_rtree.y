@@ -78,6 +78,7 @@ input: OPAR subtree COMMA subtree CPAR optional_label optional_length SEMICOLON
   tree->leaves = $2->leaves + $4->leaves;
   tree->parent = NULL;
   tree->event  = EVENT_COALESCENT;
+  tree->data   = NULL;
   free($7);
 
   tree->left->parent  = tree;
@@ -134,6 +135,7 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   if ($$->edge_count > 0)
     $$->max_species_count = $2->max_species_count + $4->max_species_count;
   $$->mark = 0;
+  $$->data = NULL;
 }
        | label optional_length
 {
@@ -150,6 +152,7 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
 
   $$->max_species_count = 1;
   $$->mark = 0;
+  $$->data = NULL;
 
   free($2);
 };

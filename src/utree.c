@@ -358,6 +358,8 @@ static rtree_t * utree_rtree(utree_t * unode)
   else
     rnode->label = NULL;
   rnode->length = unode->length;
+  rnode->data = NULL;
+  rnode->mark = 0;
 
   if (!unode->next) 
   {
@@ -415,6 +417,8 @@ rtree_t * utree_crop(utree_t * lca)
   root->parent = NULL;
   root->length = 0;
   root->label  = NULL;
+  root->data   = NULL;
+  root->mark   = 0;
 
   root->left->parent = root;
   root->right->parent = root;
@@ -440,6 +444,8 @@ rtree_t * utree_convert_rtree(utree_t * outgroup)
   root->length = 0;
   root->parent = NULL;
   root->event  = EVENT_COALESCENT;
+  root->data   = NULL;
+  root->mark   = 0;
 
   /* reset per-node leaves and valid edges */
   rtree_reset_info(root);

@@ -533,6 +533,9 @@ void cmd_auto()
   rtree_t * rtree = load_tree();
 
   detect_min_bl(rtree);
+
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
 }
 
 void cmd_ml_multi()
