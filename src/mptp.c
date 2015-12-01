@@ -709,7 +709,7 @@ void fillheader()
 void show_header()
 {
   fprintf(stdout, "%s\n", progheader);
-  fprintf(stdout, "https://github.com/Pas-Kapli/delimit\n");
+  fprintf(stdout, "https://github.com/Pas-Kapli/mptp\n");
   fprintf(stdout,"\n");
 }
 
