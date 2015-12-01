@@ -20,7 +20,7 @@
 */
 %{
 #include "parse_utree.h"
-#include "delimit.h"
+#include "mptp.h"
 
 static size_t string_length = 0;
 

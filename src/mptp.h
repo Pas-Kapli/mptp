@@ -316,7 +316,7 @@ void show_rusage();
 int extract2f(char * text, double * a, double * b);
 FILE * xopen(const char * filename, const char * mode);
 
-/* functions in delimit.c */
+/* functions in mptp.c */
 
 void args_init(int argc, char ** argv);
 void cmd_help(void);

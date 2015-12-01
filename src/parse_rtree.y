@@ -19,7 +19,7 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 %{
-#include "delimit.h"
+#include "mptp.h"
 
 extern int rtree_lex();
 extern FILE * rtree_in;

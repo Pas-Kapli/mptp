@@ -17,8 +17,8 @@ Pons et al. (2006) and Fujisawa et al. (2013). The new tool should:
 the following commands.
 
 ```
-git clone https://github.com/Pas-Kapli/delimitation.git
-cd delimitation
+git clone https://github.com/Pas-Kapli/mptp.git
+cd mptp 
 ./autogen.sh
 ./configure
 make
@@ -90,7 +90,7 @@ Visualization options:
 
 ## Usage example
 
-`./delimit --ml_multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
+`./mptp --ml_multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
 
 ## License and third party licenses
 
@@ -103,7 +103,7 @@ The code is currently licensed under the GNU Affero General Public License versi
 **arch.c**          | Architecture specific code (Mac/Linux).
 **auto.c**          | Code for auto-detecting minimum branch length.
 **bayes.c**         | Code for Bayesian Single- and multi-rate PTP.
-**delimit.c**       | Main file handling command-line parameters and executing corresponding parts.
+**mptp.c**          | Main file handling command-line parameters and executing corresponding parts.
 **dp.c**            | Single- and multi-rate DP heuristics for solving the PTP problem.
 **fasta.c**         | Code for reading FASTA files.
 **lex_rtree.l**     | Lexical analyzer parsing newick rooted trees.
