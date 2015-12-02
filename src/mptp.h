@@ -270,6 +270,7 @@ extern long opt_svg_marginright;
 extern long opt_svg_margintop;
 extern long opt_svg_marginbottom;
 extern long opt_svg_inner_radius;
+extern double opt_bayes_credible;
 extern double opt_svg_legend_ratio;
 extern double opt_pvalue;
 extern double opt_minbr;

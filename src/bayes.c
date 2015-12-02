@@ -21,6 +21,13 @@
 
 #include "mptp.h"
 
+typedef struct density_s
+{
+  double logl;
+  long species_count;
+} density_t;
+
+
 static rtree_t ** crnodes;
 static rtree_t ** snodes;
 
@@ -34,14 +41,31 @@ static long species_count = 0;
 
 static long * frequencies = NULL;
 
+static density_t * densities = NULL;
+
 static void mcmc_log(double logl, long sc)
 {
   if (opt_bayes_log)
     fprintf(fp_log, "%f,%ld\n", logl, sc);
 }
 
+int cb_desc(const void * va, const void * vb)
+{
+  const density_t * a = va;
+  const density_t * b = vb;
+
+  if (a->logl - b->logl < 0)
+    return 1;
+  else if (a->logl - b->logl > 0)
+    return -1;
+
+  return 0;
+}
+
 static void bayes_init(rtree_t * root, long seed)
 {
+  long i;
+
   crnodes = (rtree_t **)xmalloc(root->leaves*sizeof(rtree_t *));
   snodes = (rtree_t **)xmalloc(root->leaves*sizeof(rtree_t *));
 
@@ -51,6 +75,11 @@ static void bayes_init(rtree_t * root, long seed)
 
   frequencies = (long *)xmalloc((root->leaves+1)*sizeof(long));
   memset(frequencies, 0, (root->leaves+1) * sizeof(long));
+
+  densities = (density_t *)xmalloc((root->leaves+1)*sizeof(density_t));
+  memset(densities, 0, (root->leaves+1) * sizeof(density_t));
+  for (i = 0; i < root->leaves+1; ++i)
+    densities[i].species_count = i;
 
   /* open log file */
   if (opt_bayes_log)
@@ -108,13 +137,73 @@ static void conf_interval(long leaves, double * mean, double * error_margin)
   long mean_rounded = round(*mean);
   long sum_freq = frequencies[mean_rounded];
   long j = 0;
-  while(sum_freq/(double) n < 0.95) 
+  while(sum_freq/(double) n < opt_bayes_credible) 
   {
     j++;
     if (mean_rounded-j > 0) sum_freq += frequencies[mean_rounded - j];
     if (mean_rounded+j <= leaves) sum_freq += frequencies[mean_rounded + j];
   }
   *error_margin = j;
+}
+
+static void hpd(long n, FILE * fp)
+{
+  long i;
+  long min, max;
+  double densities_sum = 0;
+  double acc_sum = 0;
+  long * indices = NULL;
+
+  indices = (long *)xmalloc((n+2)*sizeof(long));
+  memset(indices, 0, (n+2) * sizeof(long));
+
+  for (i = 1; i <= n; ++i)
+    densities_sum += densities[i].logl;
+
+  max = 0; min = n+1;
+  for (i = 1; i <= n; ++i)
+  {
+    acc_sum += densities[i].logl;
+    indices[densities[i].species_count] = 1;
+
+    if (densities[i].species_count < min)
+      min = densities[i].species_count;
+
+    if (densities[i].species_count > max)
+      max = densities[i].species_count;
+
+    if (acc_sum / densities_sum >= opt_bayes_credible)
+      break;
+  }
+
+  fprintf(fp, "CCI (%ld,%ld)\n", min, max);
+  if (!opt_quiet)
+    fprintf(stdout, "CCI (%ld,%ld)\n", min, max);
+
+  
+  fprintf(fp, "HPD ");
+  if (!opt_quiet)
+    printf("HPD ");
+  for (i = 1; i <= n+1; ++i)
+  {
+    if (indices[i] == 1 && indices[i-1] == 0)
+    {
+      fprintf(fp, "(%ld,", i);
+      if (!opt_quiet)
+        printf("(%ld,", i);
+    }
+    if (indices[i] == 0 && indices[i-1] == 1)
+    {
+      fprintf(fp, "%ld) ", i-1);
+      if (!opt_quiet)
+        printf("%ld) ", i-1);
+    }
+  }
+  fprintf(fp,"\n");
+  if (!opt_quiet)
+    printf("\n");
+  free(indices);
+
 }
 
 static void bayes_finalize(rtree_t * root,
@@ -157,17 +246,26 @@ static void bayes_finalize(rtree_t * root,
 
   FILE * fp_stats = open_file_ext("stats", seed);
 
+  double densities_sum = 0;
+  for (i = 1; i <= root->leaves; ++i)
+    densities_sum += densities[i].logl;
+    
   for (i = 1; i <= root->leaves; ++i)
   {
     fprintf(fp_stats,
-            "%ld,%f\n",
+            "%ld,%f,%f\n",
             i,
-            (frequencies[i]/(double)(opt_bayes_runs-opt_bayes_burnin+1))*100.0);
+            (frequencies[i]/(double)(opt_bayes_runs-opt_bayes_burnin+1))*100.0,
+            (densities[i].logl/densities_sum)*100);
   }
 
   /* compute confidence interval */
   double mean, error_margin;
   conf_interval(root->leaves, &mean, &error_margin);
+
+  /* compute a HPD */
+  qsort(densities+1, root->leaves, sizeof(density_t), cb_desc);
+  hpd(root->leaves, fp_stats);
 
   /* print confidence interval on screen and in file */
   if (!opt_quiet)
@@ -186,6 +284,7 @@ static void bayes_finalize(rtree_t * root,
 
   fclose(fp_stats);
   free(frequencies);
+  free(densities);
 }
 
 static void dp_recurse(rtree_t * node, int method, prior_t * prior)
@@ -732,7 +831,10 @@ void bayes(rtree_t * tree,
   }
 
   if (opt_bayes_burnin == 1)
+  {
     frequencies[species_count]++;
+    densities[species_count].logl += logl;
+  }
 
   if (opt_bayes_sample == 1)
   {
@@ -833,7 +935,10 @@ void bayes(rtree_t * tree,
 
       /* update frequencies */
       if (i+1 >= opt_bayes_burnin)
+      {
         frequencies[species_count+1]++;
+        densities[species_count+1].logl += new_logl;
+      }
 
       /* decide whether to accept or reject proposal */
       drand48_r(rstate, &rand_double);
@@ -960,7 +1065,10 @@ void bayes(rtree_t * tree,
 
       /* update frequencies */
       if (i+1 >= opt_bayes_burnin)
+      {
         frequencies[species_count-1]++;
+        densities[species_count-1].logl += new_logl;
+      }
 
       /* decide whether to accept or reject proposal */
       drand48_r(rstate, &rand_double);

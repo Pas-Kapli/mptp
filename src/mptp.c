@@ -62,6 +62,7 @@ long opt_svg_marginright;
 long opt_svg_margintop;
 long opt_svg_marginbottom;
 long opt_svg_inner_radius;
+double opt_bayes_credible;
 double opt_svg_legend_ratio;
 double opt_pvalue;
 double opt_minbr;
@@ -120,6 +121,7 @@ static struct option long_options[] =
   {"bayes_chains",       required_argument, 0, 0 },  /* 33 */
   {"minbr_auto",         required_argument, 0, 0 },  /* 34 */
   {"outgroup_crop",      no_argument,       0, 0 },  /* 35 */
+  {"bayes_credible",     required_argument, 0, 0 },  /* 36 */
   { 0, 0, 0, 0 }
 };
 
@@ -156,6 +158,7 @@ void args_init(int argc, char ** argv)
   opt_bayes_log = 0;
   opt_bayes_burnin = 1;
   opt_bayes_chains = 0;
+  opt_bayes_credible = 0.95;
   opt_seed = (long)time(NULL);
   opt_crop = 0;
 
@@ -345,6 +348,10 @@ void args_init(int argc, char ** argv)
 
       case 35:
         opt_crop = 1;
+        break;
+
+      case 36:
+        opt_bayes_credible = atof(optarg);
         break;
 
       default:
@@ -607,6 +614,9 @@ void cmd_bayes(int method)
 
   if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
     fatal("--opt_bayes_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
+
+  if (opt_bayes_credible < 0 || opt_bayes_credible > 1)
+    fatal("--opt_credible must be a real number between 0 and 1");
 
   if (opt_bayes_chains)
   {
