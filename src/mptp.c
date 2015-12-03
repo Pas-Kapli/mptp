@@ -218,6 +218,7 @@ void args_init(int argc, char ** argv)
         break;
 
       case 9:
+        fatal("Option --score is not available in this version");
         free(opt_scorefile);
         opt_scorefile = optarg;
         break;
@@ -291,6 +292,7 @@ void args_init(int argc, char ** argv)
         break;
 
       case 25:
+        fatal("Option --prior_exp is not available in this version");
         dealloc_prior();
 
         opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
@@ -302,6 +304,7 @@ void args_init(int argc, char ** argv)
         break;
 
       case 26:
+        fatal("Option --prior_gamma is not available in this version");
         dealloc_prior();
 
         opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
@@ -423,22 +426,14 @@ void cmd_help()
           "  --bayes_log               Log samples and create SVG plot of log-likelihoods.\n"
           "  --bayes_burnin INT        Ignore all MCMC steps below threshold.\n"
           "  --bayes_chains INT        Run multiple chains.\n"
-          "  --score                   Compare given species delimitation with optimal one induced by the tree.\n"
           "  --pvalue                  Set p-value for LRT (default: 0.001)\n"
           "  --minbr REAL              Set minimum branch length (default: 0.0001)\n"
           "  --minbr_auto FILENAME     Detect minimum branch length from FASTA p-distances\n"
-          "  --outgroup TAXON          If input tree is unrooted, use TAXON as outgroup (default: taxon with longest branch).\n"
+          "  --outgroup TAXA           Root unrooted tree at outgroup (default: taxon with longest branch).\n"
+          "  --outgroup_crop           Crop outgroup from tree\n"
           "  --quiet                   only output warnings and fatal errors to stderr.\n"
-          "  --precision               Precision of decimal part of floating point numbers on output (default: 7).\n"
+          "  --precision               Precision of floating point numbers on output (default: 7).\n"
           "  --seed                    Seed for pseudo-random number generator.\n"
-          "Prior options:\n"
-          "  --prior_exp REAL          Rate of exponential prior.\n"
-          "  --prior_ln REAL,REAL      Log-normal prior with mean (first param) and standard deviation (second param).\n"
-          "  --prior_uni REAL,REAL     Uniform prior with minimum (first param) and maximum (second param) bounds.\n"
-          "  --prior_bin INT,REAL      Binomial prior with number of trials (first param) and success probability (second param).\n"
-          "  --prior_nbin INT,REAL     Negative binomial prior with number of failures (first param) and success probability (second param).\n"
-          "  --prior_gamma REAL,REAL   Gamma distribution with shape (first param) and rate (second param).\n"
-          "  --prior_beta REAL,REAL    Beta distribution with alpha shape (first param) and beta shape (second param).\n"
           "Input and output options:\n"
           "  --tree_file FILENAME      tree file in newick format.\n"
           "  --output_file FILENAME    output file name.\n"
