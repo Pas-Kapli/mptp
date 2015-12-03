@@ -39,8 +39,6 @@ static FILE * fp_log = NULL;
 
 static long species_count = 0;
 
-static long * frequencies = NULL;
-
 static density_t * densities = NULL;
 
 static void mcmc_log(double logl, long sc)
@@ -72,9 +70,6 @@ static void bayes_init(rtree_t * root, long seed)
   crnodes_count = 0;
   snodes_count = 0;
   accept_count = 0;
-
-  frequencies = (long *)xmalloc((root->leaves+1)*sizeof(long));
-  memset(frequencies, 0, (root->leaves+1) * sizeof(long));
 
   densities = (density_t *)xmalloc((root->leaves+1)*sizeof(density_t));
   memset(densities, 0, (root->leaves+1) * sizeof(density_t));
@@ -119,31 +114,6 @@ static void bayes_stats_init(rtree_t * root)
   }
 
   free(inner_node_list);
-}
-
-static void conf_interval(long leaves, double * mean, double * error_margin)
-{
-  long i;
-  long n = opt_bayes_runs - opt_bayes_burnin + 1;
-
-  *mean = 0;
-  *error_margin = 0;
-
-  /* compute mean */
-  for (i = 1; i <= leaves; ++i)
-    *mean += frequencies[i]*i;
-  *mean /= n;
-
-  long mean_rounded = round(*mean);
-  long sum_freq = frequencies[mean_rounded];
-  long j = 0;
-  while(sum_freq/(double) n < opt_bayes_credible) 
-  {
-    j++;
-    if (mean_rounded-j > 0) sum_freq += frequencies[mean_rounded - j];
-    if (mean_rounded+j <= leaves) sum_freq += frequencies[mean_rounded + j];
-  }
-  *error_margin = j;
 }
 
 static void hpd(long n, FILE * fp)
@@ -253,28 +223,14 @@ static void bayes_finalize(rtree_t * root,
   for (i = 1; i <= root->leaves; ++i)
   {
     fprintf(fp_stats,
-            "%ld,%f,%f\n",
+            "%ld,%f\n",
             i,
-            (frequencies[i]/(double)(opt_bayes_runs-opt_bayes_burnin+1))*100.0,
             (densities[i].logl/densities_sum)*100);
   }
-
-  /* compute confidence interval */
-  double mean, error_margin;
-  conf_interval(root->leaves, &mean, &error_margin);
 
   /* compute a HPD */
   qsort(densities+1, root->leaves, sizeof(density_t), cb_desc);
   hpd(root->leaves, fp_stats);
-
-  /* print confidence interval on screen and in file */
-  if (!opt_quiet)
-    fprintf(stdout,"95%% confidence interval on number of species: <%f , %f>\n",
-           mean - error_margin,
-           mean + error_margin);
-  fprintf(fp_stats,"95%% confidence interval on number of species: <%f , %f>\n",
-         mean - error_margin,
-         mean + error_margin);
 
   if (!opt_quiet)
     fprintf(stdout,
@@ -283,7 +239,6 @@ static void bayes_finalize(rtree_t * root,
             seed);
 
   fclose(fp_stats);
-  free(frequencies);
   free(densities);
 }
 
@@ -832,7 +787,6 @@ void bayes(rtree_t * tree,
 
   if (opt_bayes_burnin == 1)
   {
-    frequencies[species_count]++;
     densities[species_count].logl += logl;
   }
 
@@ -936,7 +890,6 @@ void bayes(rtree_t * tree,
       /* update frequencies */
       if (i+1 >= opt_bayes_burnin)
       {
-        frequencies[species_count+1]++;
         densities[species_count+1].logl += new_logl;
       }
 
@@ -1066,7 +1019,6 @@ void bayes(rtree_t * tree,
       /* update frequencies */
       if (i+1 >= opt_bayes_burnin)
       {
-        frequencies[species_count-1]++;
         densities[species_count-1].logl += new_logl;
       }
 
