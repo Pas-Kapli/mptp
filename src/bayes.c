@@ -887,7 +887,7 @@ void bayes(rtree_t * tree,
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_crnodes_count / new_snodes_count);
 
-      /* update frequencies */
+      /* update densities */
       if (i+1 >= opt_bayes_burnin)
       {
         densities[species_count+1].logl += new_logl;
@@ -1016,7 +1016,7 @@ void bayes(rtree_t * tree,
       /* Hastings ratio */
       double a = exp(new_logl - logl) * (old_snodes_count / new_crnodes_count);
 
-      /* update frequencies */
+      /* update densities */
       if (i+1 >= opt_bayes_burnin)
       {
         densities[species_count-1].logl += new_logl;
