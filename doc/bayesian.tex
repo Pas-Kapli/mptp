@@ -29,7 +29,15 @@
 An explanation of the Bayesian approach for PTP.\@
 \end{abstract}
 
-\section{Allowed Moves}
+\section{Motivation}
+
+In order to obtain support values for every node, we follow a Bayesian Markov-Chain Monte-Carlo (MCMC) approach. We let the user choose whether to start with the maximum likelihood solution found by the heuristic, the null model or a randomly chosen delimitation.
+
+In each MCMC step, we change the current delimitation and recompute its loglikelihood score. After this, we decide whether to keep the change or not according to the hastings ratio. The hastings ratio $r$ is computed as
+
+$$r = \exp(\text{new\_logl} - \text{old\_logl}) * \frac{\text{Number of possible choices for chosen move in old delimitation}}{\text{Number of possible choices for non-chosen move in new delimitation}}$$
+
+\subsection{Allowed Moves}
 
 In order to change a delimitation in the MCMC steps, we randomly select one of two possible moves with equal probability (see Fig.~\ref{fig:moves}).
 
@@ -39,6 +47,9 @@ In order to change a delimitation in the MCMC steps, we randomly select one of t
 \caption{Allowed moves in the Bayesian steps. The black edges belong to the speciation part, the colored edges are within species. The node label ``S'' means that a node is a speciation event, whereas the labels ``C'' and ``CR'' mean that a node is a coalescent event. The difference between ``C'' and ``CR'' is that ``CR'' stands for a coalescent root node, i.e. the MRCA of a species.}
 \label{fig:moves}
 \end{figure}
+
+\subsection{Support Values}
+The support value of a node is proportional to the number of MCMC moves in which the node was the MRCA of a species.
 
 \bibliographystyle{splncs03}
 \bibliography{delimit}
