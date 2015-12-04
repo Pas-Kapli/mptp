@@ -52,6 +52,39 @@ In order to change a delimitation in the MCMC steps, we randomly select one of t
 The support value $\text{support}(v)$ of a node $v$ is computed as follows:
 $$\text{support}(v) = \frac{\text{Number of MCMC moves without burnin where $v$ was a MRCA}}{\text{Number of MCMC moves without burnin}}$$
 
+\subsection{Pseudocode}
+
+\begin{algorithm}
+
+\underline{function mcmc $(T, min\_br)$}\;
+D = getInitialDelimitation($T, min\_br$)\;
+
+\For{$i = 1, \ldots, $ number of runs}{
+	p = rand() \textit{//random floating-point number between 0 and 1}\;
+	
+	\If{$p \leq 0.5$}{
+		move = move1\;
+	}
+	\Else{
+		move = move2\;
+	}
+	D\_new = applyMove(D, move)\;
+	
+	\If {$i > \text{burnin}$} {
+		updateSupportValues(T, D\_new)\;
+	}
+	r = computeHastingsRatio(D, D\_new, move)\;
+	
+	q = rand() \textit{//random floating-point number between 0 and 1}\;
+	\If{$q \leq r$}{ 
+		D = D\_new \textit{//accept move}\;
+	}
+}
+
+\caption{Markov-Chain Monte-Carlo algorithm for PTP}
+
+\end{algorithm}
+
 \bibliographystyle{splncs03}
 \bibliography{delimit}
 \end{document}
