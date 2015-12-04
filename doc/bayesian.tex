@@ -43,13 +43,14 @@ In order to change a delimitation in the MCMC steps, we randomly select one of t
 
 \begin{figure}[h!]
 \centering
-\includegraphics[scale=0.4]{images/moves.pdf}
+\includegraphics[scale=0.3]{images/moves.pdf}
 \caption{Allowed moves in the Bayesian steps. The black edges belong to the speciation part, the colored edges are within species. The node label ``S'' means that a node is a speciation event, whereas the labels ``C'' and ``CR'' mean that a node is a coalescent event. The difference between ``C'' and ``CR'' is that ``CR'' stands for a coalescent root node, i.e. the MRCA of a species.}
 \label{fig:moves}
 \end{figure}
 
 \subsection{Support Values}
-The support value of a node is proportional to the number of MCMC moves in which the node was the MRCA of a species.
+The support value $\text{support}(v)$ of a node $v$ is computed as follows:
+$$\text{support}(v) = \frac{\text{Number of MCMC moves without burnin where $v$ was a MRCA}}{\text{Number of MCMC moves without burnin}}$$
 
 \bibliographystyle{splncs03}
 \bibliography{delimit}
