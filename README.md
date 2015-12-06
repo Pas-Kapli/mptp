@@ -1,6 +1,7 @@
 # Species Delimitation
 
 [![License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0.en.html)
+[![Build Status](https://travis-ci.com/Pas-Kapli/mptp.svg?token=Rni6Dxb79oRVVpmxtv3N&branch=master)](https://travis-ci.com/Pas-Kapli/mptp)
 
 ## Introduction
 
