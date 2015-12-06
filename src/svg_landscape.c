@@ -165,7 +165,7 @@ static void out_svg(FILE * svg_fp, double min_logl, double max_logl, long seed)
   fclose(fp);
 }
   
-void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
+static void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
 {
   double scale = (max_logl - min_logl) * 1.1;
   int i;

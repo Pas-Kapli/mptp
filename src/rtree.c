@@ -111,7 +111,7 @@ void rtree_show_ascii(rtree_t * tree)
 static char * rtree_export_newick_recursive(rtree_t * root)
 {
   char * newick;
-  char * support;
+  char * support = NULL;
 
   if (!root) return NULL;
 
@@ -128,7 +128,6 @@ static char * rtree_export_newick_recursive(rtree_t * root)
     asprintf(&newick, "(%s,%s)%s:%f", subtree1,
                                       subtree2,
                                       (opt_bayes_single || opt_bayes_multi) ? support : "",
-                                      //root->label ? root->label : "",
                                       root->length);
     
     if (opt_bayes_single || opt_bayes_multi)
@@ -144,7 +143,7 @@ static char * rtree_export_newick_recursive(rtree_t * root)
 char * rtree_export_newick(rtree_t * root)
 {
   char * newick;
-  char * support;
+  char * support = NULL;
 
   if (!root) return NULL;
 
@@ -161,7 +160,6 @@ char * rtree_export_newick(rtree_t * root)
     asprintf(&newick, "(%s,%s)%s:%f;", subtree1,
                                        subtree2,
                                        (opt_bayes_single || opt_bayes_multi) ? support : "",
-                                       //root->label ? root->label : "",
                                        root->length);
     if (opt_bayes_single || opt_bayes_multi)
       free(support);
@@ -428,7 +426,7 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
   unsigned int commas_count = 0;
 
   char * taxon;
-  unsigned int taxon_len;
+  unsigned long taxon_len;
 
   ENTRY * found = NULL;
 
@@ -436,14 +434,15 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
     if (tipstring[i] == ',')
       commas_count++;
   
-  rtree_t ** node_list = (rtree_t **)xmalloc(root->leaves * sizeof(rtree_t *));
+  rtree_t ** node_list = (rtree_t **)xmalloc((size_t)(root->leaves) *
+                                             sizeof(rtree_t *));
   rtree_query_tipnodes(root, node_list);
 
-  rtree_t ** out_node_list = (rtree_t **)xmalloc((commas_count+1) *
-                                                   sizeof(rtree_t *));
+  rtree_t ** out_node_list = (rtree_t **)xmalloc((size_t)(commas_count+1) *
+                                                 sizeof(rtree_t *));
 
   /* create a hashtable of tip labels */
-  hcreate(2 * root->leaves);
+  hcreate(2 * (size_t)(root->leaves));
 
   for (i = 0; i < (unsigned int)(root->leaves); ++i)
   {

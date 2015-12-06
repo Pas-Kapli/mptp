@@ -175,8 +175,8 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
 {
   int i;
   int lrt_pass;
-  int species_count;
   int best_index = 0;
+  unsigned int species_count;
   double max = 0;
   double pvalue = -1;
 

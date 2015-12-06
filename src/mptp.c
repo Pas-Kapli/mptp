@@ -219,9 +219,11 @@ void args_init(int argc, char ** argv)
 
       case 9:
         fatal("Option --score is not available in this version");
+        /*
         free(opt_scorefile);
         opt_scorefile = optarg;
         break;
+        */
 
       case 10:
         opt_pvalue = strtod(optarg, &end);
@@ -293,6 +295,7 @@ void args_init(int argc, char ** argv)
 
       case 25:
         fatal("Option --prior_exp is not available in this version");
+        /*
         dealloc_prior();
 
         opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
@@ -302,9 +305,11 @@ void args_init(int argc, char ** argv)
         exp_params->rate = atof(optarg);
         opt_prior->params = (void *)exp_params;
         break;
+        */
 
       case 26:
         fatal("Option --prior_gamma is not available in this version");
+        /*
         dealloc_prior();
 
         opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
@@ -315,6 +320,7 @@ void args_init(int argc, char ** argv)
           fatal("Incorrect format for --prior_gamma");
         opt_prior->params = (void *)gamma_params;
         break;
+        */
 
       case 27:
         opt_bayes_sample = atol(optarg);
@@ -461,7 +467,7 @@ static rtree_t * load_tree(void)
 
   if (!rtree)
   {
-    int tip_count;
+    unsigned int tip_count;
     utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
     if (!utree)
       fatal("Tree is neither unrooted nor rooted. Go fix your tree.");

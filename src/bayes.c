@@ -31,8 +31,8 @@ typedef struct density_s
 static rtree_t ** crnodes;
 static rtree_t ** snodes;
 
-static int crnodes_count = 0;
-static int snodes_count = 0;
+static long crnodes_count = 0;
+static long snodes_count = 0;
 
 static long accept_count = 0;
 static FILE * fp_log = NULL;
@@ -47,7 +47,7 @@ static void mcmc_log(double logl, long sc)
     fprintf(fp_log, "%f,%ld\n", logl, sc);
 }
 
-int cb_desc(const void * va, const void * vb)
+static int cb_desc(const void * va, const void * vb)
 {
   const density_t * a = va;
   const density_t * b = vb;
@@ -64,15 +64,15 @@ static void bayes_init(rtree_t * root, long seed)
 {
   long i;
 
-  crnodes = (rtree_t **)xmalloc(root->leaves*sizeof(rtree_t *));
-  snodes = (rtree_t **)xmalloc(root->leaves*sizeof(rtree_t *));
+  crnodes = (rtree_t **)xmalloc((size_t)(root->leaves)*sizeof(rtree_t *));
+  snodes = (rtree_t **)xmalloc((size_t)(root->leaves)*sizeof(rtree_t *));
 
   crnodes_count = 0;
   snodes_count = 0;
   accept_count = 0;
 
-  densities = (density_t *)xmalloc((root->leaves+1)*sizeof(density_t));
-  memset(densities, 0, (root->leaves+1) * sizeof(density_t));
+  densities = (density_t *)xmalloc((size_t)(root->leaves+1)*sizeof(density_t));
+  memset(densities, 0, (size_t)(root->leaves+1) * sizeof(density_t));
   for (i = 0; i < root->leaves+1; ++i)
     densities[i].species_count = i;
 
@@ -85,7 +85,7 @@ static void init_null(rtree_t * root)
 {
   int i;
 
-  rtree_t ** inner_node_list = (rtree_t **)xmalloc((root->leaves-1) *
+  rtree_t ** inner_node_list = (rtree_t **)xmalloc((size_t)(root->leaves-1) *
                                                    sizeof(rtree_t *));
   rtree_query_innernodes(root, inner_node_list);
 
@@ -99,7 +99,7 @@ static void bayes_stats_init(rtree_t * root)
 {
   int i;
 
-  rtree_t ** inner_node_list = (rtree_t **)xmalloc((root->leaves-1) *
+  rtree_t ** inner_node_list = (rtree_t **)xmalloc((size_t)(root->leaves-1) *
                                                    sizeof(rtree_t *));
   rtree_query_innernodes(root, inner_node_list);
 
@@ -124,8 +124,8 @@ static void hpd(long n, FILE * fp)
   double acc_sum = 0;
   long * indices = NULL;
 
-  indices = (long *)xmalloc((n+2)*sizeof(long));
-  memset(indices, 0, (n+2) * sizeof(long));
+  indices = (long *)xmalloc((size_t)(n+2)*sizeof(long));
+  memset(indices, 0, (size_t)(n+2) * sizeof(long));
 
   for (i = 1; i <= n; ++i)
     densities_sum += densities[i].logl;
@@ -184,10 +184,13 @@ static void bayes_finalize(rtree_t * root,
   long i;
 
   if (!opt_quiet)
+  {
+    printf ("Minimum log-likelihood observed in bayesian run: %f\n", bayes_min_logl);
     printf ("Maximum log-likelihood observed in bayesian run: %f\n", bayes_max_logl);
+  }
 
   /* write support values to all nodes */
-  rtree_t ** inner_node_list = (rtree_t **)xmalloc((root->leaves-1) *
+  rtree_t ** inner_node_list = (rtree_t **)xmalloc((size_t)(root->leaves-1) *
                                                    sizeof(rtree_t *));
   rtree_query_innernodes(root, inner_node_list);
 
@@ -229,7 +232,7 @@ static void bayes_finalize(rtree_t * root,
   }
 
   /* compute a HPD */
-  qsort(densities+1, root->leaves, sizeof(density_t), cb_desc);
+  qsort(densities+1, (size_t)(root->leaves), sizeof(density_t), cb_desc);
   hpd(root->leaves, fp_stats);
 
   if (!opt_quiet)
@@ -302,8 +305,8 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
       int i = j + k + u_edge_count;
 
       /* set the number of species - needed for prior information */
-      unsigned int species_count = v_vec[j].species_count +
-                                   w_vec[k].species_count;
+      unsigned int u_species_count = v_vec[j].species_count +
+                                     w_vec[k].species_count;
 
       /* compute multi-rate coalescent log-likelihood */
       double coal_multi_logl = v_vec[j].coal_multi_logl +
@@ -327,9 +330,9 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
                                 w_vec[k].spec_edgelen_sum;
 
       int spec_edge_count  = node->spec_edge_count + i;
-      assert(species_count > 0);
+      assert(u_species_count > 0);
       spec_logl = loglikelihood(spec_edge_count,spec_edgelen_sum) +
-                  prior_score(species_count,prior);
+                  prior_score(u_species_count,prior);
 
       
       /* compute single- and multi-rate scores */
@@ -352,7 +355,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
         u_vec[i].coal_multi_logl = coal_multi_logl;
         u_vec[i].vec_left = j;
         u_vec[i].vec_right = k;
-        u_vec[i].species_count = species_count;
+        u_vec[i].species_count = u_species_count;
         u_vec[i].filled = 1;
       }
 
@@ -402,7 +405,7 @@ static void backtrack_random(rtree_t * node,
 }
 
 static void backtrack(rtree_t * node,
-                      int index,
+                      long index,
                       bool *warning_minbr)
 
 {
@@ -445,7 +448,7 @@ static void backtrack(rtree_t * node,
   }
 }
 
-static void speciate(unsigned int r)
+static void speciate(long r)
 {
   /*            CR                         S
                 *                          *
@@ -461,7 +464,7 @@ static void speciate(unsigned int r)
   
   /* move the last node of the list to the position of the node
      we just used */
-  if (r != (unsigned int)(crnodes_count-1))
+  if (r != (crnodes_count-1))
   {
     crnodes[r] = crnodes[crnodes_count-1];
     crnodes[r]->bayes_slot = r;
@@ -526,7 +529,7 @@ static void speciate(unsigned int r)
   }
 }
 
-static void coalesce(unsigned int r)
+static void coalesce(long r)
 {
   /*            S                          CR
                 *                          *
@@ -538,7 +541,7 @@ static void coalesce(unsigned int r)
 
   /* move the last node of the list to the position of the node
      we just used */
-  if (r != (unsigned int)(snodes_count-1))
+  if (r != (snodes_count-1))
   {
     snodes[r] = snodes[snodes_count-1];
     snodes[r]->bayes_slot = r;
@@ -623,8 +626,8 @@ void bayes(rtree_t * tree,
            double * bayes_min_logl,
            double * bayes_max_logl)
 {
-  int best_index = 0;
   long i;
+  long best_index = 0;
   long rand_long = 0;
   double rand_double = 0;
   double max = 0;
@@ -682,9 +685,9 @@ void bayes(rtree_t * tree,
   }
   species_count = vec[best_index].species_count;
 
-  unsigned int coal_edge_count = 0;
-  unsigned int spec_edge_count;
-  double spec_edgelen_sum;
+  long coal_edge_count = 0;
+  long spec_edge_count = 0;
+  double spec_edgelen_sum = 0;
   double coal_edgelen_sum = 0;
   double coal_score = 0;
 
@@ -801,9 +804,6 @@ void bayes(rtree_t * tree,
   for (i = 1; i < opt_bayes_runs; ++i)
   {
 
-    //if (opt_bayes_burnin == i)
-    //  bayes_stats_init(tree);
-
     /* throw a coin to decide whether to convert a coalescent root to a
        speciation or the other way round */
     drand48_r(rstate, &rand_double);
@@ -821,7 +821,7 @@ void bayes(rtree_t * tree,
 
       /* select a coalescent root, split it into two coalescent nodes */
       lrand48_r(rstate, &rand_long);
-      unsigned int r = (unsigned int)(rand_long % crnodes_count);
+      long r = rand_long % crnodes_count;
       rtree_t * node = crnodes[r];
 
       /* store the count of crnodes for the Hasting ratio */
@@ -837,7 +837,7 @@ void bayes(rtree_t * tree,
 
       /* subtract the two edges (left and right) from the coalescent
          distribution and add them to the speciation distribution */
-      int edge_count_diff = 0;
+      unsigned int edge_count_diff = 0;
       double edgelen_sum_diff = 0;
       if (node->left->length > opt_minbr)
       {
@@ -952,7 +952,7 @@ void bayes(rtree_t * tree,
              CR  *     *  CR             C  *     *  C         */
 
       lrand48_r(rstate, &rand_long);
-      unsigned int r = (unsigned int)(rand_long % snodes_count);
+      long r = rand_long % snodes_count;
       rtree_t * node = snodes[r];
 
       /* store the count of snodes for the Hastings ratio */

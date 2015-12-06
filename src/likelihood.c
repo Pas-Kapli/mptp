@@ -21,11 +21,13 @@
 
 #include "mptp.h"
 
-double loglikelihood(int edge_count, double edgelen_sum)
+
+
+double loglikelihood(long edge_count, double edgelen_sum)
 {
   assert(edge_count >= 0);
 
-  if (edge_count == 0 || edgelen_sum == 0) return 0;
+  if (edge_count == 0 || edgelen_sum < __DBL_MIN__) return 0;
   
   return edge_count * (log(edge_count) - 1 - log(edgelen_sum));
 }

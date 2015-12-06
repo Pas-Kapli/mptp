@@ -28,10 +28,10 @@ unsigned long arch_get_memused()
   
 #if defined __APPLE__
   /* Mac: ru_maxrss gives the size in bytes */
-  return r_usage.ru_maxrss;
+  return (unsigned long)(r_usage.ru_maxrss);
 #else
   /* Linux: ru_maxrss gives the size in kilobytes  */
-  return r_usage.ru_maxrss * 1024;
+  return (unsigned long)r_usage.ru_maxrss * 1024;
 #endif
 }
 
@@ -53,7 +53,7 @@ unsigned long arch_get_memtotal()
   if (pagesize > LONG_MAX / phys_pages)
     return LONG_MAX;
   else
-    return pagesize * phys_pages;
+    return (unsigned long)pagesize * (unsigned long)phys_pages;
 
 #elif defined(__APPLE__)
 

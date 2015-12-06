@@ -43,7 +43,7 @@ void output_info(FILE * out,
                  double pvalue,
                  int lrt_result,
                  rtree_t * root,
-                 int species_count)
+                 unsigned int species_count)
 {
   fprintf(out, "Command: %s\n", cmdline);
   fprintf(out, 

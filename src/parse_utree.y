@@ -25,7 +25,7 @@ extern int utree_lex();
 extern FILE * utree_in;
 extern void utree_lex_destroy();
 
-static int tip_cnt = 0;
+static unsigned int tip_cnt = 0;
 
 static void dealloc_tree_recursive(utree_t * node)
 {
@@ -186,7 +186,7 @@ number: NUMBER   { $$=$1;};
 
 %%
 
-utree_t * utree_parse_newick(const char * filename, int * tip_count)
+utree_t * utree_parse_newick(const char * filename, unsigned int * tip_count)
 {
   struct utree_s * tree;
 

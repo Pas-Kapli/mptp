@@ -153,7 +153,7 @@ typedef struct rtree_s
   int event;
 
   /* slot in which the node resides when doing bayesian analysis */
-  int bayes_slot;
+  long bayes_slot;
   long speciation_start;
   long speciation_count;
   double support;
@@ -196,14 +196,14 @@ typedef struct beta_params_s
 
 typedef struct bin_params_s
 {
-  int trials;
+  unsigned int trials;
   double prob;
 } bin_params_t;
 
 typedef struct nbin_params_s
 {
   double prob;
-  int failures;
+  unsigned int failures;
 } nbin_params_t;
 
 typedef struct dir_params_s 
@@ -303,17 +303,17 @@ extern long avx2_present;
 
 /* functions in util.c */
 
-void fatal(const char * format, ...);
+void fatal(const char * format, ...) __attribute__ ((noreturn));
 void progress_init(const char * prompt, unsigned long size);
 void progress_update(unsigned int progress);
-void progress_done();
+void progress_done(void);
 void * xmalloc(size_t size);
 void * xrealloc(void *ptr, size_t size);
 char * xstrchrnul(char *s, int c);
 char * xstrdup(const char * s);
 char * xstrndup(const char * s, size_t len);
 long getusec(void);
-void show_rusage();
+void show_rusage(void);
 int extract2f(char * text, double * a, double * b);
 FILE * xopen(const char * filename, const char * mode);
 
@@ -338,7 +338,7 @@ void rtree_destroy(rtree_t * root);
 
 /* functions in parse_utree.y */
 
-utree_t * utree_parse_newick(const char * filename, int * tip_count);
+utree_t * utree_parse_newick(const char * filename, unsigned int * tip_count);
 
 void utree_destroy(utree_t * root);
 
@@ -352,11 +352,7 @@ rtree_t * utree_convert_rtree(utree_t * root);
 int utree_traverse(utree_t * root,
                    int (*cbtrav)(utree_t *),
                    utree_t ** outbuffer);
-utree_t * utree_longest_branchtip(utree_t * node, int tip_count);
-utree_t * utree_lca(utree_t * root,
-                    utree_t ** tip_nodes,
-                    unsigned int count,
-                    unsigned int tip_count);
+utree_t * utree_longest_branchtip(utree_t * node, unsigned int tip_count);
 utree_t * utree_outgroup_lca(utree_t * root, unsigned int tip_count);
 rtree_t * utree_crop(utree_t * lca);
 
@@ -434,7 +430,7 @@ void dp_knapsack(rtree_t * root, int method);
 
 /* functions in likelihood.c */
 
-double loglikelihood(int edge_count, double edgelen_sum);
+double loglikelihood(long edge_count, double edgelen_sum);
 int lrt(double nullmodel_logl, double ptp_logl, unsigned int df, double * pvalue);
 
 /* functions in output.c */
@@ -446,7 +442,7 @@ void output_info(FILE * out,
 		 double pvalue,
 		 int lrt_result,
                  rtree_t * root,
-                 int species_count);
+                 unsigned int species_count);
 
 FILE * open_file_ext(const char * extension, long seed);
 
@@ -473,9 +469,9 @@ void svg_landscape_combined(double bayes_min_log, double bayes_max_logl, long ru
 
 double random_delimitation(rtree_t * root,
                            long * delimited_species,
-                           unsigned int * coal_edge_count,
+                           long * coal_edge_count,
                            double * coal_edgelen_sum,
-                           unsigned int * spec_edge_count,
+                           long * spec_edge_count,
                            double * spec_edgelen_sum,
                            double * coal_score,
                            struct drand48_data * rstate);

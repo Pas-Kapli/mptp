@@ -21,7 +21,7 @@
 
 #include "mptp.h"
 
-double mlsupport_avg(int * mlsupport, double * support, int count)
+static double mlsupport_avg(int * mlsupport, double * support, int count)
 {
   int i;
   double sum = 0;
@@ -96,7 +96,7 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   double * bayes_min_logl;
   double * bayes_max_logl;
 
-  trees = (rtree_t **)xmalloc(opt_bayes_chains * sizeof(rtree_t *));
+  trees = (rtree_t **)xmalloc((size_t)opt_bayes_chains * sizeof(rtree_t *));
   trees[0] = root;
 
   /* clone trees in order to have one independent tree per run */
@@ -105,20 +105,20 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   mltree = rtree_clone(root,NULL);
 
   /* allocate memory for storing min and max logl for each chain */
-  bayes_min_logl = (double *)xmalloc(opt_bayes_chains * sizeof(double));
-  bayes_max_logl = (double *)xmalloc(opt_bayes_chains * sizeof(double));
+  bayes_min_logl = (double *)xmalloc((size_t)opt_bayes_chains * sizeof(double));
+  bayes_max_logl = (double *)xmalloc((size_t)opt_bayes_chains * sizeof(double));
 
   /* reset to zero */
-  memset(bayes_min_logl, 0, opt_bayes_chains * sizeof(double));
-  memset(bayes_max_logl, 0, opt_bayes_chains * sizeof(double));
+  memset(bayes_min_logl, 0, (size_t)opt_bayes_chains * sizeof(double));
+  memset(bayes_max_logl, 0, (size_t)opt_bayes_chains * sizeof(double));
 
   /* generate one seed for each run */
-  seeds = (long *)xmalloc(opt_bayes_chains * sizeof(long));
+  seeds = (long *)xmalloc((size_t)opt_bayes_chains * sizeof(long));
   for (i = 0; i < opt_bayes_chains; ++i)
     seeds[i] = lrand48();
 
   /* initialize states for random number generators */
-  rstates = (struct drand48_data *)xmalloc(opt_bayes_chains *
+  rstates = (struct drand48_data *)xmalloc((size_t)opt_bayes_chains *
                                            sizeof(struct drand48_data));
   
   /* initialize a pseudo-random number generator for each chain */
@@ -184,11 +184,12 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   free(bayes_max_logl);
 
   /* allocate memory for support values */
-  double ** support = (double **)xmalloc(opt_bayes_chains * sizeof(double *));
+  double ** support = (double **)xmalloc((size_t)opt_bayes_chains *
+                                         sizeof(double *));
   int support_count = 0;
   for (i = 0; i < opt_bayes_chains; ++i)
   {
-    support[i] = (double *)xmalloc(trees[i]->leaves * sizeof(double));
+    support[i] = (double *)xmalloc((size_t)(trees[i]->leaves) * sizeof(double));
     support_count = extract_support(trees[i], support[i]); 
     rtree_destroy(trees[i]);
   }
@@ -197,7 +198,7 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   dp_init(mltree);
   dp_set_pernode_spec_edges(mltree);
   dp_ptp(mltree, method, opt_prior);
-  int * mlsupport  = (int *)xmalloc(mltree->leaves * sizeof(int));
+  int * mlsupport  = (int *)xmalloc((size_t)(mltree->leaves) * sizeof(int));
   if (support_count != extract_events(mltree, mlsupport))
     fatal("Internal error");
 

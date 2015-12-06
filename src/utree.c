@@ -254,9 +254,9 @@ static int cb_outgroup(utree_t * node)
   return node->mark;
 }
 
-int utree_traverse_postorder(utree_t * root,
-                             int (*cbtrav)(utree_t *),
-                             utree_t ** outbuffer)
+static int utree_traverse_postorder(utree_t * root,
+                                    int (*cbtrav)(utree_t *),
+                                    utree_t ** outbuffer)
 {
   int index = 0;
 
@@ -377,10 +377,10 @@ static rtree_t * utree_rtree(utree_t * unode)
   return rnode;
 }
 
-utree_t * utree_longest_branchtip(utree_t * node, int tip_count)
+utree_t * utree_longest_branchtip(utree_t * node, unsigned int tip_count)
 {
-  int i;
-  int index = 0;
+  unsigned int index = 0;
+  unsigned int i;
   double branch_length = 0;
   utree_t * outgroup = NULL;
 
@@ -456,7 +456,7 @@ rtree_t * utree_convert_rtree(utree_t * outgroup)
 
 static utree_t ** utree_tipstring_nodes(utree_t * root,
                                         char * tipstring,
-                                        int utree_tip_count,
+                                        unsigned int utree_tip_count,
                                         unsigned int * tiplist_count)
 {
   unsigned int i;
@@ -464,7 +464,7 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
   unsigned int commas_count = 0;
 
   char * taxon;
-  unsigned int taxon_len;
+  size_t taxon_len;
 
   ENTRY * found = NULL;
 
@@ -472,14 +472,15 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
     if (tipstring[i] == ',')
       commas_count++;
   
-  utree_t ** node_list = (utree_t **)xmalloc(utree_tip_count*sizeof(utree_t *));
+  utree_t ** node_list = (utree_t **)xmalloc((size_t)utree_tip_count *
+                                             sizeof(utree_t *));
   utree_query_tipnodes(root, node_list);
 
   utree_t ** out_node_list = (utree_t **)xmalloc((commas_count+1) *
                                                    sizeof(utree_t *));
 
   /* create a hashtable of tip labels */
-  hcreate(2 * utree_tip_count);
+  hcreate(2 * (size_t)utree_tip_count);
 
   for (i = 0; i < (unsigned int)utree_tip_count; ++i)
   {
@@ -532,13 +533,12 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
   return out_node_list;
 }
 
-utree_t * utree_lca(utree_t * root,
-                    utree_t ** tip_nodes,
-                    unsigned int count,
-                    unsigned int utree_tip_count)
+static utree_t * utree_lca(utree_t ** tip_nodes,
+                           unsigned int count,
+                           unsigned int utree_tip_count)
 {
   long i;
-  utree_t * lca;
+  utree_t * lca = NULL;
   utree_t ** path;
 
   /* allocate a path */
@@ -599,7 +599,7 @@ utree_t * utree_outgroup_lca(utree_t * root, unsigned int tip_count)
   {
     /* find the LCA of the tips in og_tips. Note that, *all* tips of the desired
        subtree *must* be specified */
-    og_root = utree_lca(root, og_tips, og_tips_count, tip_count);
+    og_root = utree_lca(og_tips, og_tips_count, tip_count);
   }
 
   free(og_tips);

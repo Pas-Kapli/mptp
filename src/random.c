@@ -68,9 +68,9 @@ static int cb_node_select(rtree_t * node)
 
 double random_delimitation(rtree_t * root,
                            long * delimited_species,
-                           unsigned int * coal_edge_count,
+                           long * coal_edge_count,
                            double * coal_edgelen_sum,
-                           unsigned int * spec_edge_count,
+                           long * spec_edge_count,
                            double * spec_edgelen_sum,
                            double * coal_score,
                            struct drand48_data * rstate)
@@ -90,7 +90,7 @@ double random_delimitation(rtree_t * root,
   lrand48_r(rstate, &rand_long);
   species_count = (rand_long % root->max_species_count) + 1;
 
-  rtree_t ** inner_node_list =  (rtree_t **)xmalloc(species_count *
+  rtree_t ** inner_node_list =  (rtree_t **)xmalloc((size_t)species_count *
                                                     sizeof(rtree_t *));
 
   long count = rtree_traverse(root, cb_node_select, rstate, inner_node_list);
