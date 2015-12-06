@@ -19,7 +19,7 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#include "delimit.h"
+#include "mptp.h"
 
 static double * logn_table;
 
@@ -106,7 +106,7 @@ double bin_logpmf(unsigned int k, bin_params_t * params)
   assert(k >= 0);
   double p = params->prob;
   assert(p >= 0 && p <= 1);
-  int n = params->trials;
+  unsigned int n = params->trials;
   assert(n >= 0);
 
   return logcomb(n, k) +
@@ -119,7 +119,7 @@ double nbin_logpmf(unsigned int k, nbin_params_t * params)
   assert(k >= 0);
   double p = params->prob;
   assert(p >= 0 && p <= 1);
-  int r = params->failures;
+  unsigned int r = params->failures;
   assert(r > 0);
 
   return logcomb(k + r - 1, k) + 

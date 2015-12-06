@@ -19,7 +19,7 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#include "delimit.h"
+#include "mptp.h"
 
 static char * progname;
 static char progheader[80];
@@ -33,6 +33,7 @@ static const char mandatory_options_count = 2;
 static const char * mandatory_options_list = " --tree_file --output_file";
 
 /* options */
+int pll_errno;
 int opt_quiet;
 int opt_precision;
 int opt_svg_showlegend;
@@ -43,11 +44,15 @@ long opt_ml_multi;
 long opt_ml_single;
 long opt_bayes_multi;
 long opt_bayes_single;
-long opt_bayes_log;
-long opt_ks_single;
-long opt_ks_multi;
+long opt_bayes_sample;
 long opt_bayes_runs;
+long opt_bayes_log;
+long opt_bayes_startnull;
+long opt_bayes_startrandom;
+long opt_bayes_burnin;
+long opt_bayes_chains;
 long opt_seed;
+long opt_crop;
 long opt_svg;
 long opt_svg_width;
 long opt_svg_fontsize;
@@ -57,7 +62,7 @@ long opt_svg_marginright;
 long opt_svg_margintop;
 long opt_svg_marginbottom;
 long opt_svg_inner_radius;
-long opt_bayes_startnull;
+double opt_bayes_credible;
 double opt_svg_legend_ratio;
 double opt_pvalue;
 double opt_minbr;
@@ -65,6 +70,7 @@ char * opt_treefile;
 char * opt_outfile;
 char * opt_outgroup;
 char * opt_scorefile;
+char * opt_pdist_file;
 prior_t * opt_prior;
 
 static void dealloc_prior()
@@ -90,7 +96,7 @@ static struct option long_options[] =
   {"outgroup",           required_argument, 0, 0 },  /*  8 */
   {"score",              required_argument, 0, 0 },  /*  9 */
   {"pvalue",             required_argument, 0, 0 },  /* 10 */
-  {"min_br",             required_argument, 0, 0 },  /* 11 */
+  {"minbr",              required_argument, 0, 0 },  /* 11 */
   {"svg_width",          required_argument, 0, 0 },  /* 12 */
   {"svg_fontsize",       required_argument, 0, 0 },  /* 13 */
   {"svg_tipspacing",     required_argument, 0, 0 },  /* 14 */
@@ -106,11 +112,16 @@ static struct option long_options[] =
   {"bayes_single",       required_argument, 0, 0 },  /* 24 */
   {"prior_exp",          required_argument, 0, 0 },  /* 25 */
   {"prior_gamma",        required_argument, 0, 0 },  /* 26 */
-  {"ks_single",          no_argument,       0, 0 },  /* 27 */
-  {"ks_multi",           no_argument,       0, 0 },  /* 28 */
-  {"bayes_log",          required_argument, 0, 0 },  /* 29 */
-  {"seed",               required_argument, 0, 0 },  /* 30 */
-  {"bayes_startnull",    no_argument,       0, 0 },  /* 31 */ 
+  {"bayes_sample",       required_argument, 0, 0 },  /* 27 */
+  {"bayes_log",          no_argument,       0, 0 },  /* 28 */
+  {"seed",               required_argument, 0, 0 },  /* 29 */
+  {"bayes_startnull",    no_argument,       0, 0 },  /* 30 */ 
+  {"bayes_burnin",       required_argument, 0, 0 },  /* 31 */
+  {"bayes_startrandom",  no_argument,       0, 0 },  /* 32 */
+  {"bayes_chains",       required_argument, 0, 0 },  /* 33 */
+  {"minbr_auto",         required_argument, 0, 0 },  /* 34 */
+  {"outgroup_crop",      no_argument,       0, 0 },  /* 35 */
+  {"bayes_credible",     required_argument, 0, 0 },  /* 36 */
   { 0, 0, 0, 0 }
 };
 
@@ -130,21 +141,26 @@ void args_init(int argc, char ** argv)
   opt_treefile = NULL;
   opt_outfile = NULL;
   opt_outgroup = NULL;
+  opt_pdist_file = NULL;
   opt_quiet = 0;
   opt_ml_multi = 0;
   opt_ml_single = 0;
   opt_bayes_multi = 0;
   opt_bayes_single = 0;
-  opt_ks_single = 0;
-  opt_ks_multi = 0;
   opt_scorefile = NULL;
   opt_pvalue = 0.001;
   opt_minbr = 0.0001;
   opt_precision = 7;
   opt_bayes_runs = 1;
-  opt_bayes_log = 1000;
+  opt_bayes_sample = 1000;
   opt_bayes_startnull = 0;
+  opt_bayes_startrandom = 0;
+  opt_bayes_log = 0;
+  opt_bayes_burnin = 1;
+  opt_bayes_chains = 0;
+  opt_bayes_credible = 0.95;
   opt_seed = (long)time(NULL);
+  opt_crop = 0;
 
   opt_svg_width = 1920;
   opt_svg_fontsize = 12;
@@ -202,9 +218,12 @@ void args_init(int argc, char ** argv)
         break;
 
       case 9:
+        fatal("Option --score is not available in this version");
+        /*
         free(opt_scorefile);
         opt_scorefile = optarg;
         break;
+        */
 
       case 10:
         opt_pvalue = strtod(optarg, &end);
@@ -275,6 +294,8 @@ void args_init(int argc, char ** argv)
         break;
 
       case 25:
+        fatal("Option --prior_exp is not available in this version");
+        /*
         dealloc_prior();
 
         opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
@@ -284,8 +305,11 @@ void args_init(int argc, char ** argv)
         exp_params->rate = atof(optarg);
         opt_prior->params = (void *)exp_params;
         break;
+        */
 
       case 26:
+        fatal("Option --prior_gamma is not available in this version");
+        /*
         dealloc_prior();
 
         opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
@@ -296,25 +320,47 @@ void args_init(int argc, char ** argv)
           fatal("Incorrect format for --prior_gamma");
         opt_prior->params = (void *)gamma_params;
         break;
+        */
 
       case 27:
-        opt_ks_single = 1;
+        opt_bayes_sample = atol(optarg);
         break;
 
       case 28:
-        opt_ks_multi = 1;
+        opt_bayes_log = 1;
         break;
 
       case 29:
-        opt_bayes_log = atol(optarg);
-        break;
-
-      case 30:
         opt_seed = atol(optarg);
         break;
 
-      case 31:
+      case 30:
         opt_bayes_startnull = 1;
+        break;
+
+      case 31:
+        opt_bayes_burnin = atol(optarg);
+        break;
+
+      case 32:
+        opt_bayes_startrandom = 1;
+        break;
+
+      case 33:
+        opt_bayes_chains = atol(optarg);
+        break;
+
+      case 34:
+        free(opt_pdist_file);
+        opt_pdist_file = optarg;
+        break;
+
+      case 35:
+        opt_crop = 1;
+        break;
+
+      case 36:
+        opt_bayes_credible = atof(optarg);
         break;
 
       default:
@@ -348,9 +394,7 @@ void args_init(int argc, char ** argv)
     commands++;
   if (opt_scorefile)
     commands++;
-  if (opt_ks_single)
-    commands++;
-  if (opt_ks_multi)
+  if (opt_pdist_file)
     commands++;
 
   /* if more than one independent command, fail */
@@ -364,8 +408,9 @@ void args_init(int argc, char ** argv)
     return;
   }
   /* check for mandatory options */
-  if (mand_options != mandatory_options_count)
-    fatal("Mandatory options are:\n\n%s", mandatory_options_list);
+  if (!opt_version && !opt_help)
+    if (mand_options != mandatory_options_count)
+      fatal("Mandatory options are:\n\n%s", mandatory_options_list);
 
 }
 
@@ -376,46 +421,39 @@ void cmd_help()
   fprintf(stderr,
           "\n"
           "General options:\n"
-          "  --help                         display help information.\n"
-          "  --version                      display version information.\n"
-          "  --tree_show                    display an ASCII version of the tree.\n"
-          "  --ml_multi                     Maximum-likelihood PTP with one lambda per coalescent.\n"
-          "  --ml_single                    Maximum-likelihood PTP with a single lambda for all coalescent.\n"
-          "  --bayes_multi INT              Bayesian PTP with one lambda per coalescent and INT runs.\n"
-          "  --bayes_single INT             Bayesian PTP with a single lambda for all coalescent and INT runs.\n"
-          "  --bayes_log INT                Log every INT sample of the run (default: 1000).\n"
-          "  --score                        Compare given species delimitation with optimal one induced by the tree.\n"
-          "  --pvalue                       Specify a P-value (default: 0.001)\n"
-          "  --min_br                       Specify minimum branch length (default: 0.0001)\n"
-          "  --outgroup TAXON               In case the input tree is unrooted, use TAXON as the outgroup (default: taxon with longest branch).\n"
-          "  --quiet                        only output warnings and fatal errors to stderr.\n"
-          "  --precision                    Precision of decimal part of floating point numbers on output (default: 7).\n"
-          "  --seed                         Seed for pseudo-random number generator.\n"
-          "Prior options:\n"
-          "  --prior_exp REAL               Rate of exponential prior.\n"
-          "  --prior_ln REAL,REAL           Log-normal prior with mean (first param) and standard deviation (second param).\n"
-          "  --prior_uni REAL,REAL          Uniform prior with minimum (first param) and maximum (second param) bounds.\n"
-          "  --prior_bin INT,REAL           Binomial prior with number of trials (first param) and success probability (second param).\n"
-          "  --prior_nbin INT,REAL          Negative binomial prior with number of failures (first param) and success probability (second param).\n"
-          "  --prior_gamma REAL,REAL        Gamma distribution with shape (first param) and rate (second param).\n"
-          "  --prior_beta REAL,REAL         Beta distribution with alpha shape (first param) and beta shape (second param).\n"
+          "  --help                    display help information.\n"
+          "  --version                 display version information.\n"
+          "  --tree_show               display an ASCII version of the tree.\n"
+          "  --ml_multi                Maximum-likelihood with one lambda per coalescent.\n"
+          "  --ml_single               Maximum-likelihood with one lambda for all coalescent.\n"
+          "  --bayes_multi INT         Bayesian with own lambda per coalescent (INT runs).\n"
+          "  --bayes_single INT        Bayesian with one lambda for all coalescent (INT steps).\n"
+          "  --bayes_sample INT        Sample every INT iteration (default: 1000).\n"
+          "  --bayes_log               Log samples and create SVG plot of log-likelihoods.\n"
+          "  --bayes_burnin INT        Ignore all MCMC steps below threshold.\n"
+          "  --bayes_chains INT        Run multiple chains.\n"
+          "  --pvalue                  Set p-value for LRT (default: 0.001)\n"
+          "  --minbr REAL              Set minimum branch length (default: 0.0001)\n"
+          "  --minbr_auto FILENAME     Detect minimum branch length from FASTA p-distances\n"
+          "  --outgroup TAXA           Root unrooted tree at outgroup (default: taxon with longest branch).\n"
+          "  --outgroup_crop           Crop outgroup from tree\n"
+          "  --quiet                   only output warnings and fatal errors to stderr.\n"
+          "  --precision               Precision of floating point numbers on output (default: 7).\n"
+          "  --seed                    Seed for pseudo-random number generator.\n"
           "Input and output options:\n"
-          "  --tree_file FILENAME           tree file in newick format.\n"
-          "  --output_file FILENAME         output file name.\n"
+          "  --tree_file FILENAME      tree file in newick format.\n"
+          "  --output_file FILENAME    output file name.\n"
           "Visualization options:\n"
-          "  --svg_width INT                Width of the resulting SVG image in pixels (default: 1920).\n"
-          "  --svg_fontsize INT             Size of font in SVG image. (default: 12)\n"
-          "  --svg_tipspacing INT           Vertical space between taxa in SVG image (default: 20).\n"
-          "  --svg_legend_ratio <0..1>      Ratio of the total tree length to be displayed as legend line.\n"
-          "  --svg_nolegend                 Hides the legend.\n"
-          "  --svg_marginleft               Left margin in pixels (default: 20).\n"
-          "  --svg_marginright              Right margin in pixels (default: 20).\n"
-          "  --svg_margintop                Top margin in pixels (default: 20).\n"
-          "  --svg_marginbottom             Bottom margin in pixels (default: 20).\n"
-          "  --svg_inner_radius             Radius of inner nodes in pixels (default: 0).\n"
-          "Experimental options:\n"
-          "  --ks_single                     Maximum-likelihood PTP with a single lambda for all coalescent (DP knapsack algorithm)\n"
-          "  --ks_multi                      Maximum-likelihood PTP with one lambda per coalescent (DP knapsack algorithm)\n"
+          "  --svg_width INT           Width of SVG tree in pixels (default: 1920).\n"
+          "  --svg_fontsize INT        Size of font in SVG image. (default: 12)\n"
+          "  --svg_tipspacing INT      Vertical space between taxa in SVG tree (default: 20).\n"
+          "  --svg_legend_ratio <0..1> Ratio of total tree length to be displayed as legend line.\n"
+          "  --svg_nolegend            Hides legend.\n"
+          "  --svg_marginleft          Left margin in pixels (default: 20).\n"
+          "  --svg_marginright         Right margin in pixels (default: 20).\n"
+          "  --svg_margintop           Top margin in pixels (default: 20).\n"
+          "  --svg_marginbottom        Bottom margin in pixels (default: 20).\n"
+          "  --svg_inner_radius        Radius of inner nodes in pixels (default: 0).\n"
          );
 }
 
@@ -429,7 +467,7 @@ static rtree_t * load_tree(void)
 
   if (!rtree)
   {
-    int tip_count;
+    unsigned int tip_count;
     utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
     if (!utree)
       fatal("Tree is neither unrooted nor rooted. Go fix your tree.");
@@ -440,16 +478,72 @@ static rtree_t * load_tree(void)
       fprintf(stdout, "Converting to rooted tree...\n");
     }
 
-    rtree = utree_convert_rtree(utree, tip_count);
+    /* if outgroup was not specified, get the node with the longest branch */
+    utree_t * og_root = NULL;
+
+    /* if outgroup was not specified, get the tip with the longest branch */
+    if (!opt_outgroup)
+    {
+      og_root = utree_longest_branchtip(utree, tip_count);
+      assert(og_root);
+      fprintf(stdout, 
+              "Selected %s as outgroup based on longest tip-branch criterion\n",
+              og_root->label);
+    }
+    else
+    {
+      /* get LCA of out group */
+      og_root = utree_outgroup_lca(utree, tip_count);
+      if (!og_root)
+      {
+        utree_destroy(utree);
+        fatal("Outgroup must be a single tip or a list of all tips of a subtree");
+      }
+    }
+
+    
+    if (opt_crop)
+    {
+      rtree = utree_crop(og_root);
+    }
+    else
+    {
+      rtree = utree_convert_rtree(og_root);
+    }
+
     utree_destroy(utree);
   }
   else
   {
     if (!opt_quiet)
       fprintf(stdout, "Loaded rooted tree...\n");
+
+    if (opt_crop)
+    {
+      if (!opt_outgroup)
+        fatal("--outgroup must be specified when using --outgroup_crop.");
+
+      /* get LCA of outgroup */
+      rtree_t * og_root = get_outgroup_lca(rtree);
+
+      /* crop outgroup from tree */
+      rtree = rtree_crop(rtree,og_root);
+      if (!rtree)
+        fatal("Cropping the outgroup leads to less than two tips.");
+    }
   }
 
   return rtree;
+}
+
+void cmd_auto()
+{
+  rtree_t * rtree = load_tree();
+
+  detect_min_bl(rtree);
+
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
 }
 
 void cmd_ml_multi()
@@ -465,13 +559,30 @@ void cmd_ml_multi()
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
-  cmd_svg(rtree);
+  cmd_svg(rtree, opt_seed);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
 
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
+}
+
+void cmd_multichain(int method)
+{
+  rtree_t * rtree = load_tree();
+
+  /* init random number generator */
+  srand48(opt_seed);
+
+  multichain(rtree, method, opt_prior);
+
+  if (opt_treeshow)
+    rtree_show_ascii(rtree);
+   
+  if (!opt_quiet)
+    fprintf(stdout, "Done...\n");
+
 }
 
 void cmd_ml_single()
@@ -487,7 +598,7 @@ void cmd_ml_single()
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
-  cmd_svg(rtree);
+  cmd_svg(rtree, opt_seed);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
@@ -495,25 +606,61 @@ void cmd_ml_single()
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
 }
+
 void cmd_bayes(int method)
 {
+  struct drand48_data rstate;
+  double bayes_min_logl = 0;
+  double bayes_max_logl = 0;
+
+  if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
+    fatal("--opt_bayes_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
+
+  if (opt_bayes_credible < 0 || opt_bayes_credible > 1)
+    fatal("--opt_credible must be a real number between 0 and 1");
+
+  if (opt_bayes_chains)
+  {
+    cmd_multichain(method);
+    return;
+  }
+
+
   rtree_t * rtree = load_tree();
+
+  /* init random number generator */
+  srand48_r(opt_seed, &rstate);
 
   dp_init(rtree);
   dp_set_pernode_spec_edges(rtree);
-  bayes(rtree, method, opt_prior);
+  bayes(rtree,
+        method,
+        opt_prior,
+        &rstate,
+        opt_seed,
+        &bayes_min_logl,
+        &bayes_max_logl);
   dp_free(rtree);
+
+  if (opt_bayes_log)
+    svg_landscape(bayes_min_logl, bayes_max_logl, opt_seed);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
    
   char * newick = rtree_export_newick(rtree);
 
-  FILE * newick_fp = open_file_ext(".tree");
+  if (!opt_quiet)
+    fprintf(stdout,
+            "Creating tree with support values in %s.%ld.tree ...\n",
+            opt_outfile,
+            opt_seed);
+
+  FILE * newick_fp = open_file_ext("tree", opt_seed);
   fprintf(newick_fp, "%s\n", newick);
   fclose(newick_fp);
 
-  cmd_svg(rtree);
+  cmd_svg(rtree, opt_seed);
   /* deallocate tree structure */
   rtree_destroy(rtree);
 
@@ -523,73 +670,10 @@ void cmd_bayes(int method)
     fprintf(stdout, "Done...\n");
 }
 
-void cmd_ks_single()
-{
-
-  rtree_t * rtree = load_tree();
-
-  dp_knapsack(rtree, PTP_METHOD_SINGLE);
-
-  if (opt_treeshow)
-    rtree_show_ascii(rtree);
-
-  cmd_svg(rtree);
-
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
-}
-
-void cmd_ks_multi()
-{
-
-  rtree_t * rtree = load_tree();
-
-  dp_knapsack(rtree, PTP_METHOD_MULTI);
-
-  if (opt_treeshow)
-    rtree_show_ascii(rtree);
-
-  cmd_svg(rtree);
-
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
-}
-
 void cmd_score()
 {
-  /* parse tree */
-  if (!opt_quiet)
-    fprintf(stdout, "Parsing tree file...\n");
 
-  rtree_t * rtree = rtree_parse_newick(opt_treefile);
-
-  if (!rtree)
-  {
-    int tip_count;
-    utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
-    if (!utree)
-      fatal("Tree is neither unrooted nor rooted. Go fix your tree.");
-
-    if (!opt_quiet)
-    {
-      fprintf(stdout, "Loaded unrooted tree...\n");
-      fprintf(stdout, "Converting to rooted tree...\n");
-    }
-
-    rtree = utree_convert_rtree(utree, tip_count);
-    utree_destroy(utree);
-  }
-  else
-  {
-    if (!opt_quiet)
-      fprintf(stdout, "Loaded rooted tree...\n");
-  }
+  rtree_t * rtree = load_tree();
 
   /* TODO: Sarah's score function should be called here */
   score_delimitation_tree(opt_scorefile, rtree);
@@ -597,7 +681,7 @@ void cmd_score()
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
-  cmd_svg(rtree);
+  cmd_svg(rtree, opt_seed);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
@@ -636,7 +720,7 @@ void fillheader()
 void show_header()
 {
   fprintf(stdout, "%s\n", progheader);
-  fprintf(stdout, "https://github.com/Pas-Kapli/delimit\n");
+  fprintf(stdout, "https://github.com/Pas-Kapli/mptp\n");
   fprintf(stdout,"\n");
 }
 
@@ -675,13 +759,9 @@ int main (int argc, char * argv[])
   {
     cmd_score();
   }
-  else if (opt_ks_single)
+  else if (opt_pdist_file)
   {
-    cmd_ks_single();
-  }
-  else if (opt_ks_multi)
-  {
-    cmd_ks_multi();
+    cmd_auto();
   }
 
   /* free prior information */

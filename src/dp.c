@@ -19,7 +19,7 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#include "delimit.h"
+#include "mptp.h"
 
 static unsigned int species_iter = 0;
 
@@ -175,8 +175,8 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
 {
   int i;
   int lrt_pass;
-  int species_count;
   int best_index = 0;
+  unsigned int species_count;
   double max = 0;
   double pvalue = -1;
 
@@ -250,7 +250,7 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
 #endif
 
   /* initialize file name */
-  FILE * out = open_file_ext(".txt");
+  FILE * out = open_file_ext("txt", opt_seed);
 
   if (!opt_quiet)
     fprintf(stdout, "Writing delimitation file %s.txt ...\n", opt_outfile);

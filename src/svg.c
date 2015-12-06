@@ -19,7 +19,9 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#include "delimit.h"
+#include "mptp.h"
+
+#define GRADIENT(x) (1-x)*100
 
 static double scaler = 0;
 
@@ -32,10 +34,10 @@ static double max_tree_len = 0;
 
 static double canvas_width;
 
-static const char * speciation_color = "#31a354";
-static const char * coalesence_color = "#ff0000";
+static char * const speciation_color = "#31a354";
+static char * const coalesence_color = "#ff0000";
 
-static const char * current_color;
+static int tip_occ = 0;
 
 typedef struct coord_s 
 {
@@ -70,6 +72,21 @@ static void svg_circle(double cx, double cy, double r, const char * color)
           "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"%s\" "
           "stroke=\"%s\" />\n",
           cx, cy, r, color, color);
+  /* animation effect 
+  fprintf(svg_fp, "<animate attributeName=\"r\" begin=\"mouseover\" dur=\"0.2\" fill=\"freeze\" from=\"%ld\" to=\"%ld\" />\n",
+          (long)r, (long)r+5);
+  fprintf(svg_fp, "<animate attributeName=\"r\" begin=\"mouseout\" dur=\"0.2\" fill=\"freeze\" to=\"%ld\" />\n</circle>\n",
+          (long)r);
+  */
+                
+}
+
+static void svg_text(double x, double y, long fontsize, const char * text)
+{
+  fprintf(svg_fp,
+          "<text x=\"%f\" y=\"%f\" font-size=\"%ld\" font-family=\"Arial;\" text-anchor=\"end\">"
+          "%s</text>\n",
+          x,y,fontsize,text);
 }
 
 static void rtree_set_xcoord(rtree_t * node)
@@ -99,8 +116,8 @@ static void rtree_set_xcoord(rtree_t * node)
 
 static void svg_rtree_plot(rtree_t * node)
 {
+  char * current_color;
   double y;
-  static int tip_occ = 0;
   double stroke_width = 3;
 
   /* traverse tree in post-order */
@@ -110,15 +127,13 @@ static void svg_rtree_plot(rtree_t * node)
     svg_rtree_plot(node->right);
   }
 
+  /* any node that has a parent, i.e. any node apart from the root */
   if (node->parent)
   {
     double x,px;
 
     x = ((coord_t *)(node->data))->x;
     px = ((coord_t *)(node->parent->data))->x;
-
-    current_color = (node->parent->event == EVENT_COALESCENT) ? 
-                    coalesence_color : speciation_color;
 
     if (!node->left)
     {
@@ -132,30 +147,63 @@ static void svg_rtree_plot(rtree_t * node)
       ry = ((coord_t *)(node->right->data))->y;
       y = (ly + ry) / 2.0;
 
+      /* decide the color */
+      if (opt_bayes_multi || opt_bayes_single)
+        asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
+                 GRADIENT(node->support),
+                 0.0,
+                 0.0);
+      else if (node->event == EVENT_COALESCENT)
+        current_color = coalesence_color;
+      else if (node->event == EVENT_SPECIATION)
+        current_color = speciation_color;
+      else
+        assert(0);
 
-      svg_line(x,
-               ly,
-               x,
-               ry,
-               (node->event == EVENT_COALESCENT) ?
-                 coalesence_color : speciation_color,
-               stroke_width);
-      
-      svg_circle(x,
-                 y,
-                 opt_svg_inner_radius,
-                 (node->event == EVENT_COALESCENT) ?
-                   coalesence_color : speciation_color);
+      /* draw a vertical line and a circle in the middle */
+      svg_line(x, ly, x, ry, current_color, stroke_width);
+      svg_circle(x, y, opt_svg_inner_radius, current_color);
+
+      /* deallocate color if bayesian */
+      if (opt_bayes_multi || opt_bayes_single)
+        free(current_color);
+
+      /* if support value greater than threshold output it */
+      if (opt_bayes_multi || opt_bayes_single)
+      {
+        if (node->support > 0.5)
+        {
+          char * support;
+
+          asprintf(&support, "%.2f", node->support);
+
+          svg_text(x-5,y-5,opt_svg_fontsize,support);
+          free(support);
+        }
+      }
     }
-    /* horizontal line */
-    svg_line(px,
-             y,
-             x,
-             y,
-             current_color,
-             stroke_width);
+
+    /* decide the color based on the parent node */
+    if (opt_bayes_multi || opt_bayes_single)
+      asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
+               GRADIENT(node->parent->support),
+               0.0,
+               0.0);
+    else if (node->parent->event == EVENT_COALESCENT)
+      current_color = coalesence_color;
+    else if (node->parent->event == EVENT_SPECIATION)
+      current_color = speciation_color;
+    else
+      assert(0);
+
+    /* draw horizontal line */
+    svg_line(px,y,x,y,current_color,stroke_width);
     ((coord_t *)(node->data))->y = y;
 
+    if (opt_bayes_multi || opt_bayes_single)
+      free(current_color);
+
+    /* if node is a tip then print its label */
     if (!node->left)
     {
       fprintf(svg_fp, "<text x=\"%f\" y=\"%f\" "
@@ -168,7 +216,7 @@ static void svg_rtree_plot(rtree_t * node)
     else
       fprintf(svg_fp, "\n");
   }
-  else
+  else          /* the root node case */
   {
     double ly,ry,x;
     //    lx = ((coord_t *)(node->left->data))->x;
@@ -178,16 +226,37 @@ static void svg_rtree_plot(rtree_t * node)
     y = (ly + ry) / 2.0;
     x = opt_svg_marginleft;
 
-    current_color = node->event ? 
-                    coalesence_color : speciation_color;
+    /* decide the color */
+    if (opt_bayes_multi || opt_bayes_single)
+      asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
+               GRADIENT(node->support),
+               0.0,
+               0.0);
+    else if (node->event == EVENT_COALESCENT)
+      current_color = coalesence_color;
+    else if (node->event == EVENT_SPECIATION)
+      current_color = speciation_color;
+    else
+      assert(0);
 
-    svg_line(x,
-             ly,
-             x,
-             ry,
-             current_color,
-             stroke_width);
-    svg_circle(x,y,opt_svg_inner_radius, current_color);
+    svg_line(x,ly,x,ry,current_color,stroke_width);
+    svg_circle(x,y,opt_svg_inner_radius,current_color);
+
+    if (opt_bayes_multi || opt_bayes_single)
+      free(current_color);
+
+    if (opt_bayes_multi || opt_bayes_single)
+    {
+      if (node->support > 0.5)
+      {
+        char * support;
+
+        asprintf(&support, "%.2f", node->support);
+
+        svg_text(x-5,y-5,opt_svg_fontsize,support);
+        free(support);
+      }
+    }
   }
 }
 
@@ -285,7 +354,7 @@ static void svg_rtree_init(rtree_t * root)
           "stroke-width=\"1\" />\n",
           opt_svg_marginleft, 
           opt_svg_margintop + legend_spacing, 
-          svg_width - opt_svg_marginleft - opt_svg_marginright,
+          opt_svg_width - opt_svg_marginleft - opt_svg_marginright,
           svg_height - opt_svg_margintop - legend_spacing - opt_svg_marginbottom);
   */
   
@@ -297,12 +366,26 @@ static void svg_rtree_init(rtree_t * root)
 }
 
 
-void cmd_svg(rtree_t * root)
+void cmd_svg(rtree_t * root, long seed)
 {
-  if (!opt_quiet)
-    fprintf(stdout,"Creating SVG file %s.svg ...\n", opt_outfile);
 
-  svg_fp = open_file_ext(".svg");
+  /* reset tip occurrence */
+  tip_occ = 0;
+
+  if (!opt_quiet)
+  {
+    if (opt_bayes_single || opt_bayes_multi)
+      fprintf(stdout,
+              "Creating SVG delimitation file %s.%ld.svg ...\n",
+              opt_outfile,
+              seed);
+    else
+      fprintf(stdout,
+              "Creating SVG delimitation file %s.svg ...\n",
+              opt_outfile);
+  }
+
+  svg_fp = open_file_ext("svg", seed);
 
   svg_rtree_init(root);
 

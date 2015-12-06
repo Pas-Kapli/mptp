@@ -19,13 +19,15 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#include "delimit.h"
+#include "mptp.h"
 
-FILE * open_file_ext(const char * extension)
+FILE * open_file_ext(const char * extension, long seed)
 {
-  char * filename = (char *)xmalloc((strlen(opt_outfile)+6)*sizeof(char));
-  strcpy(filename,opt_outfile);
-  strcat(filename,extension);
+  char * filename = NULL;
+  if (opt_bayes_single || opt_bayes_multi)
+    asprintf(&filename, "%s.%ld.%s", opt_outfile, seed, extension);
+  else
+    asprintf(&filename, "%s.%s", opt_outfile, extension);
 
   FILE * out = xopen(filename,"w");
 
@@ -41,7 +43,7 @@ void output_info(FILE * out,
                  double pvalue,
                  int lrt_result,
                  rtree_t * root,
-                 int species_count)
+                 unsigned int species_count)
 {
   fprintf(out, "Command: %s\n", cmdline);
   fprintf(out, 

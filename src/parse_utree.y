@@ -19,13 +19,13 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 %{
-#include "delimit.h"
+#include "mptp.h"
 
 extern int utree_lex();
 extern FILE * utree_in;
 extern void utree_lex_destroy();
 
-static int tip_cnt = 0;
+static unsigned int tip_cnt = 0;
 
 static void dealloc_tree_recursive(utree_t * node)
 {
@@ -155,6 +155,10 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->next->height       = $$->height;
   $$->next->next->height = $$->height;
 
+  $$->mark               = 0;
+  $$->next->mark         = 0;
+  $$->next->next->mark   = 0;
+
   free($7);
 
   $$->next->length       = $2->length;
@@ -169,6 +173,7 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
   $$->length = $2 ? atof($2) : 0;
   $$->next   = NULL;
   $$->height = 0;
+  $$->mark   = 0;
   tip_cnt++;
   free($2);
 };
@@ -181,7 +186,7 @@ number: NUMBER   { $$=$1;};
 
 %%
 
-utree_t * utree_parse_newick(const char * filename, int * tip_count)
+utree_t * utree_parse_newick(const char * filename, unsigned int * tip_count)
 {
   struct utree_s * tree;
 

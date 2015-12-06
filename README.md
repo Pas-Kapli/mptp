@@ -17,8 +17,8 @@ Pons et al. (2006) and Fujisawa et al. (2013). The new tool should:
 the following commands.
 
 ```
-git clone https://github.com/Pas-Kapli/delimitation.git
-cd delimitation
+git clone https://github.com/Pas-Kapli/mptp.git
+cd mptp 
 ./autogen.sh
 ./configure
 make
@@ -46,7 +46,16 @@ General options:
 * `--tree_show`
 * `--ml_single`
 * `--ml_multi`
+* `--bayes_multi`
+* `--bayes_single`
+* `--bayes_sample`
+* `--bayes_log`
+* `--bayes_burnin`
+* `--bayes_startnull`
+* `--bayes_startrandom`
+* `--bayes_chains`
 * `--outgroup`
+* `--outgroup_crop`
 * `--min_br`
 * `--pvalue`
 * `--precision`
@@ -79,14 +88,9 @@ Visualization options:
 * `--svg_marginbottom`
 * `--svg_inner_radius`
 
-Experimental options:
-
-* `--ks_single`
-* `--ks_multi`
-
 ## Usage example
 
-`./delimit --ml_multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
+`./mptp --ml_multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
 
 ## License and third party licenses
 
@@ -94,26 +98,30 @@ The code is currently licensed under the GNU Affero General Public License versi
 
 ## Code
 
-    File         | Description
------------------|----------------
-**arch.c**       | Architecture specific code (Mac/Linux).
-**delimit.c**    | Main file handling command-line parameters and executing corresponding parts.
-**dp.c**         | Single- and multi-rate DP heuristics for solving the PTP problem.
-**knapsack.c**   | Experimental knapsack-based DP heuristic.
-**lca_utree.c**  | Naive LCA computation in unrooted trees.
-**lex_rtree.l**  | Lexical analyzer parsing newick rooted trees.
-**lex_utree.l**  | Lexical analyzer parsing newick unrooted trees.
-**likelihood.c** | Likelihood rated functions.
-**Makefile**     | Makefile.
-**output.c**     | Output related files.
-**parse_rtree.y**| Functions for parsing rooted trees in newick format.
-**parse_utree.y**| Functions for parsing unrooted trees in newick format.
-**priors.c**     | Prior related functions.
-**rtree.c**      | Rooted tree manipulation functions.
-**score.c**      | Computation of NMI and Kassian score.
-**svg.c**        | SVG visualization.
-**util.c**       | Various common utility functions.
-**utree.c**      | Unrooted tree manipulation functions.
+    File            | Description
+--------------------|----------------
+**arch.c**          | Architecture specific code (Mac/Linux).
+**auto.c**          | Code for auto-detecting minimum branch length.
+**bayes.c**         | Code for Bayesian Single- and multi-rate PTP.
+**mptp.c**          | Main file handling command-line parameters and executing corresponding parts.
+**dp.c**            | Single- and multi-rate DP heuristics for solving the PTP problem.
+**fasta.c**         | Code for reading FASTA files.
+**lex_rtree.l**     | Lexical analyzer parsing newick rooted trees.
+**lex_utree.l**     | Lexical analyzer parsing newick unrooted trees.
+**likelihood.c**    | Likelihood rated functions.
+**Makefile**        | Makefile.
+**maps.c**          | Character mapping arrays for converting sequences to the internal representation.
+**output.c**        | Output related files.
+**parse_rtree.y**   | Functions for parsing rooted trees in newick format.
+**parse_utree.y**   | Functions for parsing unrooted trees in newick format.
+**priors.c**        | Prior related functions.
+**random.c**        | Functions for creating a random delimitation.
+**rtree.c**         | Rooted tree manipulation functions.
+**score.c**         | Computation of NMI and Kassian score.
+**svg.c**           | SVG visualization of delimited tree.
+**svg_landscape.c** | SVG visualization of likelihood landscape.
+**util.c**          | Various common utility functions.
+**utree.c**         | Unrooted tree manipulation functions.
 
 ## The team
 

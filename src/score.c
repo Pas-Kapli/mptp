@@ -19,7 +19,7 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#include "delimit.h"
+#include "mptp.h"
 
 typedef struct node_information_score
 {
@@ -715,7 +715,7 @@ static void collect_mrca_nodes_paschalia(rtree_t * tree,
   collect_mrca_nodes_recursive_p(tree, mrca_real_list, &index_real);
 }
 
-void retrieve_monophyletic_species(char * treefile, rtree_t * tree) {
+static void retrieve_monophyletic_species(char * treefile, rtree_t * tree) {
   init_tree_data_score_paschalia(tree);
   strtok(treefile,".");
   char * genus_name = strtok(NULL,".");
@@ -739,7 +739,7 @@ void retrieve_monophyletic_species(char * treefile, rtree_t * tree) {
 
 
   int num_monophyletic_species = 0;
-  int * mono_indices = malloc(sizeof(int) * num_species_real);
+  int * mono_indices = malloc(sizeof(int) * (size_t)num_species_real);
   int i;
   for (i = 0; i < num_species_real; i++) {
     bool unique_name = true;
