@@ -260,6 +260,7 @@ extern long opt_bayes_startrandom;
 extern long opt_bayes_burnin;
 extern long opt_bayes_chains;
 extern long opt_seed;
+extern long opt_support;
 extern long opt_crop;
 extern long opt_svg;
 extern long opt_svg_width;
@@ -432,6 +433,7 @@ void dp_knapsack(rtree_t * root, int method);
 
 double loglikelihood(long edge_count, double edgelen_sum);
 int lrt(double nullmodel_logl, double ptp_logl, unsigned int df, double * pvalue);
+double aic(double logl, int k, int n);
 
 /* functions in output.c */
 
@@ -500,3 +502,13 @@ int pll_fasta_rewind(pll_fasta_t * fd);
 /* functions in auto.c */
 
 void detect_min_bl(rtree_t * rtree);
+
+/* functions in aic.c */
+
+void aic_bayes(rtree_t * tree,
+               int method,
+               prior_t * prior,
+               struct drand48_data * rstate,
+               long seed,
+               double * bayes_min_logl,
+               double * bayes_max_logl);

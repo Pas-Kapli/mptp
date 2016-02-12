@@ -52,6 +52,7 @@ long opt_bayes_startrandom;
 long opt_bayes_burnin;
 long opt_bayes_chains;
 long opt_seed;
+long opt_support;
 long opt_crop;
 long opt_svg;
 long opt_svg_width;
@@ -122,6 +123,7 @@ static struct option long_options[] =
   {"minbr_auto",         required_argument, 0, 0 },  /* 34 */
   {"outgroup_crop",      no_argument,       0, 0 },  /* 35 */
   {"bayes_credible",     required_argument, 0, 0 },  /* 36 */
+  {"support",            required_argument, 0, 0 },  /* 37 */
   { 0, 0, 0, 0 }
 };
 
@@ -363,6 +365,11 @@ void args_init(int argc, char ** argv)
         opt_bayes_credible = atof(optarg);
         break;
 
+      case 37:
+        opt_support = 1;
+        opt_bayes_runs = atol(optarg);
+        break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -395,6 +402,8 @@ void args_init(int argc, char ** argv)
   if (opt_scorefile)
     commands++;
   if (opt_pdist_file)
+    commands++;
+  if (opt_support)
     commands++;
 
   /* if more than one independent command, fail */
@@ -440,6 +449,7 @@ void cmd_help()
           "  --quiet                   only output warnings and fatal errors to stderr.\n"
           "  --precision               Precision of floating point numbers on output (default: 7).\n"
           "  --seed                    Seed for pseudo-random number generator.\n"
+          "  --support                 Support values for the delimitation.\n"
           "Input and output options:\n"
           "  --tree_file FILENAME      tree file in newick format.\n"
           "  --output_file FILENAME    output file name.\n"
@@ -670,6 +680,69 @@ void cmd_bayes(int method)
     fprintf(stdout, "Done...\n");
 }
 
+void cmd_support(void)
+{
+  int method = PTP_METHOD_MULTI;
+  struct drand48_data rstate;
+  double bayes_min_logl = 0;
+  double bayes_max_logl = 0;
+
+  if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
+    fatal("--opt_bayes_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
+
+  if (opt_bayes_credible < 0 || opt_bayes_credible > 1)
+    fatal("--opt_credible must be a real number between 0 and 1");
+
+  if (opt_bayes_chains)
+  {
+    cmd_multichain(method);
+    return;
+  }
+
+
+  rtree_t * rtree = load_tree();
+
+  /* init random number generator */
+  srand48_r(opt_seed, &rstate);
+
+  dp_init(rtree);
+  dp_set_pernode_spec_edges(rtree);
+  aic_bayes(rtree,
+        method,
+        opt_prior,
+        &rstate,
+        opt_seed,
+        &bayes_min_logl,
+        &bayes_max_logl);
+  dp_free(rtree);
+
+  if (opt_bayes_log)
+    svg_landscape(bayes_min_logl, bayes_max_logl, opt_seed);
+
+  if (opt_treeshow)
+    rtree_show_ascii(rtree);
+   
+  char * newick = rtree_export_newick(rtree);
+
+  if (!opt_quiet)
+    fprintf(stdout,
+            "Creating tree with support values in %s.%ld.tree ...\n",
+            opt_outfile,
+            opt_seed);
+
+  FILE * newick_fp = open_file_ext("tree", opt_seed);
+  fprintf(newick_fp, "%s\n", newick);
+  fclose(newick_fp);
+
+  cmd_svg(rtree, opt_seed);
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
+
+  free(newick);
+
+  if (!opt_quiet)
+    fprintf(stdout, "Done...\n");
+}
 void cmd_score()
 {
 
@@ -762,6 +835,10 @@ int main (int argc, char * argv[])
   else if (opt_pdist_file)
   {
     cmd_auto();
+  }
+  else if (opt_support)
+  {
+    cmd_support();
   }
 
   /* free prior information */

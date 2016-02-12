@@ -37,7 +37,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
                / \
               /   \
      v_vec   *     *  w_vec    */
-  
+
   dp_vector_t * u_vec = node->vector;
 
   double spec_logl = loglikelihood(node->spec_edge_count,
@@ -89,15 +89,15 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
       /* compute multi-rate coalescent log-likelihood */
       double coal_multi_logl = v_vec[j].coal_multi_logl +
                                w_vec[k].coal_multi_logl;
-      
+
       /* compute coalescent edge count and length sum of subtree u */
       double u_spec_edgelen_sum = v_vec[j].spec_edgelen_sum +
                                   w_vec[k].spec_edgelen_sum +
                                   u_edgelen_sum;
       int coal_edge_count = node->edge_count - i;            /* change to int */
       double coal_edgelen_sum = node->edgelen_sum - u_spec_edgelen_sum;
-                                                  
-                                                  
+
+
       /* compute single-rate coalescent log-likelihood */
       double coal_single_logl = loglikelihood(coal_edge_count,coal_edgelen_sum);
 
@@ -112,7 +112,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
       spec_logl = loglikelihood(spec_edge_count,spec_edgelen_sum) +
                   prior_score(species_count,prior);
 
-      
+
       /* compute single- and multi-rate scores */
       double score_multi = coal_multi_logl + spec_logl;
       double score_single = coal_single_logl + spec_logl;
@@ -176,6 +176,7 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   int i;
   int lrt_pass;
   int best_index = 0;
+  int best_aic_index = 0;
   unsigned int species_count;
   double max = 0;
   double pvalue = -1;
@@ -192,14 +193,30 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   if (method == PTP_METHOD_MULTI)
   {
     max = vec[0].score_multi;
+    double min_aic_score = aic(vec[0].score_multi, vec[0].species_count, tree->leaves);
     for (i = 1; i < tree->edge_count; i++)
     {
-      if (max < vec[i].score_multi && vec[i].filled)
+      if (vec[i].filled)
       {
-        max = vec[i].score_multi;
-        best_index = i;
+        if (max < vec[i].score_multi)
+        {
+          max = vec[i].score_multi;
+          best_index = i;
+        }
+        double aic_score = aic(vec[i].score_multi, vec[i].species_count, tree->leaves);
+        if (aic_score < min_aic_score)
+        {
+          min_aic_score = aic_score;
+          best_aic_index = i;
+        }
       }
     }
+    if (best_index != best_aic_index)
+    {
+      fprintf(stdout, "WARNING: Selection by maximum score chose %d species, but selection by minimum AICc chose %d species!\n", vec[best_index].species_count, vec[best_aic_index].species_count);
+      fprintf(stdout, "WARNING: Selection by maximum score had score %.3f, selection by minimum AICc had score %.3f!\n", vec[best_index].score_multi, vec[best_aic_index].score_multi);
+    }
+    best_index = best_aic_index;
   }
   else
   {
@@ -218,8 +235,8 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   /* output some statistics */
   if (!opt_quiet)
   {
-    fprintf(stdout, 
-           "Number of edges greater than minimum branch length: %d / %d\n", 
+    fprintf(stdout,
+           "Number of edges greater than minimum branch length: %d / %d\n",
            tree->edge_count,
            2 * tree->leaves - 2);
     printf("Score Null Model: %.6f\n", tree->coal_logl);
@@ -337,7 +354,7 @@ void dp_set_pernode_spec_edges(rtree_t * node)
   node->spec_edgelen_sum = 0;
 
   /* for each node set spec_edge_count (and spec_edgelen_sum) as the count
-     (or sum) of edges (edge-lengths) of all direct child edges of 
+     (or sum) of edges (edge-lengths) of all direct child edges of
      nodes on the path to root excluding the current node */
   if (node->parent)
   {
@@ -345,16 +362,16 @@ void dp_set_pernode_spec_edges(rtree_t * node)
     node->spec_edgelen_sum = node->parent->spec_edgelen_sum;
 
     double len = node->parent->left->length;
-    if (len > opt_minbr) 
+    if (len > opt_minbr)
     {
-      node->spec_edge_count++; 
+      node->spec_edge_count++;
       node->spec_edgelen_sum += len;
     }
 
     len = node->parent->right->length;
-    if (len > opt_minbr) 
+    if (len > opt_minbr)
     {
-      node->spec_edge_count++; 
+      node->spec_edge_count++;
       node->spec_edgelen_sum += len;
     }
   }

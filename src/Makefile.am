@@ -12,6 +12,7 @@ AM_LFLAGS = -o lex.yy.c
 __top_builddir__bin_mptp_LDADD = libparse_utree.a libparse_rtree.a
 __top_builddir__bin_mptp_SOURCES = arch.c \
 auto.c \
+aic.c \
 bayes.c \
 mptp.c \
 mptp.h \

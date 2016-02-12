@@ -46,3 +46,8 @@ int lrt(double nullmodel_logl, double ptp_logl, unsigned int df, double * pvalue
 
   return 1;
 }
+
+double aic(double logl, int k, int n)
+{
+  return -2*logl + 2*k + (double)(2*k*(k + 1)) / (double)(n-k-1);
+}
