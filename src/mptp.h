@@ -156,6 +156,8 @@ typedef struct rtree_s
   long bayes_slot;
   long speciation_start;
   long speciation_count;
+  double aic_weight_start;
+  double aic_support;
   double support;
 
   /* dynamic programming vector */
@@ -206,7 +208,7 @@ typedef struct nbin_params_s
   unsigned int failures;
 } nbin_params_t;
 
-typedef struct dir_params_s 
+typedef struct dir_params_s
 {
   int k;
   unsigned int * a;

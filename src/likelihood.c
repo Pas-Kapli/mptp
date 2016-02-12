@@ -28,7 +28,7 @@ double loglikelihood(long edge_count, double edgelen_sum)
   assert(edge_count >= 0);
 
   if (edge_count == 0 || edgelen_sum < __DBL_MIN__) return 0;
-  
+
   return edge_count * (log(edge_count) - 1 - log(edgelen_sum));
 }
 
@@ -49,5 +49,6 @@ int lrt(double nullmodel_logl, double ptp_logl, unsigned int df, double * pvalue
 
 double aic(double logl, int k, int n)
 {
+  if (k > 1) k++;
   return -2*logl + 2*k + (double)(2*k*(k + 1)) / (double)(n-k-1);
 }

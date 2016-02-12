@@ -30,8 +30,8 @@ static void print_node_info(rtree_t * tree)
   printf("\n");
 }
 
-static void print_tree_recurse(rtree_t * tree, 
-                               int indend_level, 
+static void print_tree_recurse(rtree_t * tree,
+                               int indend_level,
                                int * active_node_order)
 {
   int i,j;
@@ -68,7 +68,7 @@ static void print_tree_recurse(rtree_t * tree,
 
   print_node_info(tree);
 
-  if (active_node_order[indend_level-1] == 2) 
+  if (active_node_order[indend_level-1] == 2)
     active_node_order[indend_level-1] = 0;
 
   active_node_order[indend_level] = 1;
@@ -94,7 +94,7 @@ static int tree_indend_level(rtree_t * tree, int indend)
 
 void rtree_show_ascii(rtree_t * tree)
 {
-  
+
   int indend_max = tree_indend_level(tree,0);
 
   int * active_node_order = (int *)malloc((size_t)(indend_max+1) * sizeof(int));
@@ -122,15 +122,15 @@ static char * rtree_export_newick_recursive(rtree_t * root)
     char * subtree1 = rtree_export_newick_recursive(root->left);
     char * subtree2 = rtree_export_newick_recursive(root->right);
 
-    if (opt_bayes_single || opt_bayes_multi)
+    if (opt_bayes_single || opt_bayes_multi || opt_support)
       asprintf(&support, "%f", root->support);
 
     asprintf(&newick, "(%s,%s)%s:%f", subtree1,
                                       subtree2,
-                                      (opt_bayes_single || opt_bayes_multi) ? support : "",
+                                      (opt_bayes_single || opt_bayes_multi || opt_support) ? support : "",
                                       root->length);
-    
-    if (opt_bayes_single || opt_bayes_multi)
+
+    if (opt_bayes_single || opt_bayes_multi || opt_support)
       free(support);
 
     free(subtree1);
@@ -154,14 +154,14 @@ char * rtree_export_newick(rtree_t * root)
     char * subtree1 = rtree_export_newick_recursive(root->left);
     char * subtree2 = rtree_export_newick_recursive(root->right);
 
-    if (opt_bayes_single || opt_bayes_multi)
+    if (opt_bayes_single || opt_bayes_multi || opt_support)
       asprintf(&support, "%f", root->support);
 
     asprintf(&newick, "(%s,%s)%s:%f;", subtree1,
                                        subtree2,
-                                       (opt_bayes_single || opt_bayes_multi) ? support : "",
+                                       (opt_bayes_single || opt_bayes_multi || opt_support) ? support : "",
                                        root->length);
-    if (opt_bayes_single || opt_bayes_multi)
+    if (opt_bayes_single || opt_bayes_multi || opt_support)
       free(support);
 
     free(subtree1);
@@ -219,7 +219,7 @@ int rtree_traverse(rtree_t * root,
   if (!root->left) return -1;
 
   /* we will traverse an rooted tree in the following way
-      
+
            root
             /\
            /  \
@@ -285,7 +285,7 @@ static int rtree_height_recursive(rtree_t * node)
 
 int rtree_height(rtree_t * root)
 {
-  return rtree_height_recursive(root); 
+  return rtree_height_recursive(root);
 }
 
 static void rtree_query_tipnodes_recursive(rtree_t * node,
@@ -365,12 +365,12 @@ void rtree_reset_info(rtree_t * root)
     root->edgelen_sum = 0;
     return;
   }
-  
+
   rtree_reset_info(root->left);
   rtree_reset_info(root->right);
 
   root->leaves = root->left->leaves + root->right->leaves;
-  root->edge_count = root->left->edge_count + 
+  root->edge_count = root->left->edge_count +
                      root->right->edge_count;
   root->edgelen_sum = root->left->edgelen_sum +
                       root->right->edgelen_sum;
@@ -433,7 +433,7 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
   for (i = 0; i < strlen(tipstring); ++i)
     if (tipstring[i] == ',')
       commas_count++;
-  
+
   rtree_t ** node_list = (rtree_t **)xmalloc((size_t)(root->leaves) *
                                              sizeof(rtree_t *));
   rtree_query_tipnodes(root, node_list);
@@ -453,7 +453,7 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
   }
 
   char * s = tipstring;
-  
+
   k = 0;
   while (*s)
   {
@@ -469,7 +469,7 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
     query.key = taxon;
     found = NULL;
     found = hsearch(query,FIND);
-    
+
     if (!found)
       fatal("Taxon %s in does not appear in the tree", taxon);
 
@@ -479,7 +479,7 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
     /* free tip label, and move to the beginning of next tip if available */
     free(taxon);
     s += taxon_len;
-    if (*s == ',') 
+    if (*s == ',')
       s += 1;
   }
 
@@ -523,13 +523,13 @@ rtree_t * rtree_lca(rtree_t * root,
                                   sizeof(rtree_t **));
   int * path_len = (int *)xmalloc((size_t)count * sizeof(int));
 
-  /* for each tip node fill corresponding path array with all nodes 
+  /* for each tip node fill corresponding path array with all nodes
      in the path to the root node and store the length of the path  */
   for (i = 0; i < count; ++i)
   {
     path[i] = (rtree_t **)xmalloc((size_t)(rtree_height(root)) *
                                   sizeof(rtree_t *));
-    
+
     fill_path(path[i], &(path_len[i]), tip_nodes[i]);
   }
 
@@ -584,19 +584,19 @@ rtree_t * rtree_crop(rtree_t * root, rtree_t * crop_root)
     return NULL;
 
   /* subtree can be cropped, distinguish between two cases: */
-  
+
   if (crop_root->parent == root)
   {
 
     /* Case 1:
 
-          root                              
+          root
          *
         / \                               A
      A *   * crop_root     ---->          *
           / \
          *   *
-           
+
        in this case the subtree rooted at crop_root is cropped, the root node is
        eliminated and subtree rooted at A becomes the new tree
     */
@@ -622,17 +622,17 @@ rtree_t * rtree_crop(rtree_t * root, rtree_t * crop_root)
 
   /* Case 2:
 
-        root                              
+        root
        *
       / \
    A *   -
           \                               root
            * B             ---->         *
           / \                           / \
-       C *   * crop_root             A *   - 
+       C *   * crop_root             A *   -
             / \                             \
            *   *                             * C
-         
+
      in this case the subtree rooted at crop_root is cropped, the root node is
      eliminated and subtree rooted at A becomes the new tree
   */

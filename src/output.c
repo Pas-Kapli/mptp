@@ -24,7 +24,7 @@
 FILE * open_file_ext(const char * extension, long seed)
 {
   char * filename = NULL;
-  if (opt_bayes_single || opt_bayes_multi)
+  if (opt_bayes_single || opt_bayes_multi || opt_support)
     asprintf(&filename, "%s.%ld.%s", opt_outfile, seed, extension);
   else
     asprintf(&filename, "%s.%s", opt_outfile, extension);
@@ -46,13 +46,13 @@ void output_info(FILE * out,
                  unsigned int species_count)
 {
   fprintf(out, "Command: %s\n", cmdline);
-  fprintf(out, 
-          "Number of edges greater than minimum branch length: %d / %d\n", 
+  fprintf(out,
+          "Number of edges greater than minimum branch length: %d / %d\n",
            root->edge_count,
            2 * root->leaves - 2);
   fprintf(out, "Null-model score: %.6f\n", nullmodel_logl);
   fprintf(out,
-          "Best score for %s coalescent rate: %.6f\n", 
+          "Best score for %s coalescent rate: %.6f\n",
           (method == PTP_METHOD_SINGLE) ?
             "single" : "multi",
           logl);

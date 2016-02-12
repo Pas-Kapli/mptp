@@ -105,9 +105,15 @@ static void bayes_stats_init(rtree_t * root)
   for (i = 0; i < root->leaves - 1; ++i)
   {
     if (inner_node_list[i]->event == EVENT_COALESCENT)
+    {
       inner_node_list[i]->speciation_start = -1;
+      inner_node_list[i]->aic_weight_start = 0; // Just to initialize - it's not used
+    }
     else
+    {
       inner_node_list[i]->speciation_start = opt_bayes_burnin-1;
+      inner_node_list[i]->aic_weight_start = 0; // This one should be used
+    }
 
     inner_node_list[i]->speciation_count = 0;
   }
@@ -149,7 +155,7 @@ static void hpd(long n, FILE * fp)
   if (!opt_quiet)
     fprintf(stdout, "CCI (%ld,%ld)\n", min, max);
 
-  
+
   fprintf(fp, "HPD ");
   if (!opt_quiet)
     printf("HPD ");
@@ -178,7 +184,7 @@ static void hpd(long n, FILE * fp)
 static void bayes_finalize(rtree_t * root,
                            double bayes_min_logl,
                            double bayes_max_logl,
-                           long seed)
+                           long seed, double aic_weight_prefix_sum)
 {
   long i;
 
@@ -196,13 +202,22 @@ static void bayes_finalize(rtree_t * root,
   for (i = 0; i < root->leaves - 1; ++i)
   {
     if (inner_node_list[i]->speciation_start != -1)
+    {
       inner_node_list[i]->speciation_count = inner_node_list[i]->speciation_count +
-                                             opt_bayes_runs - 
+                                             opt_bayes_runs -
                                              inner_node_list[i]->speciation_start;
+      inner_node_list[i]->aic_support += aic_weight_prefix_sum - inner_node_list[i]->aic_weight_start;
+    }
 
-    inner_node_list[i]->support = inner_node_list[i]->speciation_count / 
-                                  (double)(opt_bayes_runs-opt_bayes_burnin+1);
+    inner_node_list[i]->aic_support /= aic_weight_prefix_sum;
+
+    inner_node_list[i]->support = inner_node_list[i]->aic_support;
+
+    /*inner_node_list[i]->support = inner_node_list[i]->speciation_count /
+                                  (double)(opt_bayes_runs-opt_bayes_burnin+1);*/
   }
+
+  printf("denominator: %.17f\n", aic_weight_prefix_sum);
 
   free(inner_node_list);
   free(crnodes);
@@ -221,7 +236,7 @@ static void bayes_finalize(rtree_t * root,
   double densities_sum = 0;
   for (i = 1; i <= root->leaves; ++i)
     densities_sum += densities[i].logl;
-    
+
   for (i = 1; i <= root->leaves; ++i)
   {
     fprintf(fp_stats,
@@ -258,7 +273,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
                / \
               /   \
      v_vec   *     *  w_vec    */
-  
+
   dp_vector_t * u_vec = node->vector;
 
   double spec_logl = loglikelihood(node->spec_edge_count,
@@ -310,15 +325,15 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
       /* compute multi-rate coalescent log-likelihood */
       double coal_multi_logl = v_vec[j].coal_multi_logl +
                                w_vec[k].coal_multi_logl;
-      
+
       /* compute coalescent edge count and length sum of subtree u */
       double u_spec_edgelen_sum = v_vec[j].spec_edgelen_sum +
                                   w_vec[k].spec_edgelen_sum +
                                   u_edgelen_sum;
       int coal_edge_count = node->edge_count - i;            /* change to int */
       double coal_edgelen_sum = node->edgelen_sum - u_spec_edgelen_sum;
-                                                  
-                                                  
+
+
       /* compute single-rate coalescent log-likelihood */
       double coal_single_logl = loglikelihood(coal_edge_count,coal_edgelen_sum);
 
@@ -333,7 +348,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
       spec_logl = loglikelihood(spec_edge_count,spec_edgelen_sum) +
                   prior_score(u_species_count,prior);
 
-      
+
       /* compute single- and multi-rate scores */
       double score_multi = coal_multi_logl + spec_logl;
       double score_single = coal_single_logl + spec_logl;
@@ -379,7 +394,7 @@ static void backtrack_random(rtree_t * node,
     /* add to list of speciation nodes only if its two direct descendents
        are coalescent roots and also the subtree at node has at least one
        branch length greater than minbr */
-    if ((node->left->event == EVENT_COALESCENT) && 
+    if ((node->left->event == EVENT_COALESCENT) &&
         (node->right->event == EVENT_COALESCENT) &&
         (node->edge_count))
     {
@@ -390,7 +405,7 @@ static void backtrack_random(rtree_t * node,
   }
   else
   {
-    
+
     node->event = EVENT_COALESCENT;
 
     /* add to list of coalescent roots in case it is not a tip AND if
@@ -424,7 +439,7 @@ static void backtrack(rtree_t * node,
     /* add to list of speciation nodes only if its two direct descendents
        are coalescent roots and also the subtree at node has at least one
        branch length greater than minbr */
-    if ((node->left->event == EVENT_COALESCENT) && 
+    if ((node->left->event == EVENT_COALESCENT) &&
         (node->right->event == EVENT_COALESCENT) &&
         (node->edge_count))
     {
@@ -456,11 +471,11 @@ static void speciate(long r)
           C  *     *  C             CR  *     *  CR            */
 
 
-  /* select the coalescent root at position r and split it into 
+  /* select the coalescent root at position r and split it into
      two coalescent root nodes */
 
   rtree_t * node = crnodes[r];
-  
+
   /* move the last node of the list to the position of the node
      we just used */
   if (r != (crnodes_count-1))
@@ -481,10 +496,10 @@ static void speciate(long r)
                 / \                             / \
                /   \                           /   \
            C  *     *  C                  CR  *     *  CR
- 
+
   */
-  if (node->parent && 
-      node->parent->left->event == EVENT_COALESCENT && 
+  if (node->parent &&
+      node->parent->left->event == EVENT_COALESCENT &&
       node->parent->right->event == EVENT_COALESCENT)
   {
     assert(node->parent->bayes_slot != -1);
@@ -562,7 +577,7 @@ static void coalesce(long r)
     {
       /* set slot of last node in crnodes to the slot we will place it */
       crnodes[crnodes_count-1]->bayes_slot = node->left->bayes_slot;
-      
+
       /* move this last node to its new slot */
       crnodes[node->left->bayes_slot] = crnodes[crnodes_count-1];
     }
@@ -581,7 +596,7 @@ static void coalesce(long r)
     {
       /* set slot of last node in crnodes to the slot we will place it */
       crnodes[crnodes_count-1]->bayes_slot = node->right->bayes_slot;
-      
+
       /* move this last node to its new slot */
       crnodes[node->right->bayes_slot] = crnodes[crnodes_count-1];
     }
@@ -601,10 +616,10 @@ static void coalesce(long r)
        CR  *     *  S          ->      CR  *     *  CR
                 / \                             / \
                /   \                           /   \
-          CR  *     *  CR                  C  *     *  C      
+          CR  *     *  CR                  C  *     *  C
   */
-  if (node->parent && 
-      node->parent->left->event == EVENT_COALESCENT && 
+  if (node->parent &&
+      node->parent->left->event == EVENT_COALESCENT &&
       node->parent->right->event == EVENT_COALESCENT)
   {
     assert(node->parent->bayes_slot == -1);
@@ -615,6 +630,11 @@ static void coalesce(long r)
     /* place parent to the last slot in snodes and increase count */
     snodes[snodes_count++] = node->parent;
   }
+}
+
+double aic_weight_nominator(double aic_score)
+{
+  return exp(-0.5 * aic_score);
 }
 
 void aic_bayes(rtree_t * tree,
@@ -632,6 +652,8 @@ void aic_bayes(rtree_t * tree,
   double max = 0;
   double logl = 0;
 
+  double aic_weight_prefix_sum = 0.0;
+
   *bayes_max_logl = 0;
   *bayes_min_logl = 0;
 
@@ -645,13 +667,14 @@ void aic_bayes(rtree_t * tree,
                    "threshold specified by --minbr. Delimitation equals to "
                    "the null model\n");
     tree->support = 1;
+    tree->aic_support = 1;
     tree->event = EVENT_COALESCENT;
 
     return;
   }
 
   bayes_init(tree, seed);
-  
+
   /* fill DP table */
   dp_recurse(tree, method, prior);
 
@@ -684,6 +707,11 @@ void aic_bayes(rtree_t * tree,
   }
   species_count = vec[best_index].species_count;
 
+  double max_logl_aic = (method == PTP_METHOD_MULTI) ?
+              vec[best_index].score_multi : vec[best_index].score_single;
+  double max_aic = aic(max_logl_aic, species_count, tree->leaves);
+
+
   long coal_edge_count = 0;
   long spec_edge_count = 0;
   double spec_edgelen_sum = 0;
@@ -709,7 +737,7 @@ void aic_bayes(rtree_t * tree,
     spec_edgelen_sum = 0;
     coal_edgelen_sum = tree->edgelen_sum;
     coal_score = tree->coal_logl;
-    
+
     /* set all nodes to coalescent */
     init_null(tree);
 
@@ -723,11 +751,11 @@ void aic_bayes(rtree_t * tree,
   {
     bool warning_minbr = false;
     logl = random_delimitation(tree,
-                               &species_count, 
-                               &coal_edge_count, 
-                               &coal_edgelen_sum, 
-                               &spec_edge_count, 
-                               &spec_edgelen_sum, 
+                               &species_count,
+                               &coal_edge_count,
+                               &coal_edgelen_sum,
+                               &spec_edge_count,
+                               &spec_edgelen_sum,
                                &coal_score,
                                rstate);
     backtrack_random(tree, &warning_minbr);
@@ -748,9 +776,9 @@ void aic_bayes(rtree_t * tree,
       fprintf(stderr,"WARNING: A speciation edge is smaller than the specified "
                      "minimum branch length.\n");
 
-    logl = (method == PTP_METHOD_MULTI) ? 
+    logl = (method == PTP_METHOD_MULTI) ?
                 vec[best_index].score_multi : vec[best_index].score_single;
-    
+
     /* log log-likelihood at step 0 */
     if (opt_bayes_burnin == 1)
       mcmc_log(logl,species_count);
@@ -769,7 +797,7 @@ void aic_bayes(rtree_t * tree,
     {
       spec_edge_count = best_index;
       spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
-      coal_score = tree->vector[best_index].score_multi - 
+      coal_score = tree->vector[best_index].score_multi -
                         loglikelihood(spec_edge_count, spec_edgelen_sum);
     }
   }
@@ -850,7 +878,7 @@ void aic_bayes(rtree_t * tree,
         ++edge_count_diff;
         edgelen_sum_diff += node->right->length;
       }
-      
+
       if (method == PTP_METHOD_SINGLE)
       {
         coal_edgelen_sum -= edgelen_sum_diff;
@@ -871,10 +899,10 @@ void aic_bayes(rtree_t * tree,
           new_logl = loglikelihood(coal_edge_count, coal_edgelen_sum) +
                      loglikelihood(spec_edge_count, spec_edgelen_sum);
         else
-          new_logl = coal_score - node->coal_logl + 
+          new_logl = coal_score - node->coal_logl +
                      node->left->coal_logl + node->right->coal_logl +
                      loglikelihood(spec_edge_count, spec_edgelen_sum);
-          
+
       }
 
       if (new_logl > *bayes_max_logl)
@@ -914,8 +942,11 @@ void aic_bayes(rtree_t * tree,
         }
 
         /* update support values information */
-        if (i+1 >= opt_bayes_burnin)
+        if (i+1 >= opt_bayes_burnin) {
           node->speciation_start = i;
+          aic_weight_prefix_sum += aic_weight_nominator(-aic_new_logl/max_aic);
+          node->aic_weight_start = aic_weight_prefix_sum;
+        }
 
         accept_count++;
         species_count++;
@@ -926,7 +957,7 @@ void aic_bayes(rtree_t * tree,
         continue;
       }
       else
-      { 
+      {
         /* reject */
         if ((i+1) % opt_bayes_sample == 0)
         {
@@ -1007,7 +1038,7 @@ void aic_bayes(rtree_t * tree,
           new_logl = loglikelihood(coal_edge_count, coal_edgelen_sum) +
                      loglikelihood(spec_edge_count, spec_edgelen_sum);
         else
-          new_logl = coal_score - node->left->coal_logl - node->right->coal_logl + 
+          new_logl = coal_score - node->left->coal_logl - node->right->coal_logl +
                      node->coal_logl +
                      loglikelihood(spec_edge_count, spec_edgelen_sum);
 
@@ -1051,16 +1082,19 @@ void aic_bayes(rtree_t * tree,
         /* update support values information */
         if (i+1 >= opt_bayes_burnin)
         {
-          node->speciation_count = node->speciation_count + 
+          node->speciation_count = node->speciation_count +
                                    i - node->speciation_start;
           node->speciation_start = -1;
+
+          aic_weight_prefix_sum += aic_weight_nominator(-aic_new_logl/max_aic);
+          node->aic_support += aic_weight_prefix_sum - node->aic_weight_start;
         }
 
         accept_count++;
         species_count--;
         logl = new_logl;
         if (method == PTP_METHOD_MULTI)
-          coal_score = coal_score - node->left->coal_logl - node->right->coal_logl + 
+          coal_score = coal_score - node->left->coal_logl - node->right->coal_logl +
                        node->coal_logl;
 
         continue;
@@ -1094,6 +1128,6 @@ void aic_bayes(rtree_t * tree,
   printf("Acceptance: %ld\n", accept_count);
   /* TODO: DEBUG variables for checking the max likelihood bayesian runs give.
      Must be removed */
-  bayes_finalize(tree, *bayes_min_logl, *bayes_max_logl, seed);
+  bayes_finalize(tree, *bayes_min_logl, *bayes_max_logl, seed, aic_weight_prefix_sum);
 
 }

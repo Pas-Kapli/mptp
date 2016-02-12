@@ -76,7 +76,7 @@ prior_t * opt_prior;
 
 static void dealloc_prior()
 {
-  if (opt_prior) 
+  if (opt_prior)
   {
     if (opt_prior->params)
       free(opt_prior->params);
@@ -116,7 +116,7 @@ static struct option long_options[] =
   {"bayes_sample",       required_argument, 0, 0 },  /* 27 */
   {"bayes_log",          no_argument,       0, 0 },  /* 28 */
   {"seed",               required_argument, 0, 0 },  /* 29 */
-  {"bayes_startnull",    no_argument,       0, 0 },  /* 30 */ 
+  {"bayes_startnull",    no_argument,       0, 0 },  /* 30 */
   {"bayes_burnin",       required_argument, 0, 0 },  /* 31 */
   {"bayes_startrandom",  no_argument,       0, 0 },  /* 32 */
   {"bayes_chains",       required_argument, 0, 0 },  /* 33 */
@@ -496,7 +496,7 @@ static rtree_t * load_tree(void)
     {
       og_root = utree_longest_branchtip(utree, tip_count);
       assert(og_root);
-      fprintf(stdout, 
+      fprintf(stdout,
               "Selected %s as outgroup based on longest tip-branch criterion\n",
               og_root->label);
     }
@@ -511,7 +511,7 @@ static rtree_t * load_tree(void)
       }
     }
 
-    
+
     if (opt_crop)
     {
       rtree = utree_crop(og_root);
@@ -589,7 +589,7 @@ void cmd_multichain(int method)
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
-   
+
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
 
@@ -657,7 +657,7 @@ void cmd_bayes(int method)
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
-   
+
   char * newick = rtree_export_newick(rtree);
 
   if (!opt_quiet)
@@ -721,7 +721,7 @@ void cmd_support(void)
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
-   
+
   char * newick = rtree_export_newick(rtree);
 
   if (!opt_quiet)
