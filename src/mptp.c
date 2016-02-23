@@ -40,19 +40,18 @@ int opt_svg_showlegend;
 long opt_help;
 long opt_version;
 long opt_treeshow;
-long opt_ml_multi;
-long opt_ml_single;
-long opt_bayes_multi;
-long opt_bayes_single;
+long opt_method;
 long opt_bayes_sample;
 long opt_bayes_runs;
 long opt_bayes_log;
 long opt_bayes_startnull;
 long opt_bayes_startrandom;
+long opt_bayes_startml;
 long opt_bayes_burnin;
 long opt_bayes_chains;
 long opt_seed;
-long opt_support;
+long opt_mcmc;
+long opt_ml;
 long opt_crop;
 long opt_svg;
 long opt_svg_width;
@@ -70,19 +69,7 @@ double opt_minbr;
 char * opt_treefile;
 char * opt_outfile;
 char * opt_outgroup;
-char * opt_scorefile;
 char * opt_pdist_file;
-prior_t * opt_prior;
-
-static void dealloc_prior()
-{
-  if (opt_prior)
-  {
-    if (opt_prior->params)
-      free(opt_prior->params);
-    free(opt_prior);
-  }
-}
 
 static struct option long_options[] =
 {
@@ -92,38 +79,35 @@ static struct option long_options[] =
   {"tree_file",          required_argument, 0, 0 },  /*  3 */
   {"tree_show",          no_argument,       0, 0 },  /*  4 */
   {"output_file",        required_argument, 0, 0 },  /*  5 */
-  {"ml_multi",           no_argument,       0, 0 },  /*  6 */
-  {"ml_single",          no_argument,       0, 0 },  /*  7 */
-  {"outgroup",           required_argument, 0, 0 },  /*  8 */
-  {"score",              required_argument, 0, 0 },  /*  9 */
-  {"pvalue",             required_argument, 0, 0 },  /* 10 */
-  {"minbr",              required_argument, 0, 0 },  /* 11 */
-  {"svg_width",          required_argument, 0, 0 },  /* 12 */
-  {"svg_fontsize",       required_argument, 0, 0 },  /* 13 */
-  {"svg_tipspacing",     required_argument, 0, 0 },  /* 14 */
-  {"svg_legend_ratio",   required_argument, 0, 0 },  /* 15 */
-  {"svg_nolegend",       no_argument,       0, 0 },  /* 16 */
-  {"svg_marginleft",     required_argument, 0, 0 },  /* 17 */
-  {"svg_marginright",    required_argument, 0, 0 },  /* 18 */
-  {"svg_margintop",      required_argument, 0, 0 },  /* 19 */
-  {"svg_marginbottom",   required_argument, 0, 0 },  /* 20 */
-  {"svg_inner_radius",   required_argument, 0, 0 },  /* 21 */
-  {"precision",          required_argument, 0, 0 },  /* 22 */
-  {"bayes_multi",        required_argument, 0, 0 },  /* 23 */
-  {"bayes_single",       required_argument, 0, 0 },  /* 24 */
-  {"prior_exp",          required_argument, 0, 0 },  /* 25 */
-  {"prior_gamma",        required_argument, 0, 0 },  /* 26 */
-  {"bayes_sample",       required_argument, 0, 0 },  /* 27 */
-  {"bayes_log",          no_argument,       0, 0 },  /* 28 */
-  {"seed",               required_argument, 0, 0 },  /* 29 */
-  {"bayes_startnull",    no_argument,       0, 0 },  /* 30 */
-  {"bayes_burnin",       required_argument, 0, 0 },  /* 31 */
-  {"bayes_startrandom",  no_argument,       0, 0 },  /* 32 */
-  {"bayes_chains",       required_argument, 0, 0 },  /* 33 */
-  {"minbr_auto",         required_argument, 0, 0 },  /* 34 */
-  {"outgroup_crop",      no_argument,       0, 0 },  /* 35 */
-  {"bayes_credible",     required_argument, 0, 0 },  /* 36 */
-  {"support",            required_argument, 0, 0 },  /* 37 */
+  {"outgroup",           required_argument, 0, 0 },  /*  6 */
+  {"pvalue",             required_argument, 0, 0 },  /*  7 */
+  {"minbr",              required_argument, 0, 0 },  /*  8 */
+  {"svg_width",          required_argument, 0, 0 },  /*  9 */
+  {"svg_fontsize",       required_argument, 0, 0 },  /* 10 */
+  {"svg_tipspacing",     required_argument, 0, 0 },  /* 11 */
+  {"svg_legend_ratio",   required_argument, 0, 0 },  /* 12 */
+  {"svg_nolegend",       no_argument,       0, 0 },  /* 13 */
+  {"svg_marginleft",     required_argument, 0, 0 },  /* 14 */
+  {"svg_marginright",    required_argument, 0, 0 },  /* 15 */
+  {"svg_margintop",      required_argument, 0, 0 },  /* 16 */
+  {"svg_marginbottom",   required_argument, 0, 0 },  /* 17 */
+  {"svg_inner_radius",   required_argument, 0, 0 },  /* 18 */
+  {"precision",          required_argument, 0, 0 },  /* 19 */
+  {"mcmc_sample",        required_argument, 0, 0 },  /* 20 */
+  {"mcmc_log",           no_argument,       0, 0 },  /* 21 */
+  {"seed",               required_argument, 0, 0 },  /* 22 */
+  {"mcmc_startnull",     no_argument,       0, 0 },  /* 23 */
+  {"mcmc_burnin",        required_argument, 0, 0 },  /* 24 */
+  {"mcmc_startrandom",   no_argument,       0, 0 },  /* 25 */
+  {"mcmc_chains",        required_argument, 0, 0 },  /* 26 */
+  {"minbr_auto",         required_argument, 0, 0 },  /* 27 */
+  {"outgroup_crop",      no_argument,       0, 0 },  /* 28 */
+  {"mcmc_credible",      required_argument, 0, 0 },  /* 29 */
+  {"mcmc",               required_argument, 0, 0 },  /* 30 */
+  {"ml",                 required_argument, 0, 0 },  /* 31 */
+  {"single",             no_argument,       0, 0 },  /* 32 */
+  {"multi",              no_argument,       0, 0 },  /* 33 */
+  {"mcmc_startml",       no_argument,       0, 0 },  /* 34 */
   { 0, 0, 0, 0 }
 };
 
@@ -145,11 +129,6 @@ void args_init(int argc, char ** argv)
   opt_outgroup = NULL;
   opt_pdist_file = NULL;
   opt_quiet = 0;
-  opt_ml_multi = 0;
-  opt_ml_single = 0;
-  opt_bayes_multi = 0;
-  opt_bayes_single = 0;
-  opt_scorefile = NULL;
   opt_pvalue = 0.001;
   opt_minbr = 0.0001;
   opt_precision = 7;
@@ -157,12 +136,16 @@ void args_init(int argc, char ** argv)
   opt_bayes_sample = 1000;
   opt_bayes_startnull = 0;
   opt_bayes_startrandom = 0;
+  opt_bayes_startml = 0;
   opt_bayes_log = 0;
   opt_bayes_burnin = 1;
   opt_bayes_chains = 0;
   opt_bayes_credible = 0.95;
   opt_seed = (long)time(NULL);
   opt_crop = 0;
+  opt_ml = 0;
+  opt_mcmc = 0;
+  opt_method = PTP_METHOD_MULTI;
 
   opt_svg_width = 1920;
   opt_svg_fontsize = 12;
@@ -174,8 +157,6 @@ void args_init(int argc, char ** argv)
   opt_svg_margintop = 20;
   opt_svg_marginbottom = 20;
   opt_svg_inner_radius = 0;
-
-  opt_prior = NULL;
 
   while ((c = getopt_long_only(argc, argv, "", long_options, &option_index)) == 0)
   {
@@ -208,166 +189,127 @@ void args_init(int argc, char ** argv)
         break;
 
       case 6:
-        opt_ml_multi = 1;
-        break;
-
-      case 7:
-        opt_ml_single = 1;
-        break;
-
-      case 8:
         opt_outgroup = optarg;
         break;
 
-      case 9:
-        fatal("Option --score is not available in this version");
-        /*
-        free(opt_scorefile);
-        opt_scorefile = optarg;
-        break;
-        */
-
-      case 10:
+      case 7:
         opt_pvalue = strtod(optarg, &end);
         if (end == optarg) {
           fatal(" is not a valid number.\n");
         }
         break;
 
-      case 11:
+      case 8:
         opt_minbr = strtod(optarg, &end);
         if (end == optarg) {
           fatal(" is not a valid number.\n");
         }
         break;
 
-      case 12:
+      case 9:
         opt_svg_width = atoi(optarg);
         break;
 
-      case 13:
+      case 10:
         opt_svg_fontsize = atol(optarg);
         break;
 
-      case 14:
+      case 11:
         opt_svg_tipspace = atol(optarg);
         break;
 
-      case 15:
+      case 12:
         opt_svg_legend_ratio = atof(optarg);
         break;
 
-      case 16:
+      case 13:
         opt_svg_showlegend = 0;
         break;
 
-      case 17:
+      case 14:
         opt_svg_marginleft = atol(optarg);
         break;
 
-      case 18:
+      case 15:
         opt_svg_marginright = atol(optarg);
         break;
 
-      case 19:
+      case 16:
         opt_svg_margintop = atol(optarg);
         break;
 
-      case 20:
+      case 17:
         opt_svg_marginbottom = atol(optarg);
         break;
 
-      case 21:
+      case 18:
         opt_svg_inner_radius = atol(optarg);
         break;
 
-      case 22:
+      case 19:
         opt_precision = atoi(optarg);
         break;
 
-      case 23:
-        opt_bayes_multi = 1;
-        opt_bayes_runs = atoi(optarg);
-        break;
-
-      case 24:
-        opt_bayes_single = 1;
-        opt_bayes_runs = atol(optarg);
-        break;
-
-      case 25:
-        fatal("Option --prior_exp is not available in this version");
-        /*
-        dealloc_prior();
-
-        opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
-        opt_prior->dist = PRIOR_EXP;
-
-        exp_params_t * exp_params =(exp_params_t *)xmalloc(sizeof(exp_params_t));
-        exp_params->rate = atof(optarg);
-        opt_prior->params = (void *)exp_params;
-        break;
-        */
-
-      case 26:
-        fatal("Option --prior_gamma is not available in this version");
-        /*
-        dealloc_prior();
-
-        opt_prior = (prior_t *)xmalloc(sizeof(prior_t));
-        opt_prior->dist = PRIOR_GAMMA;
-
-        gamma_params_t * gamma_params = (gamma_params_t *)xmalloc(sizeof(gamma_params_t));
-        if (!extract2f(optarg, &(gamma_params->alpha), &(gamma_params->beta)))
-          fatal("Incorrect format for --prior_gamma");
-        opt_prior->params = (void *)gamma_params;
-        break;
-        */
-
-      case 27:
+      case 20:
         opt_bayes_sample = atol(optarg);
         break;
 
-      case 28:
+      case 21:
         opt_bayes_log = 1;
         break;
 
-      case 29:
+      case 22:
         opt_seed = atol(optarg);
         break;
 
-      case 30:
+      case 23:
         opt_bayes_startnull = 1;
         break;
 
-      case 31:
+      case 24:
         opt_bayes_burnin = atol(optarg);
         break;
 
-      case 32:
+      case 25:
         opt_bayes_startrandom = 1;
         break;
 
-      case 33:
+      case 26:
         opt_bayes_chains = atol(optarg);
         break;
 
-      case 34:
+      case 27:
         free(opt_pdist_file);
         opt_pdist_file = optarg;
         break;
 
-      case 35:
+      case 28:
         opt_crop = 1;
         break;
 
-      case 36:
+      case 29:
         opt_bayes_credible = atof(optarg);
         break;
 
-      case 37:
-        opt_support = 1;
+      case 30:
+        opt_mcmc = 1;
         opt_bayes_runs = atol(optarg);
+        break;
+
+      case 31:
+        opt_ml = 1;
+        break;
+
+      case 32:
+        opt_method = PTP_METHOD_SINGLE;
+        break;
+
+      case 33:
+        opt_method = PTP_METHOD_MULTI;
+        break;
+
+      case 34:
+        opt_bayes_startml = 1;
         break;
 
       default:
@@ -391,23 +333,19 @@ void args_init(int argc, char ** argv)
     commands++;
   if (opt_help)
     commands++;
-  if (opt_ml_multi)
-    commands++;
-  if (opt_ml_single)
-    commands++;
-  if (opt_bayes_multi)
-    commands++;
-  if (opt_bayes_single)
-    commands++;
-  if (opt_scorefile)
-    commands++;
   if (opt_pdist_file)
     commands++;
-  if (opt_support)
+  if (opt_mcmc)
+    commands++;
+  if (opt_ml)
     commands++;
 
   /* if more than one independent command, fail */
   if (commands > 1)
+    fatal("More than one command specified");
+
+  /* if more than one independent command, fail */
+  if (opt_bayes_startrandom + opt_bayes_startnull + opt_bayes_startml > 1)
     fatal("More than one command specified");
 
   /* if no command specified, turn on --help */
@@ -433,14 +371,18 @@ void cmd_help()
           "  --help                    display help information.\n"
           "  --version                 display version information.\n"
           "  --tree_show               display an ASCII version of the tree.\n"
-          "  --ml_multi                Maximum-likelihood with one lambda per coalescent.\n"
-          "  --ml_single               Maximum-likelihood with one lambda for all coalescent.\n"
-          "  --bayes_multi INT         Bayesian with own lambda per coalescent (INT runs).\n"
-          "  --bayes_single INT        Bayesian with one lambda for all coalescent (INT steps).\n"
-          "  --bayes_sample INT        Sample every INT iteration (default: 1000).\n"
-          "  --bayes_log               Log samples and create SVG plot of log-likelihoods.\n"
-          "  --bayes_burnin INT        Ignore all MCMC steps below threshold.\n"
-          "  --bayes_chains INT        Run multiple chains.\n"
+          "  --multi                   Use one lambda per coalescent (this is default).\n"
+          "  --single                  Use one lambda for all coalescent.\n"
+          "  --ml                      Maximum-likelihood heuristic.\n"
+          "  --mcmc INT                Support values for the delimitation (INT steps).\n"
+          "  --mcmc_sample INT         Sample every INT iteration (default: 1000).\n"
+          "  --mcmc_log                Log samples and create SVG plot of log-likelihoods.\n"
+          "  --mcmc_burnin INT         Ignore all MCMC steps below threshold.\n"
+          "  --mcmc_chains INT         Run multiple chains.\n"
+          "  --mcmc_credible REAL      Credible interval.\n"
+          "  --mcmc_startnull          Start each chain with the null model (one single species).\n"
+          "  --mcmc_startrandom        Start each chain with a random delimitation.\n"
+          "  --mcmc_startml            Start each chain with the delimitation obtained by the Maximum-likelihood heuristic.\n"
           "  --pvalue                  Set p-value for LRT (default: 0.001)\n"
           "  --minbr REAL              Set minimum branch length (default: 0.0001)\n"
           "  --minbr_auto FILENAME     Detect minimum branch length from FASTA p-distances\n"
@@ -449,10 +391,11 @@ void cmd_help()
           "  --quiet                   only output warnings and fatal errors to stderr.\n"
           "  --precision               Precision of floating point numbers on output (default: 7).\n"
           "  --seed                    Seed for pseudo-random number generator.\n"
-          "  --support                 Support values for the delimitation.\n"
+          "\n"
           "Input and output options:\n"
           "  --tree_file FILENAME      tree file in newick format.\n"
           "  --output_file FILENAME    output file name.\n"
+          "\n"
           "Visualization options:\n"
           "  --svg_width INT           Width of SVG tree in pixels (default: 1920).\n"
           "  --svg_fontsize INT        Size of font in SVG image. (default: 12)\n"
@@ -511,7 +454,6 @@ static rtree_t * load_tree(void)
       }
     }
 
-
     if (opt_crop)
     {
       rtree = utree_crop(og_root);
@@ -556,14 +498,14 @@ void cmd_auto()
   rtree_destroy(rtree);
 }
 
-void cmd_ml_multi()
+void cmd_ml(int method)
 {
 
   rtree_t * rtree = load_tree();
 
   dp_init(rtree);
   dp_set_pernode_spec_edges(rtree);
-  dp_ptp(rtree, PTP_METHOD_MULTI, opt_prior);
+  dp_ptp(rtree, method);
   dp_free(rtree);
 
   if (opt_treeshow)
@@ -585,7 +527,7 @@ void cmd_multichain(int method)
   /* init random number generator */
   srand48(opt_seed);
 
-  multichain(rtree, method, opt_prior);
+  multichain(rtree, method);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
@@ -595,29 +537,7 @@ void cmd_multichain(int method)
 
 }
 
-void cmd_ml_single()
-{
-
-  rtree_t * rtree = load_tree();
-
-  dp_init(rtree);
-  dp_set_pernode_spec_edges(rtree);
-  dp_ptp(rtree, PTP_METHOD_SINGLE, opt_prior);
-  dp_free(rtree);
-
-  if (opt_treeshow)
-    rtree_show_ascii(rtree);
-
-  cmd_svg(rtree, opt_seed);
-
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
-}
-
-void cmd_bayes(int method)
+void cmd_mcmc(int method)
 {
   struct drand48_data rstate;
   double bayes_min_logl = 0;
@@ -627,71 +547,7 @@ void cmd_bayes(int method)
     fatal("--opt_bayes_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
 
   if (opt_bayes_credible < 0 || opt_bayes_credible > 1)
-    fatal("--opt_credible must be a real number between 0 and 1");
-
-  if (opt_bayes_chains)
-  {
-    cmd_multichain(method);
-    return;
-  }
-
-
-  rtree_t * rtree = load_tree();
-
-  /* init random number generator */
-  srand48_r(opt_seed, &rstate);
-
-  dp_init(rtree);
-  dp_set_pernode_spec_edges(rtree);
-  bayes(rtree,
-        method,
-        opt_prior,
-        &rstate,
-        opt_seed,
-        &bayes_min_logl,
-        &bayes_max_logl);
-  dp_free(rtree);
-
-  if (opt_bayes_log)
-    svg_landscape(bayes_min_logl, bayes_max_logl, opt_seed);
-
-  if (opt_treeshow)
-    rtree_show_ascii(rtree);
-
-  char * newick = rtree_export_newick(rtree);
-
-  if (!opt_quiet)
-    fprintf(stdout,
-            "Creating tree with support values in %s.%ld.tree ...\n",
-            opt_outfile,
-            opt_seed);
-
-  FILE * newick_fp = open_file_ext("tree", opt_seed);
-  fprintf(newick_fp, "%s\n", newick);
-  fclose(newick_fp);
-
-  cmd_svg(rtree, opt_seed);
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
-
-  free(newick);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
-}
-
-void cmd_support(void)
-{
-  int method = PTP_METHOD_MULTI;
-  struct drand48_data rstate;
-  double bayes_min_logl = 0;
-  double bayes_max_logl = 0;
-
-  if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
-    fatal("--opt_bayes_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
-
-  if (opt_bayes_credible < 0 || opt_bayes_credible > 1)
-    fatal("--opt_credible must be a real number between 0 and 1");
+    fatal("--opt_bayes_credible must be a real number between 0 and 1");
 
   if (opt_bayes_chains)
   {
@@ -709,7 +565,6 @@ void cmd_support(void)
   dp_set_pernode_spec_edges(rtree);
   aic_bayes(rtree,
         method,
-        opt_prior,
         &rstate,
         opt_seed,
         &bayes_min_logl,
@@ -739,25 +594,6 @@ void cmd_support(void)
   rtree_destroy(rtree);
 
   free(newick);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
-}
-void cmd_score()
-{
-
-  rtree_t * rtree = load_tree();
-
-  /* TODO: Sarah's score function should be called here */
-  score_delimitation_tree(opt_scorefile, rtree);
-
-  if (opt_treeshow)
-    rtree_show_ascii(rtree);
-
-  cmd_svg(rtree, opt_seed);
-
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
 
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
@@ -812,37 +648,18 @@ int main (int argc, char * argv[])
   {
     cmd_help();
   }
-  else if (opt_ml_multi)
-  {
-    cmd_ml_multi();
-  }
-  else if (opt_ml_single)
-  {
-    cmd_ml_single();
-  }
-  else if (opt_bayes_multi)
-  {
-    cmd_bayes(PTP_METHOD_MULTI);
-  }
-  else if (opt_bayes_single)
-  {
-    cmd_bayes(PTP_METHOD_SINGLE);
-  }
-  else if (opt_scorefile)
-  {
-    cmd_score();
-  }
   else if (opt_pdist_file)
   {
     cmd_auto();
   }
-  else if (opt_support)
+  else if (opt_mcmc)
   {
-    cmd_support();
+    cmd_mcmc(opt_method);
   }
-
-  /* free prior information */
-  dealloc_prior();
+  else if (opt_ml)
+  {
+    cmd_ml(opt_method);
+  }
 
   free(cmdline);
   return (0);

@@ -40,7 +40,7 @@ static int cb_node_select(rtree_t * node)
     max_species = max_species - node->max_species_count + 1;
     return 0;
   }
-  
+
   /* check if selecting the node is possible */
   if (max_species - node->max_species_count + 1 < species_count)
   {
@@ -104,10 +104,10 @@ double random_delimitation(rtree_t * root,
   *coal_score = logl;
 
   /* if we have PTP single logl is different */
-  if (opt_ml_single || opt_bayes_single)
+  if (opt_method == PTP_METHOD_SINGLE)
     logl = loglikelihood(edge_count, edgelen_sum);
-  
-  
+
+
   /* append speciation part log-likelihood */
   logl += loglikelihood(root->edge_count - edge_count,
                         root->edgelen_sum - edgelen_sum);
@@ -124,5 +124,3 @@ double random_delimitation(rtree_t * root,
 
   return logl;
 }
-
-

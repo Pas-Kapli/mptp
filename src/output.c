@@ -24,7 +24,7 @@
 FILE * open_file_ext(const char * extension, long seed)
 {
   char * filename = NULL;
-  if (opt_bayes_single || opt_bayes_multi || opt_support)
+  if (opt_mcmc)
     asprintf(&filename, "%s.%ld.%s", opt_outfile, seed, extension);
   else
     asprintf(&filename, "%s.%s", opt_outfile, extension);

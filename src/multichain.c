@@ -86,7 +86,7 @@ static int extract_events(rtree_t * root, int * outbuffer)
   return index;
 }
 
-void multichain(rtree_t * root, int method, prior_t * prior)
+void multichain(rtree_t * root, int method)
 {
   long i;
   long * seeds;
@@ -120,7 +120,7 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   /* initialize states for random number generators */
   rstates = (struct drand48_data *)xmalloc((size_t)opt_bayes_chains *
                                            sizeof(struct drand48_data));
-  
+
   /* initialize a pseudo-random number generator for each chain */
   for (i = 0; i < opt_bayes_chains; ++i)
     srand48_r(seeds[i], rstates+i);
@@ -132,9 +132,8 @@ void multichain(rtree_t * root, int method, prior_t * prior)
     dp_set_pernode_spec_edges(trees[i]);
     if (!opt_quiet)
       fprintf(stdout, "\nBayesian run %ld...\n", i);
-    bayes(trees[i],
+    aic_bayes(trees[i],
           method,
-          prior,
           rstates+i,
           seeds[i],
           bayes_min_logl+i,
@@ -145,7 +144,7 @@ void multichain(rtree_t * root, int method, prior_t * prior)
        generated seed */
     if (opt_bayes_log)
       svg_landscape(bayes_min_logl[i], bayes_max_logl[i], seeds[i]);
-    
+
     /* output SVG tree with support values for current chain */
     char * newick = rtree_export_newick(trees[i]);
 
@@ -190,14 +189,14 @@ void multichain(rtree_t * root, int method, prior_t * prior)
   for (i = 0; i < opt_bayes_chains; ++i)
   {
     support[i] = (double *)xmalloc((size_t)(trees[i]->leaves) * sizeof(double));
-    support_count = extract_support(trees[i], support[i]); 
+    support_count = extract_support(trees[i], support[i]);
     rtree_destroy(trees[i]);
   }
 
   /* compute ML tree */
   dp_init(mltree);
   dp_set_pernode_spec_edges(mltree);
-  dp_ptp(mltree, method, opt_prior);
+  dp_ptp(mltree, method);
   int * mlsupport  = (int *)xmalloc((size_t)(mltree->leaves) * sizeof(int));
   if (support_count != extract_events(mltree, mlsupport))
     fatal("Internal error");

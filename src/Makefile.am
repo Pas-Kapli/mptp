@@ -13,7 +13,6 @@ __top_builddir__bin_mptp_LDADD = libparse_utree.a libparse_rtree.a
 __top_builddir__bin_mptp_SOURCES = arch.c \
 auto.c \
 aic.c \
-bayes.c \
 mptp.c \
 mptp.h \
 dp.c \
@@ -22,10 +21,8 @@ likelihood.c \
 maps.c \
 multichain.c \
 output.c \
-priors.c \
 random.c \
 rtree.c \
-score.c \
 svg.c \
 svg_landscape.c \
 util.c \

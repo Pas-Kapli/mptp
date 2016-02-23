@@ -39,11 +39,11 @@ static char * const coalesence_color = "#ff0000";
 
 static int tip_occ = 0;
 
-typedef struct coord_s 
+typedef struct coord_s
 {
   double x;
   double y;
-} coord_t; 
+} coord_t;
 
 static coord_t * create_coord(double x, double y)
 {
@@ -72,13 +72,13 @@ static void svg_circle(double cx, double cy, double r, const char * color)
           "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"%s\" "
           "stroke=\"%s\" />\n",
           cx, cy, r, color, color);
-  /* animation effect 
+  /* animation effect
   fprintf(svg_fp, "<animate attributeName=\"r\" begin=\"mouseover\" dur=\"0.2\" fill=\"freeze\" from=\"%ld\" to=\"%ld\" />\n",
           (long)r, (long)r+5);
   fprintf(svg_fp, "<animate attributeName=\"r\" begin=\"mouseout\" dur=\"0.2\" fill=\"freeze\" to=\"%ld\" />\n</circle>\n",
           (long)r);
   */
-                
+
 }
 
 static void svg_text(double x, double y, long fontsize, const char * text)
@@ -106,9 +106,9 @@ static void rtree_set_xcoord(rtree_t * node)
     coord->x = opt_svg_marginleft;
   }
 
-  if (!node->left) 
+  if (!node->left)
     return;
-  
+
   /* recursively set coordinates of the other nodes in a pre-order fashion */
   rtree_set_xcoord(node->left);
   rtree_set_xcoord(node->right);
@@ -148,7 +148,7 @@ static void svg_rtree_plot(rtree_t * node)
       y = (ly + ry) / 2.0;
 
       /* decide the color */
-      if (opt_bayes_multi || opt_bayes_single)
+      if (opt_mcmc)
         asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
                  GRADIENT(node->support),
                  0.0,
@@ -165,11 +165,11 @@ static void svg_rtree_plot(rtree_t * node)
       svg_circle(x, y, opt_svg_inner_radius, current_color);
 
       /* deallocate color if bayesian */
-      if (opt_bayes_multi || opt_bayes_single)
+      if (opt_mcmc)
         free(current_color);
 
       /* if support value greater than threshold output it */
-      if (opt_bayes_multi || opt_bayes_single)
+      if (opt_mcmc)
       {
         if (node->support > 0.5)
         {
@@ -184,7 +184,7 @@ static void svg_rtree_plot(rtree_t * node)
     }
 
     /* decide the color based on the parent node */
-    if (opt_bayes_multi || opt_bayes_single)
+    if (opt_mcmc)
       asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
                GRADIENT(node->parent->support),
                0.0,
@@ -200,7 +200,7 @@ static void svg_rtree_plot(rtree_t * node)
     svg_line(px,y,x,y,current_color,stroke_width);
     ((coord_t *)(node->data))->y = y;
 
-    if (opt_bayes_multi || opt_bayes_single)
+    if (opt_mcmc)
       free(current_color);
 
     /* if node is a tip then print its label */
@@ -227,7 +227,7 @@ static void svg_rtree_plot(rtree_t * node)
     x = opt_svg_marginleft;
 
     /* decide the color */
-    if (opt_bayes_multi || opt_bayes_single)
+    if (opt_mcmc)
       asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
                GRADIENT(node->support),
                0.0,
@@ -242,10 +242,10 @@ static void svg_rtree_plot(rtree_t * node)
     svg_line(x,ly,x,ry,current_color,stroke_width);
     svg_circle(x,y,opt_svg_inner_radius,current_color);
 
-    if (opt_bayes_multi || opt_bayes_single)
+    if (opt_mcmc)
       free(current_color);
 
-    if (opt_bayes_multi || opt_bayes_single)
+    if (opt_mcmc)
     {
       if (node->support > 0.5)
       {
@@ -286,10 +286,10 @@ static void rtree_scaler_init(rtree_t * root)
     /* subtract root length */
     len -= root->length;
 
-    if (len > max_tree_len) 
+    if (len > max_tree_len)
       max_tree_len = len;
 
-    label_len = (opt_svg_fontsize / 1.5) * 
+    label_len = (opt_svg_fontsize / 1.5) *
                 (node_list[i]->label ? strlen(node_list[i]->label) : 0);
 
     len = (canvas_width - label_len) / len;
@@ -314,11 +314,11 @@ static void svg_rtree_init(rtree_t * root)
 
   canvas_width = opt_svg_width - opt_svg_marginleft - opt_svg_marginright;
 
-  /* initialize pixel scaler (scaler) and compute max tree 
+  /* initialize pixel scaler (scaler) and compute max tree
      length (max_tree_len) */
   rtree_scaler_init(root);
 
-  svg_height = opt_svg_margintop + legend_spacing + opt_svg_marginbottom + 
+  svg_height = opt_svg_margintop + legend_spacing + opt_svg_marginbottom +
                opt_svg_tipspace * root->leaves;
 
 
@@ -333,7 +333,7 @@ static void svg_rtree_init(rtree_t * root)
   {
     svg_line(opt_svg_marginleft,
              10,
-             (canvas_width - max_font_len)*opt_svg_legend_ratio + 
+             (canvas_width - max_font_len)*opt_svg_legend_ratio +
                                            opt_svg_marginleft,
              10,
              speciation_color,
@@ -347,17 +347,17 @@ static void svg_rtree_init(rtree_t * root)
   }
 
   /* uncomment to print a dashed border to indicate margins */
-  
+
   /*
   fprintf(svg_fp, "<rect x=\"%ld\" y=\"%ld\" width=\"%ld\" fill=\"none\" "
           "height=\"%ld\" stroke=\"#999999\" stroke-dasharray=\"5,5\" "
           "stroke-width=\"1\" />\n",
-          opt_svg_marginleft, 
-          opt_svg_margintop + legend_spacing, 
+          opt_svg_marginleft,
+          opt_svg_margintop + legend_spacing,
           opt_svg_width - opt_svg_marginleft - opt_svg_marginright,
           svg_height - opt_svg_margintop - legend_spacing - opt_svg_marginbottom);
   */
-  
+
   rtree_set_xcoord(root);
 
   svg_rtree_plot(root);
@@ -374,7 +374,7 @@ void cmd_svg(rtree_t * root, long seed)
 
   if (!opt_quiet)
   {
-    if (opt_bayes_single || opt_bayes_multi)
+    if (opt_mcmc)
       fprintf(stdout,
               "Creating SVG delimitation file %s.%ld.svg ...\n",
               opt_outfile,

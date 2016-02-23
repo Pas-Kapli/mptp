@@ -122,15 +122,15 @@ static char * rtree_export_newick_recursive(rtree_t * root)
     char * subtree1 = rtree_export_newick_recursive(root->left);
     char * subtree2 = rtree_export_newick_recursive(root->right);
 
-    if (opt_bayes_single || opt_bayes_multi || opt_support)
+    if (opt_mcmc)
       asprintf(&support, "%f", root->support);
 
     asprintf(&newick, "(%s,%s)%s:%f", subtree1,
                                       subtree2,
-                                      (opt_bayes_single || opt_bayes_multi || opt_support) ? support : "",
+                                      (opt_mcmc) ? support : "",
                                       root->length);
 
-    if (opt_bayes_single || opt_bayes_multi || opt_support)
+    if (opt_mcmc)
       free(support);
 
     free(subtree1);
@@ -154,14 +154,14 @@ char * rtree_export_newick(rtree_t * root)
     char * subtree1 = rtree_export_newick_recursive(root->left);
     char * subtree2 = rtree_export_newick_recursive(root->right);
 
-    if (opt_bayes_single || opt_bayes_multi || opt_support)
+    if (opt_mcmc)
       asprintf(&support, "%f", root->support);
 
     asprintf(&newick, "(%s,%s)%s:%f;", subtree1,
                                        subtree2,
-                                       (opt_bayes_single || opt_bayes_multi || opt_support) ? support : "",
+                                       (opt_mcmc) ? support : "",
                                        root->length);
-    if (opt_bayes_single || opt_bayes_multi || opt_support)
+    if (opt_mcmc)
       free(support);
 
     free(subtree1);

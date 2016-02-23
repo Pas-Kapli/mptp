@@ -259,14 +259,14 @@ static void bayes_finalize(rtree_t * root,
   free(densities);
 }
 
-static void dp_recurse(rtree_t * node, int method, prior_t * prior)
+static void dp_recurse(rtree_t * node, int method)
 {
   int k,j;
 
   /* bottom-up recursion */
 
-  if (node->left)  dp_recurse(node->left,  method, prior);
-  if (node->right) dp_recurse(node->right, method, prior);
+  if (node->left)  dp_recurse(node->left,  method);
+  if (node->right) dp_recurse(node->right, method);
 
   /*                u_vec
                 *
@@ -277,8 +277,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
   dp_vector_t * u_vec = node->vector;
 
   double spec_logl = loglikelihood(node->spec_edge_count,
-                                   node->spec_edgelen_sum) +
-                     prior_score(1,prior);
+                                   node->spec_edgelen_sum);
 
   u_vec[0].spec_edgelen_sum = 0;
   u_vec[0].score_multi = node->coal_logl + spec_logl;
@@ -318,7 +317,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
 
       int i = j + k + u_edge_count;
 
-      /* set the number of species - needed for prior information */
+      /* set the number of species */
       unsigned int u_species_count = v_vec[j].species_count +
                                      w_vec[k].species_count;
 
@@ -345,8 +344,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
 
       int spec_edge_count  = node->spec_edge_count + i;
       assert(u_species_count > 0);
-      spec_logl = loglikelihood(spec_edge_count,spec_edgelen_sum) +
-                  prior_score(u_species_count,prior);
+      spec_logl = loglikelihood(spec_edge_count,spec_edgelen_sum);
 
 
       /* compute single- and multi-rate scores */
@@ -639,7 +637,6 @@ double aic_weight_nominator(double aic_score)
 
 void aic_bayes(rtree_t * tree,
                int method,
-               prior_t * prior,
                struct drand48_data * rstate,
                long seed,
                double * bayes_min_logl,
@@ -676,7 +673,7 @@ void aic_bayes(rtree_t * tree,
   bayes_init(tree, seed);
 
   /* fill DP table */
-  dp_recurse(tree, method, prior);
+  dp_recurse(tree, method);
 
   /* obtain best entry in the root DP table */
   dp_vector_t * vec = tree->vector;

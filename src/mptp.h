@@ -74,15 +74,6 @@
 #define EVENT_SPECIATION 0
 #define EVENT_COALESCENT 1
 
-#define PRIOR_NONE              0
-#define PRIOR_UNI               1
-#define PRIOR_NBIN              2
-#define PRIOR_BINOMIAL          3
-#define PRIOR_GAMMA             4
-#define PRIOR_DIRICHLET         5
-#define PRIOR_BETA              6
-#define PRIOR_EXP               7
-
 #define PTP_METHOD_SINGLE       0
 #define PTP_METHOD_MULTI        1
 
@@ -175,56 +166,6 @@ typedef struct rtree_s
 
 } rtree_t;
 
-
-/* priors and hyperpriors */
-
-typedef struct prior_s
-{
-  int dist;
-  void * params;
-} prior_t;
-
-typedef struct gamma_params_s
-{
-  double alpha;
-  double beta;
-} gamma_params_t;
-
-typedef struct beta_params_s
-{
-  double alpha;
-  double beta;
-} beta_params_t;
-
-typedef struct bin_params_s
-{
-  unsigned int trials;
-  double prob;
-} bin_params_t;
-
-typedef struct nbin_params_s
-{
-  double prob;
-  unsigned int failures;
-} nbin_params_t;
-
-typedef struct dir_params_s
-{
-  int k;
-  unsigned int * a;
-} dir_params_t;
-
-typedef struct uni_params_s
-{
-  double min;
-  double max;
-} uni_params_t;
-
-typedef struct exp_params_s
-{
-  double rate;
-} exp_params_t;
-
 typedef struct pll_fasta
 {
   FILE * fp;
@@ -250,10 +191,6 @@ extern int opt_svg_showlegend;
 extern long opt_help;
 extern long opt_version;
 extern long opt_treeshow;
-extern long opt_ml_multi;
-extern long opt_ml_single;
-extern long opt_bayes_multi;
-extern long opt_bayes_single;
 extern long opt_bayes_sample;
 extern long opt_bayes_runs;
 extern long opt_bayes_log;
@@ -262,7 +199,9 @@ extern long opt_bayes_startrandom;
 extern long opt_bayes_burnin;
 extern long opt_bayes_chains;
 extern long opt_seed;
-extern long opt_support;
+extern long opt_mcmc;
+extern long opt_ml;
+extern long opt_method;
 extern long opt_crop;
 extern long opt_svg;
 extern long opt_svg_width;
@@ -280,10 +219,8 @@ extern double opt_minbr;
 extern char * opt_treefile;
 extern char * opt_outfile;
 extern char * opt_outgroup;
-extern char * opt_scorefile;
 extern char * opt_pdist_file;
 extern char * cmdline;
-extern prior_t * opt_prior;
 
 /* common data */
 
@@ -327,10 +264,8 @@ void cmd_help(void);
 void getentirecommandline(int argc, char * argv[]);
 void fillheader(void);
 void show_header(void);
-void cmd_ml_single(void);
-void cmd_ml_multi(void);
-void cmd_score(void);
-void cmd_bayes(int method);
+void cmd_ml(int method);
+void cmd_mcmc(int method);
 void cmd_multichain(int method);
 void cmd_auto(void);
 
@@ -404,32 +339,12 @@ unsigned long arch_get_memtotal(void);
 
 void dp_init(rtree_t * tree);
 void dp_free(rtree_t * tree);
-void dp_ptp(rtree_t * rtree, int multi, prior_t * prior);
+void dp_ptp(rtree_t * rtree, int multi);
 void dp_set_pernode_spec_edges(rtree_t * node);
-
-/* functions in score.c */
-
-void score_delimitation_tree(char * scorefile, rtree_t * tree);
 
 /* functions in svg.c */
 
 void cmd_svg(rtree_t * rtree, long seed);
-
-/* functions in priors.c */
-
-double prior_score(unsigned int species_count, prior_t * prior);
-void init_logn_table(unsigned int n);
-double dir_logpdf(double * x, dir_params_t * params);
-double gamma_logpdf(double x, gamma_params_t * params);
-double beta_logpdf(double x, beta_params_t * params);
-double bin_logpmf(unsigned int k, bin_params_t * params);
-double nbin_logpmf(unsigned int k, nbin_params_t * params);
-double uni_logpdf(double x, uni_params_t * params);
-double exp_logpdf(double x, exp_params_t * params);
-
-/* functions in knapsack.c */
-
-void dp_knapsack(rtree_t * root, int method);
 
 /* functions in likelihood.c */
 
@@ -450,20 +365,6 @@ void output_info(FILE * out,
 
 FILE * open_file_ext(const char * extension, long seed);
 
-/* functions in bayes.c */
-
-void bayes(rtree_t * tree,
-           int method,
-           prior_t * prior,
-           struct drand48_data * rstate,
-           long seed,
-           double * bayes_min_logl,
-           double * bayes_max_logl);
-
-/* functions in bayes_multi.c */
-
-void bayes_multi(rtree_t * tree, int method, prior_t * prior);
-
 /* functions in svg_landscape.c */
 
 void svg_landscape(double bayes_min_log, double bayes_max_logl, long seed);
@@ -482,7 +383,7 @@ double random_delimitation(rtree_t * root,
 
 /* functions in multichain.c */
 
-void multichain(rtree_t * root, int method, prior_t * prior);
+void multichain(rtree_t * root, int method);
 
 /* functions in fasta.c */
 
@@ -509,7 +410,6 @@ void detect_min_bl(rtree_t * rtree);
 
 void aic_bayes(rtree_t * tree,
                int method,
-               prior_t * prior,
                struct drand48_data * rstate,
                long seed,
                double * bayes_min_logl,

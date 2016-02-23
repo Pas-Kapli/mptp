@@ -23,14 +23,14 @@
 
 static unsigned int species_iter = 0;
 
-static void dp_recurse(rtree_t * node, int method, prior_t * prior)
+static void dp_recurse(rtree_t * node, int method)
 {
   int k,j;
 
   /* bottom-up recursion */
 
-  if (node->left)  dp_recurse(node->left,  method, prior);
-  if (node->right) dp_recurse(node->right, method, prior);
+  if (node->left)  dp_recurse(node->left,  method);
+  if (node->right) dp_recurse(node->right, method);
 
   /*                u_vec
                 *
@@ -41,8 +41,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
   dp_vector_t * u_vec = node->vector;
 
   double spec_logl = loglikelihood(node->spec_edge_count,
-                                   node->spec_edgelen_sum) +
-                     prior_score(1,prior);
+                                   node->spec_edgelen_sum);
 
   u_vec[0].spec_edgelen_sum = 0;
   u_vec[0].score_multi = node->coal_logl + spec_logl;
@@ -82,7 +81,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
 
       int i = j + k + u_edge_count;
 
-      /* set the number of species - needed for prior information */
+      /* set the number of species */
       unsigned int species_count = v_vec[j].species_count +
                                    w_vec[k].species_count;
 
@@ -109,8 +108,7 @@ static void dp_recurse(rtree_t * node, int method, prior_t * prior)
 
       int spec_edge_count  = node->spec_edge_count + i;
       assert(species_count > 0);
-      spec_logl = loglikelihood(spec_edge_count,spec_edgelen_sum) +
-                  prior_score(species_count,prior);
+      spec_logl = loglikelihood(spec_edge_count,spec_edgelen_sum);
 
 
       /* compute single- and multi-rate scores */
@@ -171,7 +169,7 @@ static void backtrack(rtree_t * node,
   }
 }
 
-void dp_ptp(rtree_t * tree, int method, prior_t * prior)
+void dp_ptp(rtree_t * tree, int method)
 {
   int i;
   int lrt_pass;
@@ -186,7 +184,7 @@ void dp_ptp(rtree_t * tree, int method, prior_t * prior)
   species_iter = 0;
 
   /* fill DP table */
-  dp_recurse(tree, method, prior);
+  dp_recurse(tree, method);
 
   /* obtain best entry in the root DP table */
   dp_vector_t * vec = tree->vector;
@@ -379,4 +377,3 @@ void dp_set_pernode_spec_edges(rtree_t * node)
   dp_set_pernode_spec_edges(node->left);
   dp_set_pernode_spec_edges(node->right);
 }
-
