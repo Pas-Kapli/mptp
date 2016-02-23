@@ -9,20 +9,20 @@ mptp \(em species delimitation in phylogenetic trees and visualization.
 .ad l
 Maximum-likelihood species delimitation:
 .RS
-\fBmptp\fR \-\-ml_single \-\-tree_file \fInewickfile\fR \-\-output_file
+\fBmptp\fR \-\-ml \-\-single \-\-tree_file \fInewickfile\fR \-\-output_file
 \fIoutputfile\fR [\fIoptions\fR]
 .PP
-\fBmptp\fR \-\-ml_multi \-\-tree_file \fInewickfile\fR \-\-output_file
+\fBmptp\fR \-\-ml \-\-multi \-\-tree_file \fInewickfile\fR \-\-output_file
 \fIoutputfile\fR [\fIoptions\fR]
 .PP
 .RE
-Bayesian species delimitation:
+Species delimitation with support values:
 .RS
-\fBmptp\fR \-\-bayes_single \fIpositive integer\fR \-\-bayes_log \fIpositive
+\fBmptp\fR \-\-mcmc \fIpositive integer\fR \-\-single \-\-mcmc_log \fIpositive
 integer\fR \-\-tree_file \fInewickfile\fR \-\-output_file \fIoutputfile\fR
 [\fIoptions\fR]
 .PP
-\fBmptp\fR \-\-bayes_multi \fIpositive integer\fR \-\-bayes_log \fIpositive
+\fBmptp\fR \-\-mcmc \fIpositive integer\fR \-\-multi \-\-mcmc_log \fIpositive
 integer\fR \-\-tree_file \fInewickfile\fR \-\-output_file \fIoutputfile\fR
 [\fIoptions\fR]
 .PP
@@ -102,7 +102,7 @@ Maximum-likelihood estimations:
 .PP
 .RS
 Estimating the maximum-likelihood delimitation is triggered by either of two
-options: \-\-ml_single (the PTP model) or \-\-ml_multi (the mPTP model). Note
+options: \-\-ml \-\-single (the PTP model) or \-\-ml \-\-multi (the mPTP model). Note
 that these two methods affect how options \-\- output_file behaves and can be
 controlled using the \-\-min_br switch. Although both methods require an input
 phylogenetic tree that must be rooted, an unrooted tree can be specified in
@@ -122,11 +122,11 @@ with the mean defined as the reciprocal of the average of edge lengths in the
 particular distribution.
 .PP
 .TP 9
-.B \-\-ml_single
+.B \-\-ml \-\-single
 Triggers the algorithm for computing an ML estimate of the delimitation using
 the PTP model.
 .TP
-.B \-\-ml_multi
+.B \-\-ml \-\-multi
 Triggers the algorithm for computing an ML estimate of the delimitation using
 the mPTP model.
 .RE
@@ -138,7 +138,7 @@ Compute the maximum likelihood estimate using the mPTP model by discarding all
 branches below or equal to 0.0001 
 .PP
 .RS
-\fBmptp\fR \-\-ml_multi \-\-min_br 0.0001 \-\-tree_file \fInewick.txt\fR
+\fBmptp\fR \-\-ml \-\-multi \-\-min_br 0.0001 \-\-tree_file \fInewick.txt\fR
 \-\-output_file \fIout\fR
 .RE
 .PP
@@ -147,8 +147,8 @@ step, using the mPTP model and discarding all branch lengths smaller or equal
 to 0.0001.
 .PP
 .RS
-\fBmptp\fR \-\-bayes_multi 100000000 \-\-min_br 0.0001 \-\-tree_file
-\fInewick.txt\fR \-\-output_file \fIout\fR \-\-bayes_log 1000000
+\fBmptp\fR \-\-mcmc 100000000 \-\-multi \-\-min_br 0.0001 \-\-tree_file
+\fInewick.txt\fR \-\-output_file \fIout\fR \-\-mcmc_log 1000000
 .RE
 .PP
 .\"
