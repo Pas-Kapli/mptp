@@ -86,7 +86,7 @@ static int extract_events(rtree_t * root, int * outbuffer)
   return index;
 }
 
-void multichain(rtree_t * root, int method)
+void multichain(rtree_t * root, long method)
 {
   long i;
   long * seeds;

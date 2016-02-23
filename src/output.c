@@ -43,7 +43,7 @@ FILE * open_file_ext(const char * extension, long seed)
 }
 
 void output_info(FILE * out,
-                 int method,
+                 long method,
                  double nullmodel_logl,
                  double logl,
                  double pvalue,

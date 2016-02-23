@@ -194,6 +194,7 @@ extern long opt_treeshow;
 extern long opt_bayes_sample;
 extern long opt_bayes_runs;
 extern long opt_bayes_log;
+extern long opt_bayes_startml;
 extern long opt_bayes_startnull;
 extern long opt_bayes_startrandom;
 extern long opt_bayes_burnin;
@@ -201,6 +202,8 @@ extern long opt_bayes_chains;
 extern long opt_seed;
 extern long opt_mcmc;
 extern long opt_ml;
+extern long opt_multi;
+extern long opt_single;
 extern long opt_method;
 extern long opt_crop;
 extern long opt_svg;
@@ -338,7 +341,7 @@ unsigned long arch_get_memtotal(void);
 
 void dp_init(rtree_t * tree);
 void dp_free(rtree_t * tree);
-void dp_ptp(rtree_t * rtree, int multi);
+void dp_ptp(rtree_t * rtree, long method);
 void dp_set_pernode_spec_edges(rtree_t * node);
 
 /* functions in svg.c */
@@ -349,12 +352,12 @@ void cmd_svg(rtree_t * rtree, long seed);
 
 double loglikelihood(long edge_count, double edgelen_sum);
 int lrt(double nullmodel_logl, double ptp_logl, unsigned int df, double * pvalue);
-double aic(double logl, int k, int n);
+double aic(double logl, long k, long n);
 
 /* functions in output.c */
 
 void output_info(FILE * out,
-  		 int method,
+  		 long method,
 		 double nullmodel_logl,
 		 double logl,
 		 double pvalue,
@@ -382,7 +385,7 @@ double random_delimitation(rtree_t * root,
 
 /* functions in multichain.c */
 
-void multichain(rtree_t * root, int method);
+void multichain(rtree_t * root, long method);
 
 /* functions in fasta.c */
 
@@ -408,7 +411,7 @@ void detect_min_bl(rtree_t * rtree);
 /* functions in aic.c */
 
 void aic_bayes(rtree_t * tree,
-               int method,
+               long method,
                struct drand48_data * rstate,
                long seed,
                double * bayes_min_logl,

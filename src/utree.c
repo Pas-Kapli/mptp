@@ -505,7 +505,7 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
     if (!taxon_len)
       fatal("Erroneous prune list format (double comma)/taxon missing");
 
-    taxon = strndup(s, taxon_len);
+    taxon = xstrndup(s, taxon_len);
 
     /* search tip in hash table */
     ENTRY query;

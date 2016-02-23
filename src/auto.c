@@ -43,9 +43,9 @@ static const unsigned int mask[256] =
    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
  };
 
-int pdist(char * a, char * b, int len)
+static int pdist(char * a, char * b, long len)
 {
-  int i;
+  long i;
   int pdist = 0;
 
   for (i = 0; i < len; ++i)
@@ -57,7 +57,7 @@ int pdist(char * a, char * b, int len)
   return pdist;
 }
 
-static int load_fasta(int tip_nodes_count, char ** headers, char ** seqdata)
+static long load_fasta(int tip_nodes_count, char ** headers, char ** seqdata)
 {
   int i;
 
@@ -73,7 +73,7 @@ static int load_fasta(int tip_nodes_count, char ** headers, char ** seqdata)
   long seqno;
 
   /* read FASTA sequences and make sure they are all of the same length */
-  int sites = -1;
+  long sites = -1;
   for (i = 0; pll_fasta_getnext(fp,&hdr,&hdrlen,&seq,&seqlen,&seqno); ++i)
   {
     if (i >= tip_nodes_count)
@@ -164,11 +164,12 @@ static void hash_tips(rtree_t * root)
   int i;
 
   /*  obtain an array of pointers to tip names */
-  rtree_t ** tipnodes = (rtree_t  **)xmalloc(root->leaves * sizeof(rtree_t *));
+  rtree_t ** tipnodes = (rtree_t  **)xmalloc((size_t)(root->leaves) *
+                                             sizeof(rtree_t *));
   rtree_query_tipnodes(root, tipnodes);
 
   /* create a libc hash table of size tip_count */
-  hcreate(2*root->leaves);
+  hcreate(2*(size_t)(root->leaves));
 
   /* populate a libc hash table with tree tip labels */
   for (i = 0; i < root->leaves; ++i)
@@ -184,11 +185,11 @@ static void hash_tips(rtree_t * root)
 
 static void set_encode_sequence(rtree_t * node,
                                 char * sequence,
-                                int seqlen,
+                                long seqlen,
                                 const unsigned int * map)
 {
   unsigned int c;
-  int i;
+  long i;
 
   /* iterate through sites and encode */
   for (i = 0; i < seqlen; ++i)
@@ -196,7 +197,9 @@ static void set_encode_sequence(rtree_t * node,
     if ((c = map[(int)sequence[i]]) == 0)
       fatal("Illegal state code in tip \"%c\"", sequence[i]);
 
-    sequence[i] = c;
+    assert(c < 256);
+
+    sequence[i] = (char)c;
   }
 
   /* set sequence to tip */
@@ -204,7 +207,7 @@ static void set_encode_sequence(rtree_t * node,
 
 }
 
-static void link_sequences(rtree_t * root, char ** headers, char ** sequence, int seqlen)
+static void link_sequences(rtree_t * root, char ** headers, char ** sequence, long seqlen)
 {
   int i;
 
@@ -225,7 +228,7 @@ static void link_sequences(rtree_t * root, char ** headers, char ** sequence, in
 }
 
 
-static int all_pairwise_dist(rtree_t ** tip_node_list, int tip_list_count, int seqlen)
+static int all_pairwise_dist(rtree_t ** tip_node_list, int tip_list_count, long seqlen)
 {
   int j,k;
 
@@ -246,7 +249,7 @@ void detect_min_bl(rtree_t * rtree)
   int i,n;
   char ** seqdata = NULL;
   char ** headers = NULL;
-  int seqlen = 0;
+  long seqlen = 0;
 
   /* for p-distance computation load an alignment from a FASTA file and map
      the sequences to the tree tips */
@@ -255,8 +258,8 @@ void detect_min_bl(rtree_t * rtree)
     fprintf(stdout, "Parsing FASTA file %s...\n", opt_pdist_file);
   
   /* allocate arrays to store FASTA headers and sequences */
-  headers = (char **)calloc(rtree->leaves, sizeof(char *));
-  seqdata = (char **)calloc(rtree->leaves, sizeof(char *));
+  headers = (char **)calloc((size_t)(rtree->leaves), sizeof(char *));
+  seqdata = (char **)calloc((size_t)(rtree->leaves), sizeof(char *));
 
   seqlen = load_fasta(rtree->leaves, headers, seqdata);
 
@@ -273,11 +276,14 @@ void detect_min_bl(rtree_t * rtree)
      opt_subtree_short. The largest such subtrees are those that are not
      subtrees of short subtrees.
   */
-  inner_node_list = (rtree_t **)xmalloc((rtree->leaves-1)*sizeof(rtree_t *));
+  inner_node_list = (rtree_t **)xmalloc((size_t)(rtree->leaves-1) *
+                                        sizeof(rtree_t *));
 
 
-  double * branch_lengths = (double *)xmalloc((2*rtree->leaves-1)*sizeof(double));
-  rtree_t ** allnodes_list = (rtree_t **)xmalloc((2*rtree->leaves-1)*sizeof(rtree_t *));
+  double * branch_lengths = (double *)xmalloc((size_t)(2*rtree->leaves-1) *
+                                              sizeof(double));
+  rtree_t ** allnodes_list = (rtree_t **)xmalloc((size_t)(2*rtree->leaves-1) *
+                                                 sizeof(rtree_t *));
   int allnodes_count;
 
   /* get list of all nodes, extract branch lengths and sort them in ascending 
@@ -286,13 +292,14 @@ void detect_min_bl(rtree_t * rtree)
   assert(allnodes_count == 2*rtree->leaves-1);
   for (i = 0; i < allnodes_count; ++i)
     branch_lengths[i] = allnodes_list[i]->length;
-  qsort(branch_lengths, allnodes_count, sizeof(double), cb_ascending);
+  qsort(branch_lengths, (size_t)allnodes_count, sizeof(double), cb_ascending);
   free(allnodes_list);
 
 
   printf("Computing all pairwise p-distances ...\n");
 
-  tip_node_list = (rtree_t **)xmalloc((rtree->leaves)*sizeof(rtree_t *));
+  tip_node_list = (rtree_t **)xmalloc((size_t)(rtree->leaves) *
+                                      sizeof(rtree_t *));
 
 
   int minfound = 0;

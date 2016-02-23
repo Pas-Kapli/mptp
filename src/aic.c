@@ -630,13 +630,13 @@ static void coalesce(long r)
   }
 }
 
-double aic_weight_nominator(double aic_score)
+static double aic_weight_nominator(double aic_score)
 {
   return exp(-0.5 * aic_score);
 }
 
 void aic_bayes(rtree_t * tree,
-               int method,
+               long method,
                struct drand48_data * rstate,
                long seed,
                double * bayes_min_logl,

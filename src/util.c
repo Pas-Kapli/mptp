@@ -129,12 +129,12 @@ int extract2f(char * text, double * a, double * b)
   if (regexec(&preg, text, 5, pmatch, 0) == 0)
   {
     len = pmatch[1].rm_eo - pmatch[1].rm_so;
-    s  = strndup(text+pmatch[1].rm_so, (size_t)len);
+    s  = xstrndup(text+pmatch[1].rm_so, (size_t)len);
     *a = atof(s);
     free(s);
 
     len = pmatch[3].rm_eo - pmatch[3].rm_so;
-    s = strndup(text+pmatch[3].rm_so, (size_t)len);
+    s = xstrndup(text+pmatch[3].rm_so, (size_t)len);
     *b = atof(s);
     free(s);
   }

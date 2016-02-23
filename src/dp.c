@@ -23,7 +23,7 @@
 
 static unsigned int species_iter = 0;
 
-static void dp_recurse(rtree_t * node, int method)
+static void dp_recurse(rtree_t * node, long method)
 {
   int k,j;
 
@@ -169,7 +169,7 @@ static void backtrack(rtree_t * node,
   }
 }
 
-void dp_ptp(rtree_t * tree, int method)
+void dp_ptp(rtree_t * tree, long method)
 {
   int i;
   int lrt_pass;
