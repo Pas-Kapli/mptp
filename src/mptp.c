@@ -52,6 +52,8 @@ long opt_bayes_chains;
 long opt_seed;
 long opt_mcmc;
 long opt_ml;
+long opt_multi;
+long opt_single;
 long opt_crop;
 long opt_svg;
 long opt_svg_width;
@@ -146,6 +148,8 @@ void args_init(int argc, char ** argv)
   opt_ml = 0;
   opt_mcmc = 0;
   opt_method = PTP_METHOD_MULTI;
+  opt_multi = 0;
+  opt_single = 0;
 
   opt_svg_width = 1920;
   opt_svg_fontsize = 12;
@@ -302,10 +306,12 @@ void args_init(int argc, char ** argv)
 
       case 32:
         opt_method = PTP_METHOD_SINGLE;
+        opt_single = 1;
         break;
 
       case 33:
         opt_method = PTP_METHOD_MULTI;
+        opt_multi = 1;
         break;
 
       case 34:
@@ -346,7 +352,11 @@ void args_init(int argc, char ** argv)
 
   /* if more than one independent command, fail */
   if (opt_bayes_startrandom + opt_bayes_startnull + opt_bayes_startml > 1)
-    fatal("More than one command specified");
+    fatal("You can only select one out of --mcmc_startrandom, --mcmc_startnull, --mcmc_startml");
+
+  /* if more than one independent command, fail */
+  if (opt_multi && opt_single)
+    fatal("You can either specify --multi or --single, but not both at once.");
 
   /* if no command specified, turn on --help */
   if (!commands)
