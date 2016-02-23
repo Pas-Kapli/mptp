@@ -264,9 +264,9 @@ void cmd_help(void);
 void getentirecommandline(int argc, char * argv[]);
 void fillheader(void);
 void show_header(void);
-void cmd_ml(int method);
-void cmd_mcmc(int method);
-void cmd_multichain(int method);
+void cmd_ml(void);
+void cmd_mcmc(void);
+void cmd_multichain(void);
 void cmd_auto(void);
 
 /* functions in parse_rtree.y */

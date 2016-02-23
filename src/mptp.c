@@ -104,7 +104,7 @@ static struct option long_options[] =
   {"outgroup_crop",      no_argument,       0, 0 },  /* 28 */
   {"mcmc_credible",      required_argument, 0, 0 },  /* 29 */
   {"mcmc",               required_argument, 0, 0 },  /* 30 */
-  {"ml",                 required_argument, 0, 0 },  /* 31 */
+  {"ml",                 no_argument,       0, 0 },  /* 31 */
   {"single",             no_argument,       0, 0 },  /* 32 */
   {"multi",              no_argument,       0, 0 },  /* 33 */
   {"mcmc_startml",       no_argument,       0, 0 },  /* 34 */
@@ -498,14 +498,13 @@ void cmd_auto()
   rtree_destroy(rtree);
 }
 
-void cmd_ml(int method)
+void cmd_ml(void)
 {
-
   rtree_t * rtree = load_tree();
 
   dp_init(rtree);
   dp_set_pernode_spec_edges(rtree);
-  dp_ptp(rtree, method);
+  dp_ptp(rtree, opt_method);
   dp_free(rtree);
 
   if (opt_treeshow)
@@ -520,14 +519,14 @@ void cmd_ml(int method)
     fprintf(stdout, "Done...\n");
 }
 
-void cmd_multichain(int method)
+void cmd_multichain(void)
 {
   rtree_t * rtree = load_tree();
 
   /* init random number generator */
   srand48(opt_seed);
 
-  multichain(rtree, method);
+  multichain(rtree, opt_method);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
@@ -537,7 +536,7 @@ void cmd_multichain(int method)
 
 }
 
-void cmd_mcmc(int method)
+void cmd_mcmc(void)
 {
   struct drand48_data rstate;
   double bayes_min_logl = 0;
@@ -551,7 +550,7 @@ void cmd_mcmc(int method)
 
   if (opt_bayes_chains)
   {
-    cmd_multichain(method);
+    cmd_multichain();
     return;
   }
 
@@ -564,7 +563,7 @@ void cmd_mcmc(int method)
   dp_init(rtree);
   dp_set_pernode_spec_edges(rtree);
   aic_bayes(rtree,
-        method,
+        opt_method,
         &rstate,
         opt_seed,
         &bayes_min_logl,
@@ -654,11 +653,11 @@ int main (int argc, char * argv[])
   }
   else if (opt_mcmc)
   {
-    cmd_mcmc(opt_method);
+    cmd_mcmc();
   }
   else if (opt_ml)
   {
-    cmd_ml(opt_method);
+    cmd_ml();
   }
 
   free(cmdline);
