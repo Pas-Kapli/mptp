@@ -132,7 +132,7 @@ void args_init(int argc, char ** argv)
   opt_pvalue = 0.001;
   opt_minbr = 0.0001;
   opt_precision = 7;
-  opt_bayes_runs = 1;
+  opt_bayes_runs = 0;
   opt_bayes_sample = 1000;
   opt_bayes_startnull = 0;
   opt_bayes_startrandom = 0;
@@ -542,8 +542,8 @@ void cmd_mcmc(void)
   double bayes_min_logl = 0;
   double bayes_max_logl = 0;
 
-  if (opt_bayes_runs = 0)
-    fatal("--opt_mcmc_burnin must be a positive integer greater than zero");
+  if (opt_bayes_runs == 0)
+    fatal("The number of runs specified after --mcmc must be a positive integer greater than zero");
 
   if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
     fatal("--opt_mcmc_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
