@@ -531,6 +531,15 @@ void cmd_ml(void)
 
 void cmd_multichain(void)
 {
+  if (opt_bayes_runs == 0)
+    fatal("The number of runs specified after --mcmc must be a positive integer greater than zero");
+
+  if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
+    fatal("--opt_mcmc_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
+
+  if (opt_bayes_credible < 0 || opt_bayes_credible > 1)
+    fatal("--opt_mcmc_credible must be a real number between 0 and 1");
+
   rtree_t * rtree = load_tree();
 
   /* init random number generator */
@@ -544,71 +553,6 @@ void cmd_multichain(void)
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
 
-}
-
-void cmd_mcmc(void)
-{
-  struct drand48_data rstate;
-  double bayes_min_logl = 0;
-  double bayes_max_logl = 0;
-
-  if (opt_bayes_runs == 0)
-    fatal("The number of runs specified after --mcmc must be a positive integer greater than zero");
-
-  if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
-    fatal("--opt_mcmc_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
-
-  if (opt_bayes_credible < 0 || opt_bayes_credible > 1)
-    fatal("--opt_mcmc_credible must be a real number between 0 and 1");
-
-  if (opt_bayes_chains)
-  {
-    cmd_multichain();
-    return;
-  }
-
-
-  rtree_t * rtree = load_tree();
-
-  /* init random number generator */
-  srand48_r(opt_seed, &rstate);
-
-  dp_init(rtree);
-  dp_set_pernode_spec_edges(rtree);
-  aic_bayes(rtree,
-        opt_method,
-        &rstate,
-        opt_seed,
-        &bayes_min_logl,
-        &bayes_max_logl);
-  dp_free(rtree);
-
-  if (opt_bayes_log)
-    svg_landscape(bayes_min_logl, bayes_max_logl, opt_seed);
-
-  if (opt_treeshow)
-    rtree_show_ascii(rtree);
-
-  char * newick = rtree_export_newick(rtree);
-
-  if (!opt_quiet)
-    fprintf(stdout,
-            "Creating tree with support values in %s.%ld.tree ...\n",
-            opt_outfile,
-            opt_seed);
-
-  FILE * newick_fp = open_file_ext("tree", opt_seed);
-  fprintf(newick_fp, "%s\n", newick);
-  fclose(newick_fp);
-
-  cmd_svg(rtree, opt_seed);
-  /* deallocate tree structure */
-  rtree_destroy(rtree);
-
-  free(newick);
-
-  if (!opt_quiet)
-    fprintf(stdout, "Done...\n");
 }
 
 void getentirecommandline(int argc, char * argv[])
@@ -666,7 +610,7 @@ int main (int argc, char * argv[])
   }
   else if (opt_mcmc)
   {
-    cmd_mcmc();
+    cmd_multichain();
   }
   else if (opt_ml)
   {

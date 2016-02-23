@@ -265,7 +265,6 @@ void getentirecommandline(int argc, char * argv[]);
 void fillheader(void);
 void show_header(void);
 void cmd_ml(void);
-void cmd_mcmc(void);
 void cmd_multichain(void);
 void cmd_auto(void);
 

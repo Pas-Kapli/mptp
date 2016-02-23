@@ -116,6 +116,9 @@ void multichain(rtree_t * root, int method)
   seeds = (long *)xmalloc((size_t)opt_bayes_chains * sizeof(long));
   for (i = 0; i < opt_bayes_chains; ++i)
     seeds[i] = lrand48();
+    
+  if (opt_bayes_chains == 1)
+    seeds[0] = opt_seed;
 
   /* initialize states for random number generators */
   rstates = (struct drand48_data *)xmalloc((size_t)opt_bayes_chains *
