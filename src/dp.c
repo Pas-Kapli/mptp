@@ -174,7 +174,6 @@ void dp_ptp(rtree_t * tree, int method)
   int i;
   int lrt_pass;
   int best_index = 0;
-  int best_aic_index = 0;
   unsigned int species_count;
   double max = 0;
   double pvalue = -1;
@@ -196,32 +195,20 @@ void dp_ptp(rtree_t * tree, int method)
     {
       if (vec[i].filled)
       {
-        if (max < vec[i].score_multi)
-        {
-          max = vec[i].score_multi;
-          best_index = i;
-        }
         double aic_score = aic(vec[i].score_multi, vec[i].species_count, tree->leaves);
         if (aic_score < min_aic_score)
         {
           min_aic_score = aic_score;
-          best_aic_index = i;
+          best_index = i;
         }
       }
     }
-    if (best_index != best_aic_index)
-    {
-      fprintf(stdout, "WARNING: Selection by maximum score chose %d species, but selection by minimum AICc chose %d species!\n", vec[best_index].species_count, vec[best_aic_index].species_count);
-      fprintf(stdout, "WARNING: Selection by maximum score had score %.3f, selection by minimum AICc had score %.3f!\n", vec[best_index].score_multi, vec[best_aic_index].score_multi);
-    }
-    best_index = best_aic_index;
   }
   else
   {
     max = vec[0].score_single;
     for (i = 1; i < tree->edge_count; i++)
     {
-      //printf("vec[%d].score_single: %.6f\n", i, vec[i].score_single);
       if (max < vec[i].score_single && vec[i].filled)
       {
         max = vec[i].score_single;
