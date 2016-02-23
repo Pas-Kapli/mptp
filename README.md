@@ -62,7 +62,7 @@ General options:
 * `--min_br REAL`
 * `--min_br FILENAME`
 * `--pvalue REAL`
-* `--precision`
+* `--precision INT`
 
 Input and output options:
 
