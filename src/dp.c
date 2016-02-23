@@ -247,12 +247,9 @@ void dp_ptp(rtree_t * tree, int method)
   /* do a Likelihood Ratio Test (lrt) and return the computed p-value */
   species_count = vec[best_index].species_count;
 
-  lrt_pass = lrt(tree->coal_logl,
-                 (method == PTP_METHOD_MULTI) ?
-                   vec[best_index].score_multi : vec[best_index].score_single,
-                 (method == PTP_METHOD_MULTI) ?
-                   vec[best_index].species_count : 1,
-                 &pvalue);
+  // only do LRT for PTP, not for mPTP
+  lrt_pass = (method == PTP_METHOD_MULTI) ? 1 : lrt(tree->coal_logl,
+                 vec[best_index].score_single, 1, &pvalue);
 
 #ifndef HAVE_LIBGSL
   fprintf(stderr, "WARNING: delimit was not compiled with libgsl. "
