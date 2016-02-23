@@ -30,8 +30,8 @@ static void print_node_info(utree_t * tree)
   printf("\n");
 }
 
-static void print_tree_recurse(utree_t * tree, 
-                               int indend_level, 
+static void print_tree_recurse(utree_t * tree,
+                               int indend_level,
                                int * active_node_order)
 {
   int i,j;
@@ -68,7 +68,7 @@ static void print_tree_recurse(utree_t * tree,
 
   print_node_info(tree);
 
-  if (active_node_order[indend_level-1] == 2) 
+  if (active_node_order[indend_level-1] == 2)
     active_node_order[indend_level-1] = 0;
 
   if (tree->next)
@@ -78,7 +78,7 @@ static void print_tree_recurse(utree_t * tree,
                        indend_level+1,
                        active_node_order);
     active_node_order[indend_level] = 2;
-    print_tree_recurse(tree->next->next->back, 
+    print_tree_recurse(tree->next->next->back,
                        indend_level+1,
                        active_node_order);
   }
@@ -98,13 +98,13 @@ static int tree_indend_level(utree_t * tree, int indend)
 void utree_show_ascii(utree_t * tree)
 {
   int a, b;
-  
+
   a = tree_indend_level(tree->back,1);
   b = tree_indend_level(tree,0);
   int max_indend_level = (a > b ? a : b);
 
 
-  int * active_node_order = (int *)malloc((size_t)(max_indend_level+1) * 
+  int * active_node_order = (int *)malloc((size_t)(max_indend_level+1) *
                                           sizeof(int));
   active_node_order[0] = 1;
   active_node_order[1] = 1;
@@ -121,16 +121,20 @@ static char * newick_utree_recurse(utree_t * root)
   char * newick;
 
   if (!root->next)
-    asprintf(&newick, "%s:%f", root->label, root->length);
+  {
+    if (asprintf(&newick, "%s:%f", root->label, root->length) == -1)
+      fatal("Unable to allocate enough memory.");
+  }
   else
   {
     char * subtree1 = newick_utree_recurse(root->next->back);
     char * subtree2 = newick_utree_recurse(root->next->next->back);
 
-    asprintf(&newick, "(%s,%s)%s:%f", subtree1,
+    if (asprintf(&newick, "(%s,%s)%s:%f", subtree1,
                                       subtree2,
                                       root->label ? root->label : "",
-                                      root->length);
+                                      root->length) == -1)
+      fatal("Unable to allocate enough memory.");
     free(subtree1);
     free(subtree2);
   }
@@ -148,11 +152,12 @@ char * utree_export_newick(utree_t * root)
   char * subtree2 = newick_utree_recurse(root->next->back);
   char * subtree3 = newick_utree_recurse(root->next->next->back);
 
-  asprintf(&newick, "(%s,%s,%s)%s:%f;", subtree1,
+  if (asprintf(&newick, "(%s,%s,%s)%s:%f;", subtree1,
                                         subtree2,
                                         subtree3,
                                         root->label ? root->label : "",
-                                        root->length);
+                                        root->length) == -1)
+    fatal("Unable to allocate enough memory.");
   free(subtree1);
   free(subtree2);
   free(subtree3);
@@ -194,7 +199,7 @@ int utree_traverse(utree_t * root,
   if (!root->next) return -1;
 
   /* we will traverse an unrooted tree in the following way
-      
+
               2
             /
       1  --*
@@ -263,7 +268,7 @@ static int utree_traverse_postorder(utree_t * root,
   if (!root->next) return -1;
 
   /* we will traverse an unrooted tree in the following way
-      
+
               2
             /
       1  --*
@@ -349,7 +354,7 @@ int utree_query_innernodes(utree_t * root,
 
 static rtree_t * utree_rtree(utree_t * unode)
 {
-  rtree_t * rnode = (rtree_t *)xmalloc(sizeof(rtree_t)); 
+  rtree_t * rnode = (rtree_t *)xmalloc(sizeof(rtree_t));
 
   rnode->event = EVENT_COALESCENT;
 
@@ -361,7 +366,7 @@ static rtree_t * utree_rtree(utree_t * unode)
   rnode->data = NULL;
   rnode->mark = 0;
 
-  if (!unode->next) 
+  if (!unode->next)
   {
     rnode->left = NULL;
     rnode->right = NULL;
@@ -394,7 +399,7 @@ utree_t * utree_longest_branchtip(utree_t * node, unsigned int tip_count)
       index = i;
       branch_length = tip_nodes_list[i]->length;
     }
-  
+
   outgroup = tip_nodes_list[index];
 
   free(tip_nodes_list);
@@ -406,10 +411,10 @@ rtree_t * utree_crop(utree_t * lca)
 {
   /* is the back of the lca a tip? */
   if (!lca->back->next)
-    return NULL; 
+    return NULL;
 
   rtree_t * root = (rtree_t *)xmalloc(sizeof(rtree_t));
-  
+
   /* clone the two subtrees */
   root->left  = utree_rtree(lca->back->next->back);
   root->right = utree_rtree(lca->back->next->next->back);
@@ -451,7 +456,7 @@ rtree_t * utree_convert_rtree(utree_t * outgroup)
   rtree_reset_info(root);
 
   return root;
-  
+
 }
 
 static utree_t ** utree_tipstring_nodes(utree_t * root,
@@ -471,7 +476,7 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
   for (i = 0; i < strlen(tipstring); ++i)
     if (tipstring[i] == ',')
       commas_count++;
-  
+
   utree_t ** node_list = (utree_t **)xmalloc((size_t)utree_tip_count *
                                              sizeof(utree_t *));
   utree_query_tipnodes(root, node_list);
@@ -491,7 +496,7 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
   }
 
   char * s = tipstring;
-  
+
   k = 0;
   while (*s)
   {
@@ -507,7 +512,7 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
     query.key = taxon;
     found = NULL;
     found = hsearch(query,FIND);
-    
+
     if (!found)
       fatal("Taxon %s does not appear in the tree", taxon);
 
@@ -517,7 +522,7 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
     /* free tip label, and move to the beginning of next tip if available */
     free(taxon);
     s += taxon_len;
-    if (*s == ',') 
+    if (*s == ',')
       s += 1;
   }
 
@@ -556,7 +561,7 @@ static utree_t * utree_lca(utree_t ** tip_nodes,
                                           path);
 
 
-  /* there must be exactly one inner node that does not have all three 
+  /* there must be exactly one inner node that does not have all three
      directions mark. That one will be the root of the outgroup subtree */
   int root_count = 0;
   for (i = 0; i < path_len; ++i)

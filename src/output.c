@@ -25,9 +25,15 @@ FILE * open_file_ext(const char * extension, long seed)
 {
   char * filename = NULL;
   if (opt_mcmc)
-    asprintf(&filename, "%s.%ld.%s", opt_outfile, seed, extension);
+  {
+    if (asprintf(&filename, "%s.%ld.%s", opt_outfile, seed, extension) == -1)
+      fatal("Unable to allocate enough memory.");
+  }
   else
-    asprintf(&filename, "%s.%s", opt_outfile, extension);
+  {
+    if (asprintf(&filename, "%s.%s", opt_outfile, extension) == -1)
+      fatal("Unable to allocate enough memory.");
+  }
 
   FILE * out = xopen(filename,"w");
 

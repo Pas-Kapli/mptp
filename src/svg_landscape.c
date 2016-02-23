@@ -106,7 +106,7 @@ static void svg_header(FILE * svg_fp)
                   "  <line x1=\"670\" x2=\"670\" y1=\"10\" y2=\"380\"></line>\n"
                   "  <line x1=\"730\" x2=\"730\" y1=\"10\" y2=\"380\"></line>\n"
                   "</g>\n");
-                  
+
   fprintf(svg_fp, "<g class=\"grid y-grid\" id=\"yGrid\">\n"
                   "  <line x1=\"103\" x2=\"730\" y1=\"10\" y2=\"10\"></line>\n"
                   "  <line x1=\"103\" x2=\"730\" y1=\"68\" y2=\"68\"></line>\n"
@@ -121,12 +121,13 @@ static void svg_header(FILE * svg_fp)
 
 static void out_svg(FILE * svg_fp, double min_logl, double max_logl, long seed)
 {
-  
+
   double scale = (max_logl - min_logl) * 1.1;
-  
+
   /* open data points file */
   char * filename;
-  asprintf(&filename, "%s.%ld.%s", opt_outfile, seed, "log");
+  if (asprintf(&filename, "%s.%ld.%s", opt_outfile, seed, "log") == -1)
+    fatal("Unable to allocate enough memory.");
   FILE * fp = xopen(filename,"r");
   free(filename);
 
@@ -146,12 +147,12 @@ static void out_svg(FILE * svg_fp, double min_logl, double max_logl, long seed)
 
     /* compute y point */
     y = (1 - (logl-min_logl)/scale) *
-        (canvas_y2-canvas_y1) + 
+        (canvas_y2-canvas_y1) +
         canvas_y1;
 
     /* print point */
     fprintf(svg_fp,
-            "<circle cx=\"%f\" cy=\"%f\" r=\"%d\" fill=\"%s\" stroke=\"%s\" fill-opacity=\".5\" >\n" 
+            "<circle cx=\"%f\" cy=\"%f\" r=\"%d\" fill=\"%s\" stroke=\"%s\" fill-opacity=\".5\" >\n"
             "<animate attributeName=\"r\" begin=\"mouseover\" dur=\"0.2\" fill=\"freeze\" from=\"%d\" to=\"%d\" />\n"
             "<animate attributeName=\"fill-opacity\" begin=\"mouseover\" dur=\"0.2\" fill=\"freeze\" from=\".5\" to=\"1\" />\n"
             "<animate attributeName=\"r\" begin=\"mouseout\" dur=\"0.2\" fill=\"freeze\" to=\"%d\" />\n"
@@ -164,7 +165,7 @@ static void out_svg(FILE * svg_fp, double min_logl, double max_logl, long seed)
   }
   fclose(fp);
 }
-  
+
 static void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
 {
   double scale = (max_logl - min_logl) * 1.1;
@@ -184,7 +185,7 @@ static void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
   {
     fprintf(svg_fp,
             "<text transform=\"translate(%f,400)rotate(270)\">%ld</text>\n",
-              originx + (i+1)*((canvas_x2 - canvas_x1)/(double)xtics), 
+              originx + (i+1)*((canvas_x2 - canvas_x1)/(double)xtics),
               (long)((i+1)*((opt_bayes_runs-opt_bayes_burnin)/(double)xtics)) +
                     opt_bayes_burnin);
   }

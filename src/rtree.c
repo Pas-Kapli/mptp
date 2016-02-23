@@ -116,19 +116,24 @@ static char * rtree_export_newick_recursive(rtree_t * root)
   if (!root) return NULL;
 
   if (!(root->left) || !(root->right))
-    asprintf(&newick, "%s:%f", root->label, root->length);
+  {
+    if (asprintf(&newick, "%s:%f", root->label, root->length) == -1)
+      fatal("Unable to allocate enough memory.");
+  }
   else
   {
     char * subtree1 = rtree_export_newick_recursive(root->left);
     char * subtree2 = rtree_export_newick_recursive(root->right);
 
     if (opt_mcmc)
-      asprintf(&support, "%f", root->support);
+      if (asprintf(&support, "%f", root->support) == -1)
+        fatal("Unable to allocate enough memory.");
 
-    asprintf(&newick, "(%s,%s)%s:%f", subtree1,
+    if (asprintf(&newick, "(%s,%s)%s:%f", subtree1,
                                       subtree2,
                                       (opt_mcmc) ? support : "",
-                                      root->length);
+                                      root->length) == -1)
+      fatal("Unable to allocate enough memory.");
 
     if (opt_mcmc)
       free(support);
@@ -148,19 +153,24 @@ char * rtree_export_newick(rtree_t * root)
   if (!root) return NULL;
 
   if (!(root->left) || !(root->right))
-    asprintf(&newick, "%s:%f", root->label, root->length);
+  {
+    if (asprintf(&newick, "%s:%f", root->label, root->length) == -1)
+      fatal("Unable to allocate enough memory.");
+  }
   else
   {
     char * subtree1 = rtree_export_newick_recursive(root->left);
     char * subtree2 = rtree_export_newick_recursive(root->right);
 
     if (opt_mcmc)
-      asprintf(&support, "%f", root->support);
+      if (asprintf(&support, "%f", root->support) == -1)
+        fatal("Unable to allocate enough memory.");
 
-    asprintf(&newick, "(%s,%s)%s:%f;", subtree1,
+    if (asprintf(&newick, "(%s,%s)%s:%f;", subtree1,
                                        subtree2,
                                        (opt_mcmc) ? support : "",
-                                       root->length);
+                                       root->length) == -1)
+      fatal("Unable to allocate enough memory.");
     if (opt_mcmc)
       free(support);
 

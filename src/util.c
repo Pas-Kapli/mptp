@@ -73,7 +73,8 @@ void * xmalloc(size_t size)
 {
   const size_t alignment = 16;
   void * t = NULL;
-  posix_memalign(& t, alignment, size);
+  if (posix_memalign(& t, alignment, size) == -1)
+    fatal("Unable to allocate enough memory.");
 
   if (!t)
     fatal("Unable to allocate enough memory.");
@@ -159,7 +160,7 @@ void show_rusage()
 {
   struct rusage r_usage;
   getrusage(RUSAGE_SELF, & r_usage);
-  
+
   fprintf(stderr, "Time: %.3fs (user)", r_usage.ru_utime.tv_sec * 1.0 + (double) r_usage.ru_utime.tv_usec * 1.0e-6);
   fprintf(stderr, " %.3fs (sys)", r_usage.ru_stime.tv_sec * 1.0 + r_usage.ru_stime.tv_usec * 1.0e-6);
 

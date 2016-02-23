@@ -149,10 +149,13 @@ static void svg_rtree_plot(rtree_t * node)
 
       /* decide the color */
       if (opt_mcmc)
-        asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
+      {
+        if (asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
                  GRADIENT(node->support),
                  0.0,
-                 0.0);
+                 0.0) == -1)
+          fatal("Unable to allocate enough memory.");
+      }
       else if (node->event == EVENT_COALESCENT)
         current_color = coalesence_color;
       else if (node->event == EVENT_SPECIATION)
@@ -175,7 +178,8 @@ static void svg_rtree_plot(rtree_t * node)
         {
           char * support;
 
-          asprintf(&support, "%.2f", node->support);
+          if (asprintf(&support, "%.2f", node->support) == -1)
+            fatal("Unable to allocate enough memory.");
 
           svg_text(x-5,y-5,opt_svg_fontsize,support);
           free(support);
@@ -185,10 +189,13 @@ static void svg_rtree_plot(rtree_t * node)
 
     /* decide the color based on the parent node */
     if (opt_mcmc)
-      asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
+    {
+      if (asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
                GRADIENT(node->parent->support),
                0.0,
-               0.0);
+               0.0) == -1)
+        fatal("Unable to allocate enough memory.");
+    }
     else if (node->parent->event == EVENT_COALESCENT)
       current_color = coalesence_color;
     else if (node->parent->event == EVENT_SPECIATION)
@@ -228,10 +235,13 @@ static void svg_rtree_plot(rtree_t * node)
 
     /* decide the color */
     if (opt_mcmc)
-      asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
+    {
+      if (asprintf(&current_color, "rgb(%f%%,%f%%,%f%%)",
                GRADIENT(node->support),
                0.0,
-               0.0);
+               0.0) == -1)
+        fatal("Unable to allocate enough memory.");
+    }
     else if (node->event == EVENT_COALESCENT)
       current_color = coalesence_color;
     else if (node->event == EVENT_SPECIATION)
@@ -251,7 +261,8 @@ static void svg_rtree_plot(rtree_t * node)
       {
         char * support;
 
-        asprintf(&support, "%.2f", node->support);
+        if (asprintf(&support, "%.2f", node->support) == -1)
+          fatal("Unable to allocate enough memory.");
 
         svg_text(x-5,y-5,opt_svg_fontsize,support);
         free(support);
