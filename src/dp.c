@@ -257,7 +257,7 @@ void dp_ptp(rtree_t * tree, int method)
 #endif
 
 #ifdef HAVE_LIBGSL
-  if (!opt_quiet)
+  if (!opt_quiet && method == PTP_METHOD_SINGLE)
     fprintf(stdout,"LRT computed p-value: %.6f\n", pvalue);
 #endif
 
