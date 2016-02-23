@@ -60,7 +60,7 @@ General options:
 * `--outgroup TAXA`
 * `--outgroup_crop`
 * `--min_br REAL`
-* `--min_br FILENAME`
+* `--min_br_auto FILENAME`
 * `--pvalue REAL`
 * `--precision INT`
 
