@@ -542,11 +542,14 @@ void cmd_mcmc(void)
   double bayes_min_logl = 0;
   double bayes_max_logl = 0;
 
+  if (opt_bayes_runs = 0)
+    fatal("--opt_mcmc_burnin must be a positive integer greater than zero");
+
   if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
-    fatal("--opt_bayes_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
+    fatal("--opt_mcmc_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
 
   if (opt_bayes_credible < 0 || opt_bayes_credible > 1)
-    fatal("--opt_bayes_credible must be a real number between 0 and 1");
+    fatal("--opt_mcmc_credible must be a real number between 0 and 1");
 
   if (opt_bayes_chains)
   {
