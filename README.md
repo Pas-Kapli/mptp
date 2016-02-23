@@ -45,53 +45,46 @@ General options:
 * `--version`
 * `--quiet`
 * `--tree_show`
-* `--ml_single`
-* `--ml_multi`
-* `--bayes_multi`
-* `--bayes_single`
-* `--bayes_sample`
-* `--bayes_log`
-* `--bayes_burnin`
-* `--bayes_startnull`
-* `--bayes_startrandom`
-* `--bayes_chains`
-* `--outgroup`
+* `--multi`
+* `--single`
+* `--ml`
+* `--mcmc INT`
+* `--mcmc_sample INT`
+* `--mcmc_log`
+* `--mcmc_burnin INT`
+* `--mcmc_startnull`
+* `--mcmc_startrandom`
+* `--mcmc_startml`
+* `--mcmc_credible REAL`
+* `--mcmc_chains INT`
+* `--outgroup TAXA`
 * `--outgroup_crop`
-* `--min_br`
-* `--pvalue`
+* `--min_br REAL`
+* `--min_br FILENAME`
+* `--pvalue REAL`
 * `--precision`
-* `--score`
 
 Input and output options:
 
-* `--tree_file`
-* `--output_file`
-
-Prior options:
-
-* `--prior_exp`
-* `--prior_uni`
-* `--prior_bin`
-* `--prior_nbin`
-* `--prior_gamma`
-* `--prior_beta`
+* `--tree_file FILENAME`
+* `--output_file FILENAME`
 
 Visualization options:
 
-* `--svg_width`
-* `--svg_fontsize`
-* `--svg_tipspacing`
-* `--svg_legend_ratio`
+* `--svg_width INT`
+* `--svg_fontsize INT`
+* `--svg_tipspacing INT`
+* `--svg_legend_ratio <0..1>`
 * `--svg_nolegend`
-* `--svg_marginleft`
-* `--svg_marginright`
-* `--svg_margintop`
-* `--svg_marginbottom`
-* `--svg_inner_radius`
+* `--svg_marginleft INT`
+* `--svg_marginright INT`
+* `--svg_margintop INT`
+* `--svg_marginbottom INT`
+* `--svg_inner_radius INT`
 
 ## Usage example
 
-`./mptp --ml_multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
+`./mptp --ml --multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
 
 ## License and third party licenses
 
@@ -103,7 +96,7 @@ The code is currently licensed under the GNU Affero General Public License versi
 --------------------|----------------
 **arch.c**          | Architecture specific code (Mac/Linux).
 **auto.c**          | Code for auto-detecting minimum branch length.
-**bayes.c**         | Code for Bayesian Single- and multi-rate PTP.
+**aic.c**           | Code for Bayesian Single- and multi-rate PTP.
 **mptp.c**          | Main file handling command-line parameters and executing corresponding parts.
 **dp.c**            | Single- and multi-rate DP heuristics for solving the PTP problem.
 **fasta.c**         | Code for reading FASTA files.
@@ -115,10 +108,8 @@ The code is currently licensed under the GNU Affero General Public License versi
 **output.c**        | Output related files.
 **parse_rtree.y**   | Functions for parsing rooted trees in newick format.
 **parse_utree.y**   | Functions for parsing unrooted trees in newick format.
-**priors.c**        | Prior related functions.
 **random.c**        | Functions for creating a random delimitation.
 **rtree.c**         | Rooted tree manipulation functions.
-**score.c**         | Computation of NMI and Kassian score.
 **svg.c**           | SVG visualization of delimited tree.
 **svg_landscape.c** | SVG visualization of likelihood landscape.
 **util.c**          | Various common utility functions.
