@@ -479,7 +479,7 @@ static rtree_t * load_tree(void)
   {
     if (!opt_quiet)
       fprintf(stdout, "Loaded rooted tree...\n");
-
+      
     if (opt_crop)
     {
       if (!opt_outgroup)

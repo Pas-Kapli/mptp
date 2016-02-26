@@ -582,7 +582,11 @@ rtree_t * get_outgroup_lca(rtree_t * root)
                                   opt_outgroup,
                                   &og_tips_count);
 
-  og_root = rtree_lca(root, og_tips, og_tips_count);
+  if (og_tips_count > 1)
+    og_root = rtree_lca(root, og_tips, og_tips_count);
+  else og_root = og_tips[0];
+
+  free(og_tips);
 
   return og_root;
 }
@@ -627,6 +631,8 @@ rtree_t * rtree_crop(rtree_t * root, rtree_t * crop_root)
     rtree_destroy(root);
 
     new_root->parent = NULL;
+    rtree_reset_info(new_root);
+
     return new_root;
   }
 
@@ -672,6 +678,7 @@ rtree_t * rtree_crop(rtree_t * root, rtree_t * crop_root)
   c->length += b->length;
 
   rtree_destroy(b);
+  rtree_reset_info(root);
 
   return root;
 }
