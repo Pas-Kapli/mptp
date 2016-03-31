@@ -12,6 +12,26 @@ Pons et al. (2006) and Fujisawa et al. (2013). The new tool should:
 * have an open source code with an appropriate open source license.
 * 64-bit multi-threaded design that handles very large datasets.
 
+We have implemented a tool called mPTP which can handle very large biodiversity
+datasets.  It implements a fast method to compute the ML delimitation from an
+inferred phylogenetic tree of the samples.  Using MCMC, it also computes the
+support values for each clade, which can be used to assess the confidence of
+the ML delimitation.
+
+**ML delimitation** mPTP implements two flavours of the point-estimate
+solution.  First, it implements the original method from (Zhang et al. 2013)
+where all within-species processes are modelled with a single exponential
+distribution. mPTP uses a dynamic programming implementation which estimates
+the ML delimitation faster and more accurately than the original PTP. The
+dynamic programming implementation has similar properties as (Gulek et al.
+2010).  See the wiki for more information. The second method assumes a distinct
+exponential distribution for the branching events of each of the delimited
+species allowing it to fit to a wider range of empirical datasets.
+
+**MCMC method** mPTP generates support values for each clades. They represent
+the ratio of the number of samples for which a particular node was in the
+between-species process, to the total number of samples. 
+
 ## Compilation instructions
 
 **Cloning the repo** Clone the repo and build the executable and the documentation using
@@ -88,7 +108,7 @@ Visualization options:
 
 ## License and third party licenses
 
-The code is currently licensed under the GNU Affero General Public License version 3.
+The code is currently licensed under the [GNU Affero General Public License version 3](http://www.gnu.org/licenses/agpl-3.0.en.html).
 
 ## Code
 
@@ -151,3 +171,8 @@ doi:[10.1080/10635150600852011](http://dx.doi.org/10.1080/10635150600852011)
 **A dynamic programming algorithm for tree-like weighted set packing problem.**
 *Information Sciences*, 180(20):3974-3979.
 doi:[10.1016/j.ins.2010.06.035](http://dx.doi.org/10.1016/j.ins.2010.06.035)
+
+* Powell JR. (2012)
+**Accounting for uncertainty in species delineation during the analysis of environmental DNA sequence data.**
+*Methods in Ecology and Evolution*, 3(1):1-11.
+doi:[10.1111/j.2041-210X.2011.00122.x](http://dx.doi.org/10.1111/j.2041-210X.2011.00122.x)

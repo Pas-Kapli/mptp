@@ -217,8 +217,6 @@ static void bayes_finalize(rtree_t * root,
                                   (double)(opt_bayes_runs-opt_bayes_burnin+1);*/
   }
 
-  printf("denominator: %.17f\n", aic_weight_prefix_sum);
-
   free(inner_node_list);
   free(crnodes);
   free(snodes);
@@ -913,9 +911,7 @@ void aic_bayes(rtree_t * tree,
       double aic_new_logl = -aic(new_logl, species_count+1, tree->leaves);
       double aic_logl = -aic(logl, species_count, tree->leaves);
 
-       //printf("SPLIT: logl %f new_logl %f aic_logl %f aic_new_logl %f\n", logl, new_logl, aic_logl, aic_new_logl);
       /* Hastings ratio */
-      //double a = exp(new_logl - logl) * (old_crnodes_count / new_snodes_count);
       double a = exp(aic_new_logl - aic_logl) * (old_crnodes_count / new_snodes_count);
 
       /* update densities */
@@ -1051,9 +1047,7 @@ void aic_bayes(rtree_t * tree,
       double aic_new_logl = -aic(new_logl, species_count-1, tree->leaves);
       double aic_logl = -aic(logl, species_count, tree->leaves);
 
-       //printf("MERGE: logl %f new_logl %f aic_logl %f aic_new_logl %f\n", logl, new_logl, aic_logl, aic_new_logl);
       /* Hastings ratio */
-      //double a = exp(new_logl - logl) * (old_snodes_count / new_crnodes_count);
       double a = exp(aic_new_logl - aic_logl) * (old_snodes_count / new_crnodes_count);
 
       /* update densities */
@@ -1122,7 +1116,7 @@ void aic_bayes(rtree_t * tree,
     }
   }
 
-  printf("Acceptance: %ld\n", accept_count);
+  //printf("Acceptance: %ld\n", accept_count);
   /* TODO: DEBUG variables for checking the max likelihood bayesian runs give.
      Must be removed */
   bayes_finalize(tree, *bayes_min_logl, *bayes_max_logl, seed, aic_weight_prefix_sum);

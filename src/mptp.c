@@ -141,7 +141,7 @@ void args_init(int argc, char ** argv)
   opt_bayes_startml = 0;
   opt_bayes_log = 0;
   opt_bayes_burnin = 1;
-  opt_bayes_chains = 0;
+  opt_bayes_chains = 1;
   opt_bayes_credible = 0.95;
   opt_seed = (long)time(NULL);
   opt_crop = 0;
