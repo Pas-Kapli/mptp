@@ -161,11 +161,8 @@ static void backtrack(rtree_t * node,
     species_iter++;
     node->event = EVENT_COALESCENT;
 
-    if (!opt_quiet)
-    {
-      fprintf(out, "\nSpecies %d:\n", species_iter);
-      rtree_print_tips(node,out);
-    }
+    fprintf(out, "\nSpecies %d:\n", species_iter);
+    rtree_print_tips(node,out);
   }
 }
 
@@ -278,12 +275,9 @@ void dp_ptp(rtree_t * tree, long method)
   else
   {
     species_iter = 1;
-    if (!opt_quiet)
-    {
-      fprintf(stdout, "LRT failed -- null-model is preferred and printed\n");
-      fprintf(out,"\nSpecies 1:\n");
-      rtree_print_tips(tree,out);
-    }
+    fprintf(stdout, "LRT failed -- null-model is preferred and printed\n");
+    fprintf(out,"\nSpecies 1:\n");
+    rtree_print_tips(tree,out);
   }
 
   if (!opt_quiet)
