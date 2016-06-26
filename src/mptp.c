@@ -389,7 +389,7 @@ void cmd_help()
           "  --mcmc_log                Log samples and create SVG plot of log-likelihoods.\n"
           "  --mcmc_burnin INT         Ignore all MCMC steps below threshold.\n"
           "  --mcmc_chains INT         Run multiple chains.\n"
-          "  --mcmc_credible REAL      Credible interval.\n"
+          "  --mcmc_credible <0..1>    Credible interval (default: 0.95).\n"
           "  --mcmc_startnull          Start each chain with the null model (one single species).\n"
           "  --mcmc_startrandom        Start each chain with a random delimitation.\n"
           "  --mcmc_startml            Start each chain with the delimitation obtained by the Maximum-likelihood heuristic.\n"

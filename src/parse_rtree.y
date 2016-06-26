@@ -158,10 +158,10 @@ subtree: OPAR subtree COMMA subtree CPAR optional_label optional_length
 };
 
  
-optional_label:  { $$ = NULL;} | label  {$$ = $1;};
-optional_length: { $$ = NULL;} | COLON number {$$ = $2;};
-label: STRING    { $$=$1;} | NUMBER {$$=$1;};
-number: NUMBER   { $$=$1;};
+optional_label:  {$$ = NULL;} | label  {$$ = $1;};
+optional_length: {$$ = NULL;} | COLON number {$$ = $2;};
+label: STRING    {$$=$1;} | NUMBER {$$=$1;};
+number: NUMBER   {$$=$1;};
 
 %%
 

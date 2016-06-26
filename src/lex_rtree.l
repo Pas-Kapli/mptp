@@ -26,14 +26,13 @@ static size_t string_length = 0;
 
 static char * append(size_t * dstlen, const char * src, size_t srclen)
 {
-  char * mem = (char *)realloc(rtree_lval.s, (*dstlen + srclen + 1));
-  if (!mem)
-  {
-    fatal("Unable to allocate enough memory.");
-  }
+  char * mem = (char *)xmalloc((*dstlen + srclen + 1)*sizeof(char));
+  memcpy(mem,rtree_lval.s,*dstlen);
+  strncpy(mem+(*dstlen),src,srclen);
+  mem[*dstlen+srclen] = 0;
+  if (*dstlen)
+    free(rtree_lval.s);
   rtree_lval.s =  mem;
-  strncpy(&rtree_lval.s[*dstlen], src, srclen);
-  rtree_lval.s[*dstlen + srclen] = 0;
   *dstlen += srclen;
   return rtree_lval.s;
 }
@@ -43,39 +42,40 @@ static char * append(size_t * dstlen, const char * src, size_t srclen)
 %option prefix="rtree_"
 %option nounput
 %option noinput
-%s apos
-%s quot
+%x apos
+%x quot
 
 %%
 <quot>{
-\\\"                                         append(&string_length, "\"", 1);
-\'                                           append(&string_length, "\'", 1);
-\"                                           {BEGIN(INITIAL);return STRING;}
+\\\"                                             {append(&string_length, "\\\"", 2);}
+\'                                               {append(&string_length, "\'", 1);}
+\"                                               {BEGIN(INITIAL);return STRING;}
 }
 
 <apos>{
-\\\'                                         append(&string_length, "\'", 1);
-\"                                           append(&string_length, "\"", 1);
-\'                                           {BEGIN(INITIAL);return STRING;}
+\\\'                                             {append(&string_length, "\\\'", 2);}
+\"                                               {append(&string_length, "\"", 1);}
+\'                                               {BEGIN(INITIAL);return STRING;}
 }
 
 <apos,quot>{
-\\n                                          append(&string_length, "\n", 1);
-\\t                                          append(&string_length, "\t", 1);
-\\\\                                         append(&string_length, "\\", 1);
-([^\"\'\\]|\n)+                              append(&string_length, rtree_text, rtree_leng);
+\\n                                              {append(&string_length, "\\n", 2);}
+\\t                                              {append(&string_length, "\\t", 2);}
+\\                                               {append(&string_length, "\\", 1);}
+\\\\                                             {append(&string_length, "\\\\", 2);}
+([^\"\'\\]|\n)+                                  {append(&string_length, rtree_text, rtree_leng);}
 }
 
-\:                                           return COLON;
-\;                                           return SEMICOLON;
-\)                                           return CPAR;
-\(                                           return OPAR;
-\,                                           return COMMA;
-\"                                           {string_length = 0; BEGIN(quot);}
-\'                                           {string_length = 0; BEGIN(apos);}
-[\+|\-]?[0-9]+                               {rtree_lval.d = xstrndup(rtree_text, rtree_leng); return NUMBER;}
-[\+|\-]?[0-9]+\.[0-9]+([e|E][\+|\-]?[0-9]+)? {rtree_lval.d = xstrndup(rtree_text, rtree_leng); return NUMBER;}
-[A-Za-z0-9\'\.\-\_]*                         {rtree_lval.s = xstrndup(rtree_text, rtree_leng); return STRING;}
-[ \t\n\r]                                    ;
-.                                            {fatal("Syntax error (%c)\n", rtree_text[0]);}
+\:                                               return COLON;
+\;                                               return SEMICOLON;
+\)                                               return CPAR;
+\(                                               return OPAR;
+\,                                               return COMMA;
+\"                                               {string_length = 0; BEGIN(quot);}
+\'                                               {string_length = 0; BEGIN(apos);}
+[\+|\-]?[0-9]+                                   {rtree_lval.d = xstrndup(rtree_text, rtree_leng); return NUMBER;}
+[\+|\-]?[0-9]+\.[0-9]+([e|E][\+|\-]?[0-9]+)?     {rtree_lval.d = xstrndup(rtree_text, rtree_leng); return NUMBER;}
+[^ \'\",\(\):;\[\]\t\n\r][^ \t\n\r\)\(\[\]\,:;]* {rtree_lval.s = xstrndup(rtree_text, rtree_leng); return STRING;}
+[ \t\n\r]                                        ;
+.                                                {fatal("Syntax error (%c)\n", rtree_text[0]);}
 %%
