@@ -1,30 +1,25 @@
+.\" -*- coding: utf-8 -*-
 .\" ============================================================================
-.TH mptp 1 "October 30, 2015" "mptp 0.0.1" "USER COMMANDS"
+.TH mptp 1 "June 27, 2016" "mptp 0.1.0" "USER COMMANDS"
 .\" ============================================================================
 .SH NAME
-mptp \(em species delimitation in phylogenetic trees and visualization.
+mptp \(em single-locus species delimitation
 .\" ============================================================================
 .SH SYNOPSIS
 .\" left justified, ragged right
 .ad l
 Maximum-likelihood species delimitation:
 .RS
-\fBmptp\fR \-\-ml \-\-single \-\-tree_file \fInewickfile\fR \-\-output_file
-\fIoutputfile\fR [\fIoptions\fR]
-.PP
-\fBmptp\fR \-\-ml \-\-multi \-\-tree_file \fInewickfile\fR \-\-output_file
-\fIoutputfile\fR [\fIoptions\fR]
+\fBmptp\fR \-\-ml (\-\-single | \-\-multi) \-\-tree_file \fInewickfile\fR 
+\-\-output_file \fIoutputfile\fR [\fIoptions\fR]
 .PP
 .RE
 Species delimitation with support values:
 .RS
-\fBmptp\fR \-\-mcmc \fIpositive integer\fR \-\-single \-\-mcmc_log \fIpositive
-integer\fR \-\-tree_file \fInewickfile\fR \-\-output_file \fIoutputfile\fR
-[\fIoptions\fR]
-.PP
-\fBmptp\fR \-\-mcmc \fIpositive integer\fR \-\-multi \-\-mcmc_log \fIpositive
-integer\fR \-\-tree_file \fInewickfile\fR \-\-output_file \fIoutputfile\fR
-[\fIoptions\fR]
+\fBmptp\fR \-\-mcmc \fIpositive integer\fR (\-\-single | \-\-multi)
+(\-\-mcmc_startnull | \-\-mcmc_startrandom | \-\-mcmc_startml) \-\-mcmc_log
+\fIpositive integer\fR \-\-tree_file \fInewickfile\fR \-\-output_file
+\fIoutputfile\fR [\fIoptions\fR]
 .PP
 .RE
 .\" left and right justified (default)
@@ -47,8 +42,8 @@ PTP model is specified by using the \fIsingle\fR switch and the mPTP by using
 \fImulti\fR.
 .\" ============================================================================
 .SS Input
-\fBmptp\fR input is a newick file that contains one phylogenetic tree, i.e.
-branches are in expected number of substitutions per site.
+The input for \fBmptp\fR is a newick file that contains one phylogenetic tree,
+i.e., branches express the expected number of substitutions per alignment site.
 .\" ============================================================================
 .SS Options
 \fBmptp\fR parses a large number of command-line options. For easier
@@ -85,34 +80,44 @@ splitting the branch leading to the most recent common ancestor (MRCA) of the
 comma-separated list of taxa into two branches of equal size and introducing a
 new node (the root of the new rooted tree) that connects these two branches.
 .TP
+.BI \-\-outgroup_crop
+Crops taxa specified with the \-\-outgroup option from the the tree.
+.TP
 .BI \-\-min_br \0real
 Any branch lengths in the input tree smaller or equal than \fIreal\fR are
 excluded (ignored) from the computations. In addition, for bayesian analyses,
 subtrees that exclusively consist of branch lengths smaller or equal to
 \fIreal\fR are completely ignored from the proposals (support values for those
-clades are set to 0).
+clades are set to 0). (default: 0.0001)
 .TP
 .BI \-\-precision\~ "positive integer"
 Specifies the precision of the decimal part of floating point numbers on output
 (default: 7)
+.TP
+.BI \-\-minbr_auto \0filename
+Automatically detects the minimum branch length from the p-distances of the
+FASTA file \fIfilename\fR.
+.TP
+.BI \-\-tree_show
+Show an ASCII version of the processed input tree (i.e. after it is rooted by,
+potentially cropping, the outgroup).
 .RE
 .PP
 .\" ============================================================================
 Maximum-likelihood estimations:
 .PP
 .RS
-Estimating the maximum-likelihood delimitation is triggered by either of two
-options: \-\-ml \-\-single (the PTP model) or \-\-ml \-\-multi (the mPTP model). Note
-that these two methods affect how options \-\- output_file behaves and can be
-controlled using the \-\-min_br switch. Although both methods require an input
-phylogenetic tree that must be rooted, an unrooted tree can be specified in
-conjuction with the option \-\-outgrpoup and \fImptp\fR roots it at that
-outgroup (see General options, \-\-outgroup for more info). Note that both
-methods output an SVG depiction of the ML delimitation. See the Visualization
-group of options for more information on adjusting and fine-tuning the SVG
-output.
+Estimating the maximum-likelihood delimitation is triggered by the switch
+\-\-ml followed by \-\-single (the PTP model) or \-\-ml \-\-multi (the mPTP
+model). Note that these two methods affect how options \-\-output_file behaves
+and can be controlled using the \-\-min_br switch. Both methods require a
+rooted phylogenetic tree, however an unrooted tree may be specified in
+conjuction with the option \-\-outgroup. In this case, \fImptp\fR roots it at
+that outgroup (see General options, \-\-outgroup for more info). Note that both
+methods output an SVG depiction of the ML delimitation. See Visualization for
+more information on adjusting and fine-tuning the SVG output.
 .PP
-Both methods first discard branch lengths of size smaller than the size
+Both methods ignore discard branch lengths of size smaller than the size
 specified using the \-\-min_br option. The PTP model then attempts to find a
 connected subgraph of the rooted tree that (a) contains the root, and (b) the
 sum of likelihoods of fitting the edges of that subgraph in one exponential
@@ -129,34 +134,159 @@ the PTP model.
 .B \-\-ml \-\-multi
 Triggers the algorithm for computing an ML estimate of the delimitation using
 the mPTP model.
+.TP
+.B \-\-pvalue \0real
+Only used with the PTP model (specified with \-\-single). Sets the p-value for
+performing a likelihood ratio test. Note that, there is no likelihood ratio test
+for the mPTP model this test is not done. (default: 0.001)
+.RE
+.PP
+.\" ============================================================================
+MCMC method:
+.PP
+.RS
+The MCMC method is triggered with the \-\-mcmc switch combined with either
+\-\-single (the PTP model) or \-\-multi (the mPTP model). 
+.PP
+Some more stuff to write
+.PP
+.TP 9
+.B \-\-mcmc\~ "positive integer" \-\-single
+Triggers the algorithm for computing support values by taking the specified
+number of MCMC samples (delimitations) using the PTP model.
+.TP
+.B \-\-mcmc\~ "positive integer" \-\-multi
+Triggers the algorithm for computing support values by taking the specified
+number of MCMC samples (delimitations) using the mPTP model.
+.TP
+.B \-\-mcmc_sample\~ "positive integer"
+Sample only every n-th MCMC step.
+.TP
+.B \-\-mcmc_log
+Log the scores (log-likelihood) for each MCMC sample in a file and create an SVG
+plot.
+.TP
+.B \-\-mcmc_burnin\~ "positive integer"
+Ignore all MCMC samples generated before the specified step. (default: 1)
+.TP
+.B \-\-mcmc_chains\~ "positive integer"
+Run multiple MCMC chains. If more than 1 chains are specified, then mptp will
+generate one seed for each chain based on the provided seed using the \-\-seed
+switch. Output files will be generated for each chain (default: 1)
+.TP
+.B \-\-mcmc_credible \0real
+Specify the probability (0.0 to 1.0) for which to generate the credible interval
+i.e., the probability the true number of species will fall within the credible
+interval given the observed data. (default: 0.95)
+.TP
+.B \-\-mcmc_startnull
+Start MCMC sampling from the null-model.
+.TP
+.B \-\-mcmc_startrandom
+Start MCMC sampling from a random delimitation. 
+.TP
+.B \-\-mcmc_startrandom
+Start MCMC sampling from the ML delimitation.
+.TP
+.B \-\-seed\~ "positive integer"
+Specifies the seed for the pseudo-random number generator. (default: randomly
+generated based on system time)
+.RE
+.PP
+.\" ============================================================================
+SVG Output:
+.PP
+.RS
+The ML method generates one SVG file that visualizes the processed input tree
+(i.e. after it is rooted by, potentially cropping, the outgroup) and marks the
+subtrees corresponding to coalescent processes (the detected species groups)
+with red color, while the speciation process is colored green.
+.PP
+The MCMC method generates one SVG files per chain visualizing the processed
+tree, and indicates the support value for each node, i.e., the percentage of
+MCMC samples (delimitations) in which the particular node was part of the
+speciation process.  A value of 1 means it was always in the speciation process
+while a value of 0 means it was always in a coalescent process. The tree
+branches are colored according to the support values of descendant nodes; a
+support of value of 0 is colored with red, 1 with black, and values in between
+are gradients of the two colors. Only support values above 0.5 are shown to
+avoid packed numbers in dense branching events. In addition, if \-\-mcmc_log is
+specified, an additional SVG image of log-likelihoods plots for each sampled
+delimitation is created.
+.PP
+.TP 9
+.B \-\-svg_width\~ "positive integer"
+Sets the total width (including margins) of the SVG in pixels. (default: 1920)
+.TP
+.B \-\-svg_fontsize\~ "positive integer"
+Size of font in SVG image. (default: 12)
+.TP
+.B \-\-svg_tipspacing\~ "positive integer"
+Vertical space in pixels between taxa in SVG tree. (default: 20)
+.TP
+.B \-\-svg_legend_ratio \0real
+Ratio (value between 0.0 and 1.0) of total tree length to be displayed as
+legend line.  (default: 0.1)
+.TP
+.B \-\-svg_nolengend
+Hide legend.
+.TP
+.B \-\-svg_marginleft\~ "positive integer"
+Left margin in pixels. (default: 20)
+.TP
+.B \-\-svg_marginright\~ "positive integer"
+Right margin in pixels. (default: 20)
+.TP
+.B \-\-svg_margintop\~ "positive integer"
+Top margin in pixels. (default: 20)
+.TP
+.B \-\-svg_marginbottom\~ "positive integer"
+Top margin in pixels. (default: 20)
+.TP
+.B \-\-svg_inner_radius\~ "positive integer"
+Radius of inner nodes in pixels. (default: 0)
 .RE
 .PP
 .\" ============================================================================
 .SH EXAMPLES
 .PP
 Compute the maximum likelihood estimate using the mPTP model by discarding all
-branches below or equal to 0.0001 
+branches with length below or equal to 0.0001 
 .PP
 .RS
 \fBmptp\fR \-\-ml \-\-multi \-\-min_br 0.0001 \-\-tree_file \fInewick.txt\fR
 \-\-output_file \fIout\fR
 .RE
 .PP
-Run a bayesian analysis of 100 million MCMC steps logging every one millionth
-step, using the mPTP model and discarding all branch lengths smaller or equal
-to 0.0001.
+Run an MCMC analysis of 100 million steps with the mPTP model, that logs every
+one million-th step, ignores the first 2 million steps and discards all branches
+with lengths smaller or equal to 0.0001. Use 777 as seed. The chain will start
+from the ML delimitation (default).
 .PP
 .RS
 \fBmptp\fR \-\-mcmc 100000000 \-\-multi \-\-min_br 0.0001 \-\-tree_file
-\fInewick.txt\fR \-\-output_file \fIout\fR \-\-mcmc_log 1000000
+\fInewick.txt\fR \-\-output_file \fIout\fR \-\-mcmc_log 1000000 \-\-mcmc_burnin
+2000000 -seed 777
+.RE
+.PP
+Run an MCMC analysis of 5 chains, each of 100 million steps with the mPTP model,
+log every one million-th step, ignore the first 2 million steps, and detect the
+minimum branch length by specifying the FASTA file alignment.fa that contains
+the alignment. Use 777 as seed. Start each chain from a random delimitation.
+.PP
+.RS
+\fBmptp\fR \-\-mcmc 100000000 \-\-multi -\-\-mcmc_chains 5 \-\-mcmc_log 1000000
+\-\-minbr_auto \fIalignment.fa\fR \-\-tree_file \fInewick.txt\fR
+\-\-output_file \fIout\fR \-\-mcmc_burnin 2000000 -seed 777
+\-\-mcmc_startrandom
 .RE
 .PP
 .\"
 .\" ============================================================================
 .SH AUTHORS
 Implementation by Tomas Flouri, Sarah Lutteropp and Paschalia Kapli. Additional
-PTP and mPTP model authors include Kassian Kobert, Jiajie Zhang and Alexandros
-Stamatakis.
+PTP and mPTP model authors include Kassian Kobert, Jiajie Zhang, Pavlos
+Pavlidis, and Alexandros Stamatakis.
 .SH REPORTING BUGS
 Submit suggestions and bug-reports at
 <https://github.com/Pas-Kapli/mptp/issues>, or e-mail Tomas Flouri
@@ -167,7 +297,7 @@ Source code and binaries are available at
 <https://github.com/Pas-Kapli/mptp>.
 .\" ============================================================================
 .SH COPYRIGHT
-Copyright (C) 2015, Tomas Flouri, Sarah Lutteropp, Paschalia Kapli
+Copyright (C) 2015-2016, Tomas Flouri, Sarah Lutteropp, Paschalia Kapli
 .PP
 All rights reserved.
 .PP
@@ -175,28 +305,29 @@ Contact: Tomas Flouri <Tomas.Flouri@h-its.org>,
 Scientific Computing, Heidelberg Insititute for Theoretical Studies,
 69118 Heidelberg, Germany
 .PP
-This software is licensed under the terms of the GNU Affero General Public License version 3.
+This software is licensed under the terms of the GNU Affero General Public
+License version 3.
 .PP
 \fBGNU Affero General Public License version 3\fR
 .PP
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
 .PP
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU Affero General Public License for more
+details.
 .PP
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Affero General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
 .SH VERSION HISTORY
-New features and important modifications of \fBmptp\fR (short lived or
-minor bug releases may not be mentioned):
+New features and important modifications of \fBmptp\fR (short lived or minor
+bug releases may not be mentioned):
 .RS
 .TP
-.BR v0.0.0\~ "released November 1st, 2015"
+.BR v0.1.0\~ "released June 27th, 2016"
 First public release.
 .RE
 .LP
