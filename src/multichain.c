@@ -93,61 +93,61 @@ void multichain(rtree_t * root, long method)
   rtree_t * mltree;
   rtree_t ** trees;
   struct drand48_data * rstates;
-  double * bayes_min_logl;
-  double * bayes_max_logl;
+  double * mcmc_min_logl;
+  double * mcmc_max_logl;
 
-  trees = (rtree_t **)xmalloc((size_t)opt_bayes_chains * sizeof(rtree_t *));
+  trees = (rtree_t **)xmalloc((size_t)opt_mcmc_runs * sizeof(rtree_t *));
   trees[0] = root;
 
   /* clone trees in order to have one independent tree per run */
-  for (i = 1; i < opt_bayes_chains; ++i)
+  for (i = 1; i < opt_mcmc_runs; ++i)
     trees[i] = rtree_clone(root, NULL);
   mltree = rtree_clone(root,NULL);
 
   /* allocate memory for storing min and max logl for each chain */
-  bayes_min_logl = (double *)xmalloc((size_t)opt_bayes_chains * sizeof(double));
-  bayes_max_logl = (double *)xmalloc((size_t)opt_bayes_chains * sizeof(double));
+  mcmc_min_logl = (double *)xmalloc((size_t)opt_mcmc_runs * sizeof(double));
+  mcmc_max_logl = (double *)xmalloc((size_t)opt_mcmc_runs * sizeof(double));
 
   /* reset to zero */
-  memset(bayes_min_logl, 0, (size_t)opt_bayes_chains * sizeof(double));
-  memset(bayes_max_logl, 0, (size_t)opt_bayes_chains * sizeof(double));
+  memset(mcmc_min_logl, 0, (size_t)opt_mcmc_runs * sizeof(double));
+  memset(mcmc_max_logl, 0, (size_t)opt_mcmc_runs * sizeof(double));
 
   /* generate one seed for each run */
-  seeds = (long *)xmalloc((size_t)opt_bayes_chains * sizeof(long));
-  for (i = 0; i < opt_bayes_chains; ++i)
+  seeds = (long *)xmalloc((size_t)opt_mcmc_runs * sizeof(long));
+  for (i = 0; i < opt_mcmc_runs; ++i)
     seeds[i] = lrand48();
     
-  if (opt_bayes_chains == 1)
+  if (opt_mcmc_runs == 1)
     seeds[0] = opt_seed;
 
   /* initialize states for random number generators */
-  rstates = (struct drand48_data *)xmalloc((size_t)opt_bayes_chains *
+  rstates = (struct drand48_data *)xmalloc((size_t)opt_mcmc_runs *
                                            sizeof(struct drand48_data));
 
   /* initialize a pseudo-random number generator for each chain */
-  for (i = 0; i < opt_bayes_chains; ++i)
+  for (i = 0; i < opt_mcmc_runs; ++i)
     srand48_r(seeds[i], rstates+i);
 
   /* execute each chain sequentially  */
-  for (i = 0; i < opt_bayes_chains; ++i)
+  for (i = 0; i < opt_mcmc_runs; ++i)
   {
     dp_init(trees[i]);
     dp_set_pernode_spec_edges(trees[i]);
     if (!opt_quiet)
-      fprintf(stdout, "\nBayesian run %ld...\n", i);
-    aic_bayes(trees[i],
-          method,
-          rstates+i,
-          seeds[i],
-          bayes_min_logl+i,
-          bayes_max_logl+i);
+      fprintf(stdout, "\nMCMC run %ld...\n", i);
+    aic_mcmc(trees[i],
+             method,
+             rstates+i,
+             seeds[i],
+             mcmc_min_logl+i,
+             mcmc_max_logl+i);
     dp_free(trees[i]);
 
     /* print SVG log-likelihood landscape of current chain given its
        generated seed */
-    if (opt_bayes_log)
+    if (opt_mcmc_log)
     {
-      svg_landscape(bayes_min_logl[i], bayes_max_logl[i], seeds[i]);
+      svg_landscape(mcmc_min_logl[i], mcmc_max_logl[i], seeds[i]);
     }
 
     /* output SVG tree with support values for current chain */
@@ -169,29 +169,29 @@ void multichain(rtree_t * root, long method)
   }
 
   /* compute the min and max log-l values among all chains */
-  double min_logl = bayes_min_logl[0];
-  double max_logl = bayes_max_logl[0];
-  for (i = 1; i < opt_bayes_chains; ++i)
+  double min_logl = mcmc_min_logl[0];
+  double max_logl = mcmc_max_logl[0];
+  for (i = 1; i < opt_mcmc_runs; ++i)
   {
-    if (bayes_min_logl[i] < min_logl) min_logl = bayes_min_logl[i];
-    if (bayes_max_logl[i] > max_logl) max_logl = bayes_max_logl[i];
+    if (mcmc_min_logl[i] < min_logl) min_logl = mcmc_min_logl[i];
+    if (mcmc_max_logl[i] > max_logl) max_logl = mcmc_max_logl[i];
   }
 
   /* generate the SVG log-likelihood landscape for all chains combined */
-  if (!opt_quiet && opt_bayes_log && (opt_bayes_chains > 1))
+  if (!opt_quiet && opt_mcmc_log && (opt_mcmc_runs > 1))
     fprintf(stdout, "\nPreparing overall log-likelihood landscape ...\n");
-  if (opt_bayes_log && (opt_bayes_chains > 1))
-    svg_landscape_combined(min_logl, max_logl, opt_bayes_chains, seeds);
+  if (opt_mcmc_log && (opt_mcmc_runs > 1))
+    svg_landscape_combined(min_logl, max_logl, opt_mcmc_runs, seeds);
 
   /* free min and max logl arrays */
-  free(bayes_min_logl);
-  free(bayes_max_logl);
+  free(mcmc_min_logl);
+  free(mcmc_max_logl);
 
   /* allocate memory for support values */
-  double ** support = (double **)xmalloc((size_t)opt_bayes_chains *
+  double ** support = (double **)xmalloc((size_t)opt_mcmc_runs *
                                          sizeof(double *));
   int support_count = 0;
-  for (i = 0; i < opt_bayes_chains; ++i)
+  for (i = 0; i < opt_mcmc_runs; ++i)
   {
     support[i] = (double *)xmalloc((size_t)(trees[i]->leaves) * sizeof(double));
     support_count = extract_support(trees[i], support[i]);
@@ -206,7 +206,7 @@ void multichain(rtree_t * root, long method)
   if (support_count != extract_events(mltree, mlsupport))
     fatal("Internal error");
 
-  for (i = 0; i < opt_bayes_chains; ++i)
+  for (i = 0; i < opt_mcmc_runs; ++i)
   {
     printf("ML average support based on chain %ld : %.17f\n",
            seeds[i],
@@ -227,15 +227,15 @@ void multichain(rtree_t * root, long method)
   {
     int j;
     mean = var = stdev = 0;
-    for (j = 0; j < opt_bayes_chains; ++j)
+    for (j = 0; j < opt_mcmc_runs; ++j)
       mean += support[j][i];
 
-    mean /= opt_bayes_chains;
+    mean /= opt_mcmc_runs;
 
-    for (j = 0; j < opt_bayes_chains; ++j)
+    for (j = 0; j < opt_mcmc_runs; ++j)
       var += (mean - support[j][i])*(mean - support[j][i]);
 
-    var /= opt_bayes_chains;
+    var /= opt_mcmc_runs;
     stdev = sqrt(var);
 
     avg_stdev += stdev;
@@ -247,7 +247,7 @@ void multichain(rtree_t * root, long method)
            avg_stdev);
 
   /* deallocate support values array */
-  for (i = 0; i < opt_bayes_chains; ++i)
+  for (i = 0; i < opt_mcmc_runs; ++i)
     free(support[i]);
   free(support);
 

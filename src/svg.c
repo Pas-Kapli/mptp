@@ -167,7 +167,7 @@ static void svg_rtree_plot(rtree_t * node)
       svg_line(x, ly, x, ry, current_color, stroke_width);
       svg_circle(x, y, opt_svg_inner_radius, current_color);
 
-      /* deallocate color if bayesian */
+      /* deallocate color if mcmc */
       if (opt_mcmc)
         free(current_color);
 

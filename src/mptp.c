@@ -41,14 +41,14 @@ long opt_help;
 long opt_version;
 long opt_treeshow;
 long opt_method;
-long opt_bayes_sample;
-long opt_bayes_runs;
-long opt_bayes_log;
-long opt_bayes_startnull;
-long opt_bayes_startrandom;
-long opt_bayes_startml;
-long opt_bayes_burnin;
-long opt_bayes_chains;
+long opt_mcmc_sample;
+long opt_mcmc_steps;
+long opt_mcmc_log;
+long opt_mcmc_startnull;
+long opt_mcmc_startrandom;
+long opt_mcmc_startml;
+long opt_mcmc_burnin;
+long opt_mcmc_runs;
 long opt_seed;
 long opt_mcmc;
 long opt_ml;
@@ -64,7 +64,7 @@ long opt_svg_marginright;
 long opt_svg_margintop;
 long opt_svg_marginbottom;
 long opt_svg_inner_radius;
-double opt_bayes_credible;
+double opt_mcmc_credible;
 double opt_svg_legend_ratio;
 double opt_pvalue;
 double opt_minbr;
@@ -101,7 +101,7 @@ static struct option long_options[] =
   {"mcmc_startnull",     no_argument,       0, 0 },  /* 23 */
   {"mcmc_burnin",        required_argument, 0, 0 },  /* 24 */
   {"mcmc_startrandom",   no_argument,       0, 0 },  /* 25 */
-  {"mcmc_chains",        required_argument, 0, 0 },  /* 26 */
+  {"mcmc_runs",          required_argument, 0, 0 },  /* 26 */
   {"minbr_auto",         required_argument, 0, 0 },  /* 27 */
   {"outgroup_crop",      no_argument,       0, 0 },  /* 28 */
   {"mcmc_credible",      required_argument, 0, 0 },  /* 29 */
@@ -134,15 +134,15 @@ void args_init(int argc, char ** argv)
   opt_pvalue = 0.001;
   opt_minbr = 0.0001;
   opt_precision = 7;
-  opt_bayes_runs = 0;
-  opt_bayes_sample = 1000;
-  opt_bayes_startnull = 0;
-  opt_bayes_startrandom = 0;
-  opt_bayes_startml = 0;
-  opt_bayes_log = 0;
-  opt_bayes_burnin = 1;
-  opt_bayes_chains = 1;
-  opt_bayes_credible = 0.95;
+  opt_mcmc_steps = 0;
+  opt_mcmc_sample = 1000;
+  opt_mcmc_startnull = 0;
+  opt_mcmc_startrandom = 0;
+  opt_mcmc_startml = 0;
+  opt_mcmc_log = 0;
+  opt_mcmc_burnin = 1;
+  opt_mcmc_runs = 1;
+  opt_mcmc_credible = 0.95;
   opt_seed = (long)time(NULL);
   opt_crop = 0;
   opt_ml = 0;
@@ -255,11 +255,11 @@ void args_init(int argc, char ** argv)
         break;
 
       case 20:
-        opt_bayes_sample = atol(optarg);
+        opt_mcmc_sample = atol(optarg);
         break;
 
       case 21:
-        opt_bayes_log = 1;
+        opt_mcmc_log = 1;
         break;
 
       case 22:
@@ -267,19 +267,19 @@ void args_init(int argc, char ** argv)
         break;
 
       case 23:
-        opt_bayes_startnull = 1;
+        opt_mcmc_startnull = 1;
         break;
 
       case 24:
-        opt_bayes_burnin = atol(optarg);
+        opt_mcmc_burnin = atol(optarg);
         break;
 
       case 25:
-        opt_bayes_startrandom = 1;
+        opt_mcmc_startrandom = 1;
         break;
 
       case 26:
-        opt_bayes_chains = atol(optarg);
+        opt_mcmc_runs = atol(optarg);
         break;
 
       case 27:
@@ -292,12 +292,12 @@ void args_init(int argc, char ** argv)
         break;
 
       case 29:
-        opt_bayes_credible = atof(optarg);
+        opt_mcmc_credible = atof(optarg);
         break;
 
       case 30:
         opt_mcmc = 1;
-        opt_bayes_runs = atol(optarg);
+        opt_mcmc_steps = atol(optarg);
         break;
 
       case 31:
@@ -315,7 +315,7 @@ void args_init(int argc, char ** argv)
         break;
 
       case 34:
-        opt_bayes_startml = 1;
+        opt_mcmc_startml = 1;
         break;
 
       default:
@@ -351,7 +351,7 @@ void args_init(int argc, char ** argv)
     fatal("More than one command specified");
 
   /* if more than one independent command, fail */
-  if (opt_bayes_startrandom + opt_bayes_startnull + opt_bayes_startml > 1)
+  if (opt_mcmc_startrandom + opt_mcmc_startnull + opt_mcmc_startml > 1)
     fatal("You can only select one out of --mcmc_startrandom, --mcmc_startnull, --mcmc_startml");
 
   /* if more than one independent command, fail */
@@ -388,7 +388,7 @@ void cmd_help()
           "  --mcmc_sample INT         Sample every INT iteration (default: 1000).\n"
           "  --mcmc_log                Log samples and create SVG plot of log-likelihoods.\n"
           "  --mcmc_burnin INT         Ignore all MCMC steps below threshold.\n"
-          "  --mcmc_chains INT         Run multiple chains.\n"
+          "  --mcmc_runs INT           Perform multiple MCMC runs.\n"
           "  --mcmc_credible <0..1>    Credible interval (default: 0.95).\n"
           "  --mcmc_startnull          Start each chain with the null model (one single species).\n"
           "  --mcmc_startrandom        Start each chain with a random delimitation.\n"
@@ -531,13 +531,13 @@ void cmd_ml(void)
 
 void cmd_multichain(void)
 {
-  if (opt_bayes_runs == 0)
+  if (opt_mcmc_steps == 0)
     fatal("The number of runs specified after --mcmc must be a positive integer greater than zero");
 
-  if (opt_bayes_burnin < 1 || opt_bayes_burnin > opt_bayes_runs)
-    fatal("--opt_mcmc_burnin must be a positive integer smaller or equal to --opt_bayes_runs");
+  if (opt_mcmc_burnin < 1 || opt_mcmc_burnin > opt_mcmc_steps)
+    fatal("--opt_mcmc_burnin must be a positive integer smaller or equal to --opt_mcmc_steps");
 
-  if (opt_bayes_credible < 0 || opt_bayes_credible > 1)
+  if (opt_mcmc_credible < 0 || opt_mcmc_credible > 1)
     fatal("--opt_mcmc_credible must be a real number between 0 and 1");
 
   rtree_t * rtree = load_tree();

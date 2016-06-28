@@ -35,7 +35,7 @@ based on the Poisson Tree Process (PTP) and the Multiple Poisson Tree Process
 .PP
 \fBmptp\fR offers two methods for inferring species delimitation. First, a
 maximum-likelihood based method that uses a dynamic programming approach to
-infer an ML estimate. Second, a bayesian approach for sampling the space of
+infer an ML estimate. Second, an mcmc approach for sampling the space of
 possible delimitations providing the user with support values on the tree clades.
 Both approaches are available in two flavours: the PTP and the mPTP model. The
 PTP model is specified by using the \fIsingle\fR switch and the mPTP by using
@@ -68,7 +68,7 @@ Input newick file that contains a phylogenetic tree. Can be rooted or unrooted.
 Specifies the prefix used for generating output files. For maximum-likelihood
 species delimitation two files will be created. First, \fIfilename\fR.txt that
 contains the actual delimitation and \fIfilename\fR.svg that contains an SVG
-figure of the computed delimitation. For bayesian analyses, a file
+figure of the computed delimitation. For mcmc analyses, a file
 \fIfilename\fR.txt is created that contains the newick tree with supports
 values.
 .TP
@@ -85,7 +85,7 @@ Crops taxa specified with the \-\-outgroup option from the the tree.
 .TP
 .BI \-\-min_br \0real
 Any branch lengths in the input tree smaller or equal than \fIreal\fR are
-excluded (ignored) from the computations. In addition, for bayesian analyses,
+excluded (ignored) from the computations. In addition, for mcmc analyses,
 subtrees that exclusively consist of branch lengths smaller or equal to
 \fIreal\fR are completely ignored from the proposals (support values for those
 clades are set to 0). (default: 0.0001)
@@ -169,10 +169,10 @@ plot.
 .B \-\-mcmc_burnin\~ "positive integer"
 Ignore all MCMC samples generated before the specified step. (default: 1)
 .TP
-.B \-\-mcmc_chains\~ "positive integer"
-Run multiple MCMC chains. If more than 1 chains are specified, then mptp will
-generate one seed for each chain based on the provided seed using the \-\-seed
-switch. Output files will be generated for each chain (default: 1)
+.B \-\-mcmc_runs\~ "positive integer"
+Perform multiple MCMC runs. If more than 1 run is specified, mptp will generate
+one seed for each run based on the provided seed using the \-\-seed switch.
+Output files will be generated for each run (default: 1)
 .TP
 .B \-\-mcmc_credible \0real
 Specify the probability (0.0 to 1.0) for which to generate the credible interval
@@ -202,7 +202,7 @@ The ML method generates one SVG file that visualizes the processed input tree
 subtrees corresponding to coalescent processes (the detected species groups)
 with red color, while the speciation process is colored green.
 .PP
-The MCMC method generates one SVG files per chain visualizing the processed
+The MCMC method generates one SVG file per run visualizing the processed
 tree, and indicates the support value for each node, i.e., the percentage of
 MCMC samples (delimitations) in which the particular node was part of the
 speciation process.  A value of 1 means it was always in the speciation process
@@ -269,13 +269,14 @@ from the ML delimitation (default).
 2000000 -seed 777
 .RE
 .PP
-Run an MCMC analysis of 5 chains, each of 100 million steps with the mPTP model,
-log every one million-th step, ignore the first 2 million steps, and detect the
-minimum branch length by specifying the FASTA file alignment.fa that contains
-the alignment. Use 777 as seed. Start each chain from a random delimitation.
+Perform an MCMC analysis of 5 runs, each of 100 million steps with the mPTP
+model, log every one million-th step, ignore the first 2 million steps, and
+detect the minimum branch length by specifying the FASTA file alignment.fa that
+contains the alignment. Use 777 as seed. Start each run chain from a random
+delimitation.
 .PP
 .RS
-\fBmptp\fR \-\-mcmc 100000000 \-\-multi -\-\-mcmc_chains 5 \-\-mcmc_log 1000000
+\fBmptp\fR \-\-mcmc 100000000 \-\-multi -\-\-mcmc_runs 5 \-\-mcmc_log 1000000
 \-\-minbr_auto \fIalignment.fa\fR \-\-tree_file \fInewick.txt\fR
 \-\-output_file \fIout\fR \-\-mcmc_burnin 2000000 -seed 777
 \-\-mcmc_startrandom

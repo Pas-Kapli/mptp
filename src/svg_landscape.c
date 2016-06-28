@@ -142,7 +142,7 @@ static void out_svg(FILE * svg_fp, double min_logl, double max_logl, long seed)
     sscanf(line,"%lf,%d\n",&logl,&species);
 
     /* compute x point */
-    x = ((i*opt_bayes_sample)/(double)(opt_bayes_runs-opt_bayes_burnin)) *
+    x = ((i*opt_mcmc_sample)/(double)(opt_mcmc_steps-opt_mcmc_burnin)) *
         (canvas_x2 - canvas_x1) + canvas_x1;
 
     /* compute y point */
@@ -180,14 +180,14 @@ static void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
   fprintf(svg_fp, "<g class=\"labels x-labels\">\n");
   fprintf(svg_fp, "<text transform=\"translate(%f,400)rotate(270)\">%ld</text>\n",
                   originx,
-                  opt_bayes_burnin);
+                  opt_mcmc_burnin);
   for (i = 0; i < xtics; ++i)
   {
     fprintf(svg_fp,
             "<text transform=\"translate(%f,400)rotate(270)\">%ld</text>\n",
               originx + (i+1)*((canvas_x2 - canvas_x1)/(double)xtics),
-              (long)((i+1)*((opt_bayes_runs-opt_bayes_burnin)/(double)xtics)) +
-                    opt_bayes_burnin);
+              (long)((i+1)*((opt_mcmc_steps-opt_mcmc_burnin)/(double)xtics)) +
+                    opt_mcmc_burnin);
   }
   fprintf(svg_fp, "</g>\n");
 
@@ -205,7 +205,7 @@ static void svg_footer(FILE * svg_fp, double min_logl, double max_logl)
   fprintf(svg_fp,"</svg>\n");
 }
 
-void svg_landscape(double bayes_min_logl, double bayes_max_logl, long seed)
+void svg_landscape(double mcmc_min_logl, double mcmc_max_logl, long seed)
 {
   FILE * svg_fp = open_file_ext("logl.svg", seed);
   if (!opt_quiet)
@@ -214,14 +214,14 @@ void svg_landscape(double bayes_min_logl, double bayes_max_logl, long seed)
             opt_outfile, seed);
 
   svg_header(svg_fp);
-  out_svg(svg_fp, bayes_min_logl, bayes_max_logl, seed);
-  svg_footer(svg_fp, bayes_min_logl, bayes_max_logl);
+  out_svg(svg_fp, mcmc_min_logl, mcmc_max_logl, seed);
+  svg_footer(svg_fp, mcmc_min_logl, mcmc_max_logl);
 
   fclose(svg_fp);
 }
 
-void svg_landscape_combined(double bayes_min_logl,
-                            double bayes_max_logl,
+void svg_landscape_combined(double mcmc_min_logl,
+                            double mcmc_max_logl,
                             long runs,
                             long *seed)
 {
@@ -237,10 +237,10 @@ void svg_landscape_combined(double bayes_min_logl,
   for (i = 0; i < runs; ++i)
   {
     color_index = i % 10;
-    out_svg(svg_fp, bayes_min_logl, bayes_max_logl, seed[i]);
+    out_svg(svg_fp, mcmc_min_logl, mcmc_max_logl, seed[i]);
   }
 
-  svg_footer(svg_fp, bayes_min_logl, bayes_max_logl);
+  svg_footer(svg_fp, mcmc_min_logl, mcmc_max_logl);
 
   fclose(svg_fp);
 }

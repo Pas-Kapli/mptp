@@ -143,8 +143,8 @@ typedef struct rtree_s
   /* which process does this node belong to (coalesent or speciation) */
   int event;
 
-  /* slot in which the node resides when doing bayesian analysis */
-  long bayes_slot;
+  /* slot in which the node resides when doing mcmc analysis */
+  long mcmc_slot;
   long speciation_start;
   long speciation_count;
   double aic_weight_start;
@@ -191,14 +191,14 @@ extern int opt_svg_showlegend;
 extern long opt_help;
 extern long opt_version;
 extern long opt_treeshow;
-extern long opt_bayes_sample;
-extern long opt_bayes_runs;
-extern long opt_bayes_log;
-extern long opt_bayes_startml;
-extern long opt_bayes_startnull;
-extern long opt_bayes_startrandom;
-extern long opt_bayes_burnin;
-extern long opt_bayes_chains;
+extern long opt_mcmc_sample;
+extern long opt_mcmc_steps;
+extern long opt_mcmc_log;
+extern long opt_mcmc_startml;
+extern long opt_mcmc_startnull;
+extern long opt_mcmc_startrandom;
+extern long opt_mcmc_burnin;
+extern long opt_mcmc_runs;
 extern long opt_seed;
 extern long opt_mcmc;
 extern long opt_ml;
@@ -215,7 +215,7 @@ extern long opt_svg_marginright;
 extern long opt_svg_margintop;
 extern long opt_svg_marginbottom;
 extern long opt_svg_inner_radius;
-extern double opt_bayes_credible;
+extern double opt_mcmc_credible;
 extern double opt_svg_legend_ratio;
 extern double opt_pvalue;
 extern double opt_minbr;
@@ -369,8 +369,8 @@ FILE * open_file_ext(const char * extension, long seed);
 
 /* functions in svg_landscape.c */
 
-void svg_landscape(double bayes_min_log, double bayes_max_logl, long seed);
-void svg_landscape_combined(double bayes_min_log, double bayes_max_logl, long runs, long * seed);
+void svg_landscape(double mcmc_min_log, double mcmc_max_logl, long seed);
+void svg_landscape_combined(double mcmc_min_log, double mcmc_max_logl, long runs, long * seed);
 
 /* functions in random.c */
 
@@ -410,9 +410,9 @@ void detect_min_bl(rtree_t * rtree);
 
 /* functions in aic.c */
 
-void aic_bayes(rtree_t * tree,
-               long method,
-               struct drand48_data * rstate,
-               long seed,
-               double * bayes_min_logl,
-               double * bayes_max_logl);
+void aic_mcmc(rtree_t * tree,
+              long method,
+              struct drand48_data * rstate,
+              long seed,
+              double * mcmc_min_logl,
+              double * mcmc_max_logl);
