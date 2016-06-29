@@ -24,7 +24,7 @@
 static long min_species;
 static long max_species;
 static long species_count;
-static struct drand48_data * g_rstate;
+static unsigned short * g_rstate;
 
 static int cb_node_select(rtree_t * node)
 {
@@ -51,7 +51,7 @@ static int cb_node_select(rtree_t * node)
   }
 
   /* otherwise, we just throw a coin and select one of the two cases */
-  drand48_r(g_rstate, &rand_double);
+  rand_double = erand48(g_rstate);
   if (rand_double >= 0.5)
   {
     /* don't select */
@@ -73,7 +73,7 @@ double random_delimitation(rtree_t * root,
                            long * spec_edge_count,
                            double * spec_edgelen_sum,
                            double * coal_score,
-                           struct drand48_data * rstate)
+                           unsigned short * rstate)
 {
   int edge_count = 0;
   long i;
@@ -87,7 +87,7 @@ double random_delimitation(rtree_t * root,
   g_rstate = rstate;
 
 
-  lrand48_r(rstate, &rand_long);
+  rand_long = nrand48(rstate);
   species_count = (rand_long % root->max_species_count) + 1;
 
   rtree_t ** inner_node_list =  (rtree_t **)xmalloc((size_t)species_count *

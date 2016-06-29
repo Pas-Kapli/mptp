@@ -181,3 +181,11 @@ FILE * xopen(const char * filename, const char * mode)
 
   return out;
 }
+
+void random_init(unsigned short * rstate, long seedval)
+{
+  /* emulate drand48() */
+  rstate[0] = 0x330e;
+  rstate[1] = seedval & 0xffffl;
+  rstate[2] = seedval >> 16;
+}

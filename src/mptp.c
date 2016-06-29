@@ -28,6 +28,9 @@ char * cmdline;
 /* global error message buffer */
 char errmsg[200] = {0};
 
+/* global pseudo-random number generator 48-bit state */
+unsigned short global_xsubi[3];
+
 /* number of mandatory options for the user to input */
 static const char mandatory_options_count = 2;
 static const char * mandatory_options_list = " --tree_file --output_file";
@@ -542,9 +545,6 @@ void cmd_multichain(void)
 
   rtree_t * rtree = load_tree();
 
-  /* init random number generator */
-  srand48(opt_seed);
-
   multichain(rtree, opt_method);
 
   if (opt_treeshow)
@@ -598,7 +598,8 @@ int main (int argc, char * argv[])
 
   show_header();
 
-  srand48(opt_seed);
+  /* init random number generator and maintain compatibility with srand48 */
+  random_init(global_xsubi,opt_seed);
 
   if (opt_help)
   {

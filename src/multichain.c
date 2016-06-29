@@ -92,7 +92,7 @@ void multichain(rtree_t * root, long method)
   long * seeds;
   rtree_t * mltree;
   rtree_t ** trees;
-  struct drand48_data * rstates;
+  unsigned short ** rstates;
   double * mcmc_min_logl;
   double * mcmc_max_logl;
 
@@ -115,18 +115,20 @@ void multichain(rtree_t * root, long method)
   /* generate one seed for each run */
   seeds = (long *)xmalloc((size_t)opt_mcmc_runs * sizeof(long));
   for (i = 0; i < opt_mcmc_runs; ++i)
-    seeds[i] = lrand48();
+    seeds[i] = nrand48(global_xsubi);
     
   if (opt_mcmc_runs == 1)
     seeds[0] = opt_seed;
 
   /* initialize states for random number generators */
-  rstates = (struct drand48_data *)xmalloc((size_t)opt_mcmc_runs *
-                                           sizeof(struct drand48_data));
+  rstates = (unsigned short **)xmalloc((size_t)opt_mcmc_runs *
+                                       sizeof(unsigned short *));
+  for (i = 0; i < opt_mcmc_runs; ++i)
+    rstates[i] = (unsigned short *)xmalloc(3*sizeof(unsigned short *));
 
   /* initialize a pseudo-random number generator for each chain */
   for (i = 0; i < opt_mcmc_runs; ++i)
-    srand48_r(seeds[i], rstates+i);
+    random_init(rstates[i], seeds[i]);
 
   /* execute each chain sequentially  */
   for (i = 0; i < opt_mcmc_runs; ++i)
@@ -137,7 +139,7 @@ void multichain(rtree_t * root, long method)
       fprintf(stdout, "\nMCMC run %ld...\n", i);
     aic_mcmc(trees[i],
              method,
-             rstates+i,
+             rstates[i],
              seeds[i],
              mcmc_min_logl+i,
              mcmc_max_logl+i);
@@ -217,8 +219,6 @@ void multichain(rtree_t * root, long method)
   rtree_destroy(mltree);
   free(mlsupport);
 
-
-
   /* compute the standard deviation of each support value given the chains,
      and then compute a consensus average standard deviation for all support
      values */
@@ -252,6 +252,8 @@ void multichain(rtree_t * root, long method)
   free(support);
 
   /* deallocate all cloned trees (except from the original) */
+  for (i = 0; i < opt_mcmc_runs; ++i)
+    free(rstates[i]);
   free(rstates);
   free(seeds);
   free(trees);

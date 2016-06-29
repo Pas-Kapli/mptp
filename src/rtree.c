@@ -184,7 +184,7 @@ char * rtree_export_newick(rtree_t * root)
 static void rtree_traverse_recursive(rtree_t * node,
                                      int (*cbtrav)(rtree_t *),
                                      int * index,
-                                     struct drand48_data * rstate,
+                                     unsigned short * rstate,
                                      rtree_t ** outbuffer)
 {
   double rand_double = 0;
@@ -205,7 +205,7 @@ static void rtree_traverse_recursive(rtree_t * node,
     return;
   }
 
-  drand48_r(rstate, &rand_double);
+  rand_double = erand48(rstate);
   if (rand_double >= 0.5)
   {
     rtree_traverse_recursive(node->left, cbtrav, index, rstate, outbuffer);
@@ -221,7 +221,7 @@ static void rtree_traverse_recursive(rtree_t * node,
 
 int rtree_traverse(rtree_t * root,
                    int (*cbtrav)(rtree_t *),
-                   struct drand48_data * rstate,
+                   unsigned short * rstate,
                    rtree_t ** outbuffer)
 {
   int index = 0;

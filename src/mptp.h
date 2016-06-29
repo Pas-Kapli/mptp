@@ -230,6 +230,7 @@ extern char * cmdline;
 extern char errmsg[200];
 
 extern int pll_errno;
+extern unsigned short global_xsubi[3];
 extern const unsigned int pll_map_nt[256];
 extern const unsigned int pll_map_fasta[256];
 
@@ -259,6 +260,7 @@ long getusec(void);
 void show_rusage(void);
 int extract2f(char * text, double * a, double * b);
 FILE * xopen(const char * filename, const char * mode);
+void random_init(unsigned short * rstate, long seedval);
 
 /* functions in mptp.c */
 
@@ -306,7 +308,7 @@ void rtree_reset_info(rtree_t * root);
 void rtree_print_tips(rtree_t * node, FILE * out);
 int rtree_traverse(rtree_t * root,
                    int (*cbtrav)(rtree_t *),
-                   struct drand48_data * rstate,
+                   unsigned short * rstate,
                    rtree_t ** outbuffer);
 rtree_t * rtree_clone(rtree_t * node, rtree_t * parent);
 int rtree_traverse_postorder(rtree_t * root,
@@ -381,7 +383,7 @@ double random_delimitation(rtree_t * root,
                            long * spec_edge_count,
                            double * spec_edgelen_sum,
                            double * coal_score,
-                           struct drand48_data * rstate);
+                           unsigned short * rstate);
 
 /* functions in multichain.c */
 
@@ -412,7 +414,7 @@ void detect_min_bl(rtree_t * rtree);
 
 void aic_mcmc(rtree_t * tree,
               long method,
-              struct drand48_data * rstate,
+              unsigned short * rstate,
               long seed,
               double * mcmc_min_logl,
               double * mcmc_max_logl);

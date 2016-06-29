@@ -636,7 +636,7 @@ static double aic_weight_nominator(double aic_score)
 
 void aic_mcmc(rtree_t * tree,
               long method,
-              struct drand48_data * rstate,
+              unsigned short * rstate,
               long seed,
               double * mcmc_min_logl,
               double * mcmc_max_logl)
@@ -830,7 +830,7 @@ void aic_mcmc(rtree_t * tree,
 
     /* throw a coin to decide whether to convert a coalescent root to a
        speciation or the other way round */
-    drand48_r(rstate, &rand_double);
+    rand_double = erand48(rstate);
     int speciation = (rand_double >= 0.5) ? 1 : 0;
 
     if ((speciation && crnodes_count) || (snodes_count == 0))
@@ -844,7 +844,7 @@ void aic_mcmc(rtree_t * tree,
 
 
       /* select a coalescent root, split it into two coalescent nodes */
-      lrand48_r(rstate, &rand_long);
+      rand_long = nrand48(rstate);
       long r = rand_long % crnodes_count;
       rtree_t * node = crnodes[r];
 
@@ -923,7 +923,7 @@ void aic_mcmc(rtree_t * tree,
       }
 
       /* decide whether to accept or reject proposal */
-      drand48_r(rstate, &rand_double);
+      rand_double = erand48(rstate);
       if (rand_double <= a)
       {
         /* accept */
@@ -983,7 +983,7 @@ void aic_mcmc(rtree_t * tree,
                   /   \                      /   \
              CR  *     *  CR             C  *     *  C         */
 
-      lrand48_r(rstate, &rand_long);
+      rand_long = nrand48(rstate);
       long r = rand_long % snodes_count;
       rtree_t * node = snodes[r];
 
@@ -1059,7 +1059,7 @@ void aic_mcmc(rtree_t * tree,
       }
 
       /* decide whether to accept or reject proposal */
-      drand48_r(rstate, &rand_double);
+      rand_double = erand48(rstate);
       if (rand_double <= a)
       {
         /* accept */
