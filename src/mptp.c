@@ -393,9 +393,9 @@ void cmd_help()
           "  --mcmc_burnin INT         Ignore all MCMC steps below threshold.\n"
           "  --mcmc_runs INT           Perform multiple MCMC runs.\n"
           "  --mcmc_credible <0..1>    Credible interval (default: 0.95).\n"
-          "  --mcmc_startnull          Start each chain with the null model (one single species).\n"
-          "  --mcmc_startrandom        Start each chain with a random delimitation.\n"
-          "  --mcmc_startml            Start each chain with the delimitation obtained by the Maximum-likelihood heuristic.\n"
+          "  --mcmc_startnull          Start each run with the null model (one single species).\n"
+          "  --mcmc_startrandom        Start each run with a random delimitation.\n"
+          "  --mcmc_startml            Start each run with the delimitation obtained by the Maximum-likelihood heuristic.\n"
           "  --pvalue REAL             Set p-value for LRT (default: 0.001)\n"
           "  --minbr REAL              Set minimum branch length (default: 0.0001)\n"
           "  --minbr_auto FILENAME     Detect minimum branch length from FASTA p-distances\n"
@@ -532,7 +532,7 @@ void cmd_ml(void)
     fprintf(stdout, "Done...\n");
 }
 
-void cmd_multichain(void)
+void cmd_multirun(void)
 {
   if (opt_mcmc_steps == 0)
     fatal("The number of runs specified after --mcmc must be a positive integer greater than zero");
@@ -545,7 +545,7 @@ void cmd_multichain(void)
 
   rtree_t * rtree = load_tree();
 
-  multichain(rtree, opt_method);
+  multirun(rtree, opt_method);
 
   if (opt_treeshow)
     rtree_show_ascii(rtree);
@@ -611,7 +611,7 @@ int main (int argc, char * argv[])
   }
   else if (opt_mcmc)
   {
-    cmd_multichain();
+    cmd_multirun();
   }
   else if (opt_ml)
   {

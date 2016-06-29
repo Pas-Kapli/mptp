@@ -86,7 +86,7 @@ static int extract_events(rtree_t * root, int * outbuffer)
   return index;
 }
 
-void multichain(rtree_t * root, long method)
+void multirun(rtree_t * root, long method)
 {
   long i;
   long * seeds;
@@ -104,7 +104,7 @@ void multichain(rtree_t * root, long method)
     trees[i] = rtree_clone(root, NULL);
   mltree = rtree_clone(root,NULL);
 
-  /* allocate memory for storing min and max logl for each chain */
+  /* allocate memory for storing min and max logl for each run */
   mcmc_min_logl = (double *)xmalloc((size_t)opt_mcmc_runs * sizeof(double));
   mcmc_max_logl = (double *)xmalloc((size_t)opt_mcmc_runs * sizeof(double));
 
@@ -126,11 +126,11 @@ void multichain(rtree_t * root, long method)
   for (i = 0; i < opt_mcmc_runs; ++i)
     rstates[i] = (unsigned short *)xmalloc(3*sizeof(unsigned short *));
 
-  /* initialize a pseudo-random number generator for each chain */
+  /* initialize a pseudo-random number generator for each run */
   for (i = 0; i < opt_mcmc_runs; ++i)
     random_init(rstates[i], seeds[i]);
 
-  /* execute each chain sequentially  */
+  /* execute each run sequentially  */
   for (i = 0; i < opt_mcmc_runs; ++i)
   {
     dp_init(trees[i]);
@@ -145,14 +145,14 @@ void multichain(rtree_t * root, long method)
              mcmc_max_logl+i);
     dp_free(trees[i]);
 
-    /* print SVG log-likelihood landscape of current chain given its
+    /* print SVG log-likelihood landscape of current run given its
        generated seed */
     if (opt_mcmc_log)
     {
       svg_landscape(mcmc_min_logl[i], mcmc_max_logl[i], seeds[i]);
     }
 
-    /* output SVG tree with support values for current chain */
+    /* output SVG tree with support values for current run */
     char * newick = rtree_export_newick(trees[i]);
 
     if (!opt_quiet)
@@ -170,7 +170,7 @@ void multichain(rtree_t * root, long method)
     free(newick);
   }
 
-  /* compute the min and max log-l values among all chains */
+  /* compute the min and max log-l values among all runs */
   double min_logl = mcmc_min_logl[0];
   double max_logl = mcmc_max_logl[0];
   for (i = 1; i < opt_mcmc_runs; ++i)
@@ -179,7 +179,7 @@ void multichain(rtree_t * root, long method)
     if (mcmc_max_logl[i] > max_logl) max_logl = mcmc_max_logl[i];
   }
 
-  /* generate the SVG log-likelihood landscape for all chains combined */
+  /* generate the SVG log-likelihood landscape for all runs combined */
   if (!opt_quiet && opt_mcmc_log && (opt_mcmc_runs > 1))
     fprintf(stdout, "\nPreparing overall log-likelihood landscape ...\n");
   if (opt_mcmc_log && (opt_mcmc_runs > 1))
@@ -210,7 +210,7 @@ void multichain(rtree_t * root, long method)
 
   for (i = 0; i < opt_mcmc_runs; ++i)
   {
-    printf("ML average support based on chain %ld : %.17f\n",
+    printf("ML average support based on run with seed %ld : %.17f\n",
            seeds[i],
            mlsupport_avg(mlsupport, support[i], support_count));
   }
@@ -219,7 +219,7 @@ void multichain(rtree_t * root, long method)
   rtree_destroy(mltree);
   free(mlsupport);
 
-  /* compute the standard deviation of each support value given the chains,
+  /* compute the standard deviation of each support value given the runs,
      and then compute a consensus average standard deviation for all support
      values */
   double mean, var, stdev, avg_stdev = 0;
@@ -243,7 +243,7 @@ void multichain(rtree_t * root, long method)
   avg_stdev /= support_count;
 
   if (!opt_quiet)
-    printf("Average standard deviation of support values among chains: %f\n",
+    printf("Average standard deviation of support values among runs: %f\n",
            avg_stdev);
 
   /* deallocate support values array */

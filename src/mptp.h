@@ -268,7 +268,7 @@ void getentirecommandline(int argc, char * argv[]);
 void fillheader(void);
 void show_header(void);
 void cmd_ml(void);
-void cmd_multichain(void);
+void cmd_multirun(void);
 void cmd_auto(void);
 
 /* functions in parse_rtree.y */
@@ -383,9 +383,9 @@ double random_delimitation(rtree_t * root,
                            double * coal_score,
                            unsigned short * rstate);
 
-/* functions in multichain.c */
+/* functions in multirun.c */
 
-void multichain(rtree_t * root, long method);
+void multirun(rtree_t * root, long method);
 
 /* functions in fasta.c */
 

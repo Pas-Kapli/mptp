@@ -19,7 +19,7 @@ dp.c \
 fasta.c \
 likelihood.c \
 maps.c \
-multichain.c \
+multirun.c \
 output.c \
 random.c \
 rtree.c \

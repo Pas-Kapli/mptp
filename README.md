@@ -24,9 +24,10 @@ where all within-species processes are modelled with a single exponential
 distribution. mPTP uses a dynamic programming implementation which estimates
 the ML delimitation faster and more accurately than the original PTP. The
 dynamic programming implementation has similar properties as (Gulek et al.
-2010).  See the wiki for more information. The second method assumes a distinct
-exponential distribution for the branching events of each of the delimited
-species allowing it to fit to a wider range of empirical datasets.
+2010).  See the [wiki](https://github.com/Pas-Kapli/mptp/wiki) for more
+information. The second method assumes a distinct exponential distribution for
+the branching events of each of the delimited species allowing it to fit to a
+wider range of empirical datasets.
 
 **MCMC method** mPTP generates support values for each clades. They represent
 the ratio of the number of samples for which a particular node was in the
@@ -37,13 +38,13 @@ between-species process, to the total number of samples.
 **Cloning the repo** Clone the repo and build the executable and the documentation using
 the following commands.
 
-```
+```bash
 git clone https://github.com/Pas-Kapli/mptp.git
 cd mptp 
 ./autogen.sh
 ./configure
 make
-make install  # as root or sudo make install
+make install  # as root, or run sudo make install
 ```
 
 You will need [GNU Bison](http://www.gnu.org/software/bison/) and
@@ -76,11 +77,11 @@ General options:
 * `--mcmc_startrandom`
 * `--mcmc_startml`
 * `--mcmc_credible REAL`
-* `--mcmc_chains INT`
+* `--mcmc_runs INT`
 * `--outgroup TAXA`
 * `--outgroup_crop`
 * `--min_br REAL`
-* `--min_br_auto FILENAME`
+* `--minbr_auto FILENAME`
 * `--pvalue REAL`
 * `--precision INT`
 
@@ -104,7 +105,21 @@ Visualization options:
 
 ## Usage example
 
-`./mptp --ml --multi --tree_file testTree --output_file out --outgroup A,C --tree_show`
+```bash
+./mptp --ml --multi --tree_file testTree --output_file out --outgroup A,C --tree_show
+```
+
+## Documentation
+
+If `mptp` was installed according to the [Compilation
+instructions](https://github.com/Pas-Kapli/mptp#compilation-instructions) you
+can access the man pages by:
+
+```bash
+man mptp
+```
+
+A comprehensive documentation is also available in the [wiki](https://github.com/Pas-Kapli/mptp/wiki).
 
 ## License and third party licenses
 
@@ -118,13 +133,15 @@ The code is currently licensed under the [GNU Affero General Public License vers
 **auto.c**          | Code for auto-detecting minimum branch length.
 **aic.c**           | Code for Bayesian Single- and multi-rate PTP.
 **mptp.c**          | Main file handling command-line parameters and executing corresponding parts.
+**mptp.h**          | MPTP Header file.
 **dp.c**            | Single- and multi-rate DP heuristics for solving the PTP problem.
 **fasta.c**         | Code for reading FASTA files.
 **lex_rtree.l**     | Lexical analyzer parsing newick rooted trees.
 **lex_utree.l**     | Lexical analyzer parsing newick unrooted trees.
 **likelihood.c**    | Likelihood rated functions.
-**Makefile**        | Makefile.
+**Makefile.am**     | Automake file for generating Makefile.in.
 **maps.c**          | Character mapping arrays for converting sequences to the internal representation.
+**multirun.c**      | Functions to execute multiple MCMC runs and compute ASD of support values.
 **output.c**        | Output related files.
 **parse_rtree.y**   | Functions for parsing rooted trees in newick format.
 **parse_utree.y**   | Functions for parsing unrooted trees in newick format.
