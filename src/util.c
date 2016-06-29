@@ -115,40 +115,6 @@ char * xstrndup(const char * s, size_t len)
   return p;
 }
 
-int extract2f(char * text, double * a, double * b)
-{
-  regmatch_t pmatch[9];
-  regex_t preg;
-  char * regex = REGEX_REAL "," REGEX_REAL;
-  char * s;
-  int len;
-
-  if (regcomp(&preg, regex, REG_EXTENDED))
-    fatal("Bad pattern");
-
-  if (regexec(&preg, text, 5, pmatch, 0) == 0)
-  {
-    len = pmatch[1].rm_eo - pmatch[1].rm_so;
-    s  = xstrndup(text+pmatch[1].rm_so, (size_t)len);
-    *a = atof(s);
-    free(s);
-
-    len = pmatch[3].rm_eo - pmatch[3].rm_so;
-    s = xstrndup(text+pmatch[3].rm_so, (size_t)len);
-    *b = atof(s);
-    free(s);
-  }
-  else
-  {
-    regfree(&preg);
-    return 0;
-  }
-
-  regfree(&preg);
-
-  return 1;
-}
-
 long getusec(void)
 {
   struct timeval tv;

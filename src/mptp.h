@@ -33,7 +33,6 @@
 #include <limits.h>
 #include <locale.h>
 #include <math.h>
-#include <regex.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
@@ -258,7 +257,6 @@ char * xstrdup(const char * s);
 char * xstrndup(const char * s, size_t len);
 long getusec(void);
 void show_rusage(void);
-int extract2f(char * text, double * a, double * b);
 FILE * xopen(const char * filename, const char * mode);
 void random_init(unsigned short * rstate, long seedval);
 
