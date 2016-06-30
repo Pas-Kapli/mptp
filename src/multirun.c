@@ -88,9 +88,10 @@ static int extract_events(rtree_t * root, int * outbuffer)
 
 void multirun(rtree_t * root, long method)
 {
-  long i;
+  long i,j;
   long * seeds;
   rtree_t * mltree;
+  rtree_t * ctree;
   rtree_t ** trees;
   unsigned short ** rstates;
   double * mcmc_min_logl;
@@ -103,6 +104,7 @@ void multirun(rtree_t * root, long method)
   for (i = 1; i < opt_mcmc_runs; ++i)
     trees[i] = rtree_clone(root, NULL);
   mltree = rtree_clone(root,NULL);
+  ctree = rtree_clone(root,NULL);
 
   /* allocate memory for storing min and max logl for each run */
   mcmc_min_logl = (double *)xmalloc((size_t)opt_mcmc_runs * sizeof(double));
@@ -130,6 +132,15 @@ void multirun(rtree_t * root, long method)
   for (i = 0; i < opt_mcmc_runs; ++i)
     random_init(rstates[i], seeds[i]);
 
+  /* create an array for storing the sum of support values for each node
+     across all MCMC runs */
+  double * combined_val;
+  combined_val = (double *)xmalloc((size_t)(root->leaves-1) * sizeof(double));
+  memset(combined_val,0,(root->leaves-1)*sizeof(double));
+
+  rtree_t ** inner_node_list = (rtree_t **)xmalloc((size_t)(root->leaves-1) *
+                                                   sizeof(rtree_t *));
+
   /* execute each run sequentially  */
   for (i = 0; i < opt_mcmc_runs; ++i)
   {
@@ -144,6 +155,12 @@ void multirun(rtree_t * root, long method)
              mcmc_min_logl+i,
              mcmc_max_logl+i);
     dp_free(trees[i]);
+
+    /* add up support values */
+    rtree_query_innernodes(trees[i], inner_node_list);
+    for (j = 0; j < trees[i]->leaves-1; ++j)
+      combined_val[j] += inner_node_list[j]->support;
+
 
     /* print SVG log-likelihood landscape of current run given its
        generated seed */
@@ -165,7 +182,7 @@ void multirun(rtree_t * root, long method)
     fprintf(newick_fp, "%s\n", newick);
     fclose(newick_fp);
 
-    cmd_svg(trees[i], seeds[i]);
+    cmd_svg(trees[i], seeds[i], "svg");
 
     free(newick);
   }
@@ -245,6 +262,42 @@ void multirun(rtree_t * root, long method)
   if (!opt_quiet)
     printf("Average standard deviation of support values among runs: %f\n",
            avg_stdev);
+
+  /* compute the combined support values */
+  for (j = 0; j < ctree->leaves-1; ++j)
+    combined_val[j] /= opt_mcmc_runs;
+
+  /* query inner nodes and set the combined support values */
+  rtree_query_innernodes(ctree, inner_node_list);
+  for (j = 0; j < ctree->leaves-1; ++j)
+    inner_node_list[j]->support = combined_val[j];
+
+  /* deallocate the structures */
+  free(inner_node_list);
+  free(combined_val);
+
+  /* export the combined tree */
+  char * newick = rtree_export_newick(ctree);
+
+  if (!opt_quiet)
+    fprintf(stdout,
+            "Creating tree with combined support values in %s.%ld.combined.tree ...\n",
+            opt_outfile,
+            opt_seed);
+
+  /* open, write, close, free newick */
+  FILE * newick_fp = open_file_ext("combined.tree", opt_seed);
+  fprintf(newick_fp, "%s\n", newick);
+  fclose(newick_fp);
+  free(newick);
+
+  /* create an SVG of the combined tree with support values */
+  cmd_svg(ctree, opt_seed, "combined.svg");
+
+
+  /* destroy combined tree */
+  rtree_destroy(ctree);
+
 
   /* deallocate support values array */
   for (i = 0; i < opt_mcmc_runs; ++i)

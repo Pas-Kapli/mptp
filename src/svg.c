@@ -377,7 +377,7 @@ static void svg_rtree_init(rtree_t * root)
 }
 
 
-void cmd_svg(rtree_t * root, long seed)
+void cmd_svg(rtree_t * root, long seed, const char * ext)
 {
 
   /* reset tip occurrence */
@@ -396,7 +396,7 @@ void cmd_svg(rtree_t * root, long seed)
               opt_outfile);
   }
 
-  svg_fp = open_file_ext("svg", seed);
+  svg_fp = open_file_ext(ext, seed);
 
   svg_rtree_init(root);
 

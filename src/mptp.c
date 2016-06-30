@@ -523,7 +523,7 @@ void cmd_ml(void)
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
-  cmd_svg(rtree, opt_seed);
+  cmd_svg(rtree, opt_seed, "svg");
 
   /* deallocate tree structure */
   rtree_destroy(rtree);

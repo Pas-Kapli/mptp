@@ -346,7 +346,7 @@ void dp_set_pernode_spec_edges(rtree_t * node);
 
 /* functions in svg.c */
 
-void cmd_svg(rtree_t * rtree, long seed);
+void cmd_svg(rtree_t * rtree, long seed, const char * ext);
 
 /* functions in likelihood.c */
 
