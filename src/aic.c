@@ -941,6 +941,10 @@ void aic_mcmc(rtree_t * tree,
           aic_weight_prefix_sum += aic_weight_nominator(-aic_new_logl/max_aic);
           node->aic_weight_start = aic_weight_prefix_sum;
         }
+        else
+        {
+          node->speciation_start = opt_mcmc_burnin;
+        }
 
         accept_count++;
         species_count++;
@@ -1076,11 +1080,10 @@ void aic_mcmc(rtree_t * tree,
         {
           node->speciation_count = node->speciation_count +
                                    i - node->speciation_start;
-          node->speciation_start = -1;
-
           aic_weight_prefix_sum += aic_weight_nominator(-aic_new_logl/max_aic);
           node->aic_support += aic_weight_prefix_sum - node->aic_weight_start;
         }
+        node->speciation_start = -1;
 
         accept_count++;
         species_count--;
