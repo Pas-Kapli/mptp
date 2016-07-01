@@ -46,15 +46,16 @@ AC_CHECK_LIB([gsl], [gsl_cdf_chisq_P])
 # Bash completions
 AC_ARG_WITH([bash-completions],
   AC_HELP_STRING([--with-bash-completions=[DIR]], [Bash completions directory [default=no]]),
-  [with_bash_completions=${withval}],
+  [with_bash_completions="$withval"],
   [with_bash_completions="no"]
 )
 AS_CASE([$with_bash_completions],
-  [yes], [PKG_CHECK_VAR([bash_completions_dir], [bash-completion], [completionsdir], [], [AC_MSG_ERROR([bash completions not found])])],
+#  [yes], [PKG_CHECK_VAR([bash_completions_dir], [bash-completion], [completionsdir], [], [AC_MSG_ERROR([bash completions not found])])],
   [no], [bash_completions_dir=],
   [bash_completions_dir="$with_bash_completions"]
 )
-AM_CONDITIONAL([HAVE_BASH_COMPLETIONS], [test -n "$bash_completions_dir"])
+AC_SUBST([bash_completions_dir])
+AM_CONDITIONAL(HAVE_BASH_COMPLETIONS, test -n "$bash_completions_dir")
 AS_IF([test -n "$bash_completions_dir"],
   [bash_completions_output="${bash_completions_dir}"],
   [bash_completions_output=no]
