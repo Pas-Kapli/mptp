@@ -58,6 +58,17 @@ using the command
 
 `sudo apt-get install libgsl0-dev flex bison`
 
+**Optionally**, you can install the bash auto-completion for mptp. To do that,
+replace the `./configure` step above with
+```bash
+./configure --with-bash-completions=DIR
+```
+where `DIR` is the directory where bash autocompletion is stored. You can use
+`pkg-config` as follows:
+```bash
+./configure --with-bash-completions=`pkg-config --variable=completionsdir bash-completion`
+```
+
 ## Command-line options
 
 General options:
@@ -80,7 +91,7 @@ General options:
 * `--mcmc_runs INT`
 * `--outgroup TAXA`
 * `--outgroup_crop`
-* `--min_br REAL`
+* `--minbr REAL`
 * `--minbr_auto FILENAME`
 * `--pvalue REAL`
 * `--precision INT`

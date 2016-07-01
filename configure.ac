@@ -7,6 +7,7 @@ AM_INIT_AUTOMAKE([subdir-objects])
 AC_LANG([C])
 AC_CONFIG_SRCDIR([src/mptp.c])
 AC_CONFIG_HEADERS([config.h])
+AC_CANONICAL_HOST
 
 # Checks for programs.
 AC_PROG_CC
@@ -42,6 +43,23 @@ AC_CHECK_LIB([m],[cos])
 AC_CHECK_LIB([gslcblas], [cblas_dgemm])
 AC_CHECK_LIB([gsl], [gsl_cdf_chisq_P])
 
+# Bash completions
+AC_ARG_WITH([bash-completions],
+  AC_HELP_STRING([--with-bash-completions=[DIR]], [Bash completions directory [default=no]]),
+  [with_bash_completions=${withval}],
+  [with_bash_completions="no"]
+)
+AS_CASE([$with_bash_completions],
+  [yes], [PKG_CHECK_VAR([bash_completions_dir], [bash-completion], [completionsdir], [], [AC_MSG_ERROR([bash completions not found])])],
+  [no], [bash_completions_dir=],
+  [bash_completions_dir="$with_bash_completions"]
+)
+AM_CONDITIONAL([HAVE_BASH_COMPLETIONS], [test -n "$bash_completions_dir"])
+AS_IF([test -n "$bash_completions_dir"],
+  [bash_completions_output="${bash_completions_dir}"],
+  [bash_completions_output=no]
+)
+
 have_ps2pdf=no
 AC_ARG_ENABLE(pdfman, AS_HELP_STRING([--disable-pdfman], [Disable PDF manual creation]))
 AS_IF([test "x$enable_pdfman" != "xno"], [
@@ -58,6 +76,18 @@ AM_PROG_CC_C_O
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-                 man/Makefile])
+                 man/Makefile
+                 completion/Makefile])
 
 AC_OUTPUT
+
+AC_MSG_RESULT([
+  $PACKAGE $VERSION
+
+    Target:    $host_os $host_cpu
+    Compiler:  ${CC}
+    CFLAGS:    ${CFLAGS} ${CPPFLAGS}
+    LIBS:      ${LIBS} ${LDFLAGS}
+  
+  Continue  with 'make' command
+])

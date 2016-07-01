@@ -1,0 +1,27 @@
+_mptp()
+{
+  local cur prev opts
+  COMREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  opts="--help --version --tree_show --multi --single --ml --mcmc --mcmc_sample
+  --mcmc_log --mcmc_burnin --mcmc_runs --mcmc_credible --mcmc_startnull
+  --mcmc_startrandom --mcmc_startml --pvalue --minbr --minbr_auto --outgroup
+  --outgroup_crop --quiet --precision --seed --tree_file --output_file
+  --svg_width --svg_fontsize --svg_tipspacing --svg_legend_ratio --svg_nolegend
+  --svg_marginleft --svg_marginright --svg_margintop --svg_marginbottom
+  --svg_inner_radius"
+
+  case "${prev}" in
+      '--tree_file')
+        #COMPREPLY=( $(compgen -f ${cur}) )
+        _filedir
+        return 0
+        ;;
+      *)
+      ;;
+  esac
+
+  COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+}
+complete -F _mptp mptp
