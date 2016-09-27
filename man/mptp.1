@@ -333,5 +333,12 @@ First public release.
 .TP
 .BR v0.1.1\~ "released July 15th, 2016"
 Bug fix (now LRT test is not printed in output file when using --multi)
+.TP
+.BR v.0.2.0\~ "released September 27th, 2016"
+Fixed floating point exception error when constructing random trees, caused
+from dividing by zero.  Changed allocation from malloc to calloc, as it caused
+unititialized variables when converting unrooted trees to rooted when using the
+MCMC method. Fixed sample size for the AIC with a correction for finite sample
+sizes.
 .RE
 .LP
