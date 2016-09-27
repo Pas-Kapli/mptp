@@ -86,9 +86,14 @@ double random_delimitation(rtree_t * root,
   max_species = root->max_species_count;
   g_rstate = rstate;
 
+  printf("Number of tips: %d\n", root->leaves);
+  assert(0);
 
   rand_long = nrand48(rstate);
-  species_count = (rand_long % root->max_species_count) + 1;
+  if (!root->max_species_count)
+    species_count = (rand_long % root->leaves) + 1;
+  else
+    species_count = (rand_long % root->max_species_count) + 1;
 
   rtree_t ** inner_node_list =  (rtree_t **)xmalloc((size_t)species_count *
                                                     sizeof(rtree_t *));

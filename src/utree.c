@@ -354,7 +354,7 @@ int utree_query_innernodes(utree_t * root,
 
 static rtree_t * utree_rtree(utree_t * unode)
 {
-  rtree_t * rnode = (rtree_t *)xmalloc(sizeof(rtree_t));
+  rtree_t * rnode = (rtree_t *)xcalloc(1,sizeof(rtree_t));
 
   rnode->event = EVENT_COALESCENT;
 
@@ -390,7 +390,7 @@ utree_t * utree_longest_branchtip(utree_t * node, unsigned int tip_count)
   utree_t * outgroup = NULL;
 
   /* query tip nodes */
-  utree_t ** tip_nodes_list = (utree_t **)xmalloc((size_t)tip_count * sizeof(utree_t *));
+  utree_t ** tip_nodes_list = (utree_t **)xcalloc(1,(size_t)tip_count * sizeof(utree_t *));
   utree_query_tipnodes(node, tip_nodes_list);
 
   for (i = 0; i < tip_count; ++i)
@@ -413,7 +413,7 @@ rtree_t * utree_crop(utree_t * lca)
   if (!lca->back->next)
     return NULL;
 
-  rtree_t * root = (rtree_t *)xmalloc(sizeof(rtree_t));
+  rtree_t * root = (rtree_t *)xcalloc(1,sizeof(rtree_t));
 
   /* clone the two subtrees */
   root->left  = utree_rtree(lca->back->next->back);
@@ -435,7 +435,7 @@ rtree_t * utree_crop(utree_t * lca)
 
 rtree_t * utree_convert_rtree(utree_t * outgroup)
 {
-  rtree_t * root = (rtree_t *)xmalloc(sizeof(rtree_t));
+  rtree_t * root = (rtree_t *)xcalloc(1,sizeof(rtree_t));
   root->left   = utree_rtree(outgroup);
   root->right  = utree_rtree(outgroup->back);
 
@@ -477,11 +477,11 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
     if (tipstring[i] == ',')
       commas_count++;
 
-  utree_t ** node_list = (utree_t **)xmalloc((size_t)utree_tip_count *
+  utree_t ** node_list = (utree_t **)xcalloc(1,(size_t)utree_tip_count *
                                              sizeof(utree_t *));
   utree_query_tipnodes(root, node_list);
 
-  utree_t ** out_node_list = (utree_t **)xmalloc((commas_count+1) *
+  utree_t ** out_node_list = (utree_t **)xcalloc(1,(commas_count+1) *
                                                    sizeof(utree_t *));
 
   /* create a hashtable of tip labels */
@@ -547,7 +547,7 @@ static utree_t * utree_lca(utree_t ** tip_nodes,
   utree_t ** path;
 
   /* allocate a path */
-  path = (utree_t **)xmalloc((size_t)utree_tip_count *
+  path = (utree_t **)xcalloc(1,(size_t)utree_tip_count *
                                   sizeof(utree_t **));
 
   /* mark all tip nodes */

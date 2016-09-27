@@ -251,6 +251,7 @@ void progress_init(const char * prompt, unsigned long size);
 void progress_update(unsigned int progress);
 void progress_done(void);
 void * xmalloc(size_t size);
+void * xcalloc(size_t nmemb, size_t size);
 void * xrealloc(void *ptr, size_t size);
 char * xstrchrnul(char *s, int c);
 char * xstrdup(const char * s);

@@ -412,7 +412,7 @@ rtree_t * rtree_clone(rtree_t * node, rtree_t * parent)
   if (!node) return NULL;
 
   /* clone node */
-  rtree_t * clone = (rtree_t *)xmalloc(sizeof(rtree_t));
+  rtree_t * clone = (rtree_t *)xcalloc(1,sizeof(rtree_t));
   memcpy(clone,node,sizeof(rtree_t));
   clone->parent = parent;
   clone->data = NULL;

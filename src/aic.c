@@ -705,7 +705,7 @@ void aic_mcmc(rtree_t * tree,
 
   double max_logl_aic = (method == PTP_METHOD_MULTI) ?
               vec[best_index].score_multi : vec[best_index].score_single;
-  double max_aic = aic(max_logl_aic, species_count, tree->leaves);
+  double max_aic = aic(max_logl_aic, species_count, tree->leaves+2);
 
 
   long coal_edge_count = 0;
@@ -814,7 +814,7 @@ void aic_mcmc(rtree_t * tree,
   if (opt_mcmc_burnin == 1)
   {
     //densities[species_count].logl += logl;
-    densities[species_count].logl += -aic(logl, species_count, tree->leaves);
+    densities[species_count].logl += -aic(logl, species_count, tree->leaves+2);
   }
 
   if (opt_mcmc_sample == 1)
@@ -909,8 +909,8 @@ void aic_mcmc(rtree_t * tree,
         *mcmc_min_logl = new_logl;
 
 
-      double aic_new_logl = -aic(new_logl, species_count+1, tree->leaves);
-      double aic_logl = -aic(logl, species_count, tree->leaves);
+      double aic_new_logl = -aic(new_logl, species_count+1, tree->leaves+2);
+      double aic_logl = -aic(logl, species_count, tree->leaves+2);
 
       /* Hastings ratio */
       double a = exp(aic_new_logl - aic_logl) * (old_crnodes_count / new_snodes_count);
@@ -1049,8 +1049,8 @@ void aic_mcmc(rtree_t * tree,
       else if (new_logl < *mcmc_min_logl)
         *mcmc_min_logl = new_logl;
 
-      double aic_new_logl = -aic(new_logl, species_count-1, tree->leaves);
-      double aic_logl = -aic(logl, species_count, tree->leaves);
+      double aic_new_logl = -aic(new_logl, species_count-1, tree->leaves+2);
+      double aic_logl = -aic(logl, species_count, tree->leaves+2);
 
       /* Hastings ratio */
       double a = exp(aic_new_logl - aic_logl) * (old_snodes_count / new_crnodes_count);
