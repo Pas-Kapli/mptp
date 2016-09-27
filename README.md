@@ -47,17 +47,22 @@ make install  # as root, or run sudo make install
 ```
 
 You will need [GNU Bison](http://www.gnu.org/software/bison/) and
-[Flex](http://flex.sourceforge.net/) installed on your system.  Optionally, you
+[Flex](http://flex.sourceforge.net/) installed on your system.  When using the
+cloned repository version, you will also need
+[autoconf](https://www.gnu.org/software/autoconf/autoconf.html) and
+[automake](https://www.gnu.org/software/automake/) installed. Optionally, you
 will need the [GNU Scientific Library](http://www.gnu.org/software/gsl/) for
 the likelihood ratio test. If it is not available on your system, ratio test
 will be disabled.
 
-On a Debian-based Linux system, the three packages can be installed
+On a Debian-based Linux system, the four packages can be installed
 using the command
 
-`sudo apt-get install libgsl0-dev flex bison`
+```bash
+sudo apt-get install libgsl0-dev flex bison autotools-dev
+```
 
-**Optionally**, you can install the bash auto-completion for mptp. To do that,
+Optionally, you can install the bash auto-completion for mptp. To do that,
 replace the `./configure` step above with
 ```bash
 ./configure --with-bash-completions=DIR
@@ -67,6 +72,56 @@ where `DIR` is the directory where bash autocompletion is stored. You can use
 ```bash
 ./configure --with-bash-completions=`pkg-config --variable=completionsdir bash-completion`
 ```
+
+**Source distribution** To download the source distribution from a
+[release](https://github.com/Pas-Kapli/mptp/releases) and build the executable
+and the documentation, use the following commands:
+
+```bash
+wget https://github.com/Pas-Kapli/mptp/releases/download/v0.2.0/mptp-src-0.2.0.tar.gz
+tar zxvf mptp-src-0.2.0.tar.gz
+cd mptp-src-0.2.0
+./configure
+make
+make install  # as root, or run sudo make install
+```
+
+Note that, similarly to cloning the repository, you will need [GNU
+Bison](http://www.gnu.org/software/bison/) and
+[Flex](http://flex.sourceforge.net/) installed on your system, and optionally,
+the [GNU Scientific Library](http://www.gnu.org/software/gsl/).  However, you
+do not need [autoconf](https://www.gnu.org/software/autoconf/autoconf.html) and
+[automake](https://www.gnu.org/software/automake/) installed (note the missing `./autogen`).
+See also the notes for installing the bash auto-completition, as described in
+the *Cloning the repo* section.
+
+
+**Binary distribution** Starting with version 0.2.0, binary distribution files
+(.tar.gz) for GNU/Linux on x86-64 containing pre-compiled binaries as well as
+the documentation (man and pdf files) will be made available as part of each
+[release](https://github.com/Pas-Kapli/mptp/releases). The included executables
+currently are not compiled with [`libgsl`](http://www.gnu.org/software/gsl/)
+support. This means, Likelihood Ratio Test (LRT) is disabled for the
+single-rate PTP model. However, we intend to implement dynamic loading for
+`libgsl` and therefore this issue will disappear in the next releases. Until then, please
+consider compiling from source in order to enable `libgsl`.
+
+To use the pre-compiled binary, download the appropriate executable for your
+system using the following commands if you are using a Linux system:
+
+```bash
+wget https://github.com/Pas-Kapli/mptp/releases/download/v0.2.0/mptp-0.2.0-linux-x86_64.tar.gz
+tar zxvf mptp-0.2.0-linux-x86_64.tar.gz
+```
+
+You will now have the binary distribution in a folder called
+`mptp-0.2.0-linux-x86_64` in which you will find three subfolders `bin`, `man`
+and `doc`. We recommend making a copy or a symbolic link to the mptp binary
+`bin/mptp` in a folder included in your `$PATH`, and a copy or a symbolic link
+to the mptp man page `man/mptp.1` in a folder included in your `$MANPATH`. The
+PDF version of the manual is available in `doc/mptp_manual.pdf`.
+
+
 
 ## Command-line options
 
