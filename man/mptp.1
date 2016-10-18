@@ -1,6 +1,6 @@
 .\" -*- coding: utf-8 -*-
 .\" ============================================================================
-.TH mptp 1 "June 27, 2016" "mptp 0.1.0" "USER COMMANDS"
+.TH mptp 1 "October 18, 2016" "mptp 0.2.1" "USER COMMANDS"
 .\" ============================================================================
 .SH NAME
 mptp \(em single-locus species delimitation
@@ -340,5 +340,10 @@ from dividing by zero.  Changed allocation from malloc to calloc, as it caused
 unititialized variables when converting unrooted trees to rooted when using the
 MCMC method. Fixed sample size for the AIC with a correction for finite sample
 sizes.
+.TP
+.BR v.0.2.1\~ "released October 18th, 2016"
+Updated ASV to consider only coalescent roots of ML delimitation. Removed
+assertion stopping mptp when using random starting delimitations for the MCMC
+method.
 .RE
 .LP
