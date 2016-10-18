@@ -21,20 +21,68 @@
 
 #include "mptp.h"
 
-static double mlsupport_avg(int * mlsupport, double * support, int count)
+static double asv(int * mlcroots, double * support, int count)
 {
   int i;
   double sum = 0;
+  int croots_count = 0;
 
   for (i = 0; i < count; ++i)
   {
-    if (mlsupport[i] == EVENT_SPECIATION)
-      sum += support[i];
-    else
-      sum += 1 - support[i];
+    if (mlcroots[i] == 1)
+    {
+      sum += (1-support[i]);
+      croots_count++;
+    }
   }
 
-  return sum / count;
+  return sum / croots_count;
+}
+
+static void extract_croots_recursive(rtree_t * node,
+                                     int * index,
+                                     int * outbuffer)
+{
+  if (!node->edge_count) return;
+
+  if (node->parent)
+  {
+    outbuffer[*index] = 0;
+    if (node->event == EVENT_COALESCENT &&
+        node->parent->event == EVENT_SPECIATION)
+    {
+      outbuffer[*index] = 1;
+    }
+  }
+  else
+  {
+    outbuffer[*index] = 0;
+    if (node->event == EVENT_COALESCENT)
+      outbuffer[*index] = 1;
+  }
+  
+  *index = *index+1;
+
+  extract_croots_recursive(node->left,  index, outbuffer);
+  extract_croots_recursive(node->right, index, outbuffer);
+}
+
+/* recursively extract support values from a tree into an array */
+static int extract_croots(rtree_t * root, int * outbuffer)
+{
+  int index = 0;
+  int count = 0;
+  int i;
+
+  if (!root->edge_count) return -1;
+
+  extract_croots_recursive(root, &index, outbuffer);
+
+  for (i = 0; i < index; ++i)
+    if (outbuffer[i])
+      ++count;
+
+  return count;
 }
 
 static void extract_support_recursive(rtree_t * node,
@@ -58,30 +106,6 @@ static int extract_support(rtree_t * root, double * outbuffer)
   if (!root->edge_count) return -1;
 
   extract_support_recursive(root, &index, outbuffer);
-
-  return index;
-}
-
-static void extract_events_recursive(rtree_t * node,
-                                     int * index,
-                                     int * outbuffer)
-{
-  if (!node->edge_count) return;
-
-  outbuffer[*index] = node->event;
-  *index = *index + 1;
-
-  extract_events_recursive(node->left,  index, outbuffer);
-  extract_events_recursive(node->right, index, outbuffer);
-}
-
-static int extract_events(rtree_t * root, int * outbuffer)
-{
-  int index = 0;
-
-  if (!root->edge_count) return -1;
-
-  extract_events_recursive(root, &index, outbuffer);
 
   return index;
 }
@@ -221,20 +245,31 @@ void multirun(rtree_t * root, long method)
   dp_init(mltree);
   dp_set_pernode_spec_edges(mltree);
   dp_ptp(mltree, method);
-  int * mlsupport  = (int *)xmalloc((size_t)(mltree->leaves) * sizeof(int));
-  if (support_count != extract_events(mltree, mlsupport))
-    fatal("Internal error");
+  int * mlcroots = (int *)xmalloc((size_t)(mltree->leaves) * sizeof(int));
+  int croots_count = extract_croots(mltree, mlcroots);
 
-  for (i = 0; i < opt_mcmc_runs; ++i)
+  /* If any of the two following conditions hold then the ML solution is the
+     null-model in the following form:
+
+      0 : we have n species (n = tips)
+     -1 : we have one species
+
+     In this case, ASV is not informative and hence it is skipped */
+  if (croots_count == 0 || croots_count == -1)
+    fprintf(stderr, "WARNING: ML delimitation is the null-model - ASV is skipped\n");
+  else
   {
-    printf("ML average support based on run with seed %ld : %.17f\n",
-           seeds[i],
-           mlsupport_avg(mlsupport, support[i], support_count));
+    for (i = 0; i < opt_mcmc_runs; ++i)
+    {
+      printf("ML average support based on run with seed %ld : %.17f\n",
+             seeds[i],
+             asv(mlcroots, support[i], support_count));
+    }
   }
 
   dp_free(mltree);
   rtree_destroy(mltree);
-  free(mlsupport);
+  free(mlcroots);
 
   /* compute the standard deviation of each support value given the runs,
      and then compute a consensus average standard deviation for all support

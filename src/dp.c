@@ -193,6 +193,7 @@ void dp_ptp(rtree_t * tree, long method)
       if (vec[i].filled)
       {
         double aic_score = aic(vec[i].score_multi, vec[i].species_count, tree->leaves+2);
+        //printf("edges: %d logl: %f aic: %f species: %d\n", i, vec[i].score_multi, aic_score, vec[i].species_count);
         if (aic_score < min_aic_score)
         {
           min_aic_score = aic_score;
