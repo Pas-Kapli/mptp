@@ -56,6 +56,9 @@ static void rtree_error(rtree_t * tree, const char * s)
 %error-verbose
 %parse-param {struct rtree_s * tree}
 %destructor { rtree_destroy($$); } subtree
+%destructor { free($$); } STRING
+%destructor { free($$); } NUMBER
+%destructor { free($$); } label
 
 %token OPAR
 %token CPAR

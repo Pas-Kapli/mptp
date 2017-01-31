@@ -380,6 +380,9 @@ void cmd_help()
           "Usage: %s [OPTIONS]\n", progname);
   fprintf(stderr,
           "\n"
+          "Examples:\n"
+          "  mptp --ml --multi --tree_file tree.newick --output_file output\n"
+          "  mptp --mcmc 50000000 --multi --mcmc_sample 1000000 --mcmc_burnin 1000000 --tree_file tree.newick --output_file output\n\n"
           "General options:\n"
           "  --help                    display help information.\n"
           "  --version                 display version information.\n"
@@ -436,7 +439,7 @@ static rtree_t * load_tree(void)
     unsigned int tip_count;
     utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
     if (!utree)
-      fatal("Tree is neither unrooted nor rooted. Go fix your tree.");
+      fatal("Tree is neither unrooted nor rooted.");
 
     if (!opt_quiet)
     {

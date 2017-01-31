@@ -2,6 +2,12 @@
 All notable changes to `mptp` will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.2] - 2017-01-31
+### Fixed
+ - Regular expressions now allow scientific notation when parsing branch lengths
+ - Improved accuracy of ASV score (takes into account tip species)
+ - Memory leaks when parsing incorrectly formatted trees
+
 ## [0.2.1] - 2016-10-18
 ### Fixed
  - Updated ASV to consider only coalescent roots of ML delimitation

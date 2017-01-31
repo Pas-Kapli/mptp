@@ -21,6 +21,9 @@
 
 #include "mptp.h"
 
+#define MPTP_INNER_CROOT 1
+#define MPTP_TIP_CROOT   2
+
 static double asv(int * mlcroots, double * support, int count)
 {
   int i;
@@ -29,9 +32,14 @@ static double asv(int * mlcroots, double * support, int count)
 
   for (i = 0; i < count; ++i)
   {
-    if (mlcroots[i] == 1)
+    if (mlcroots[i] == MPTP_INNER_CROOT)
     {
       sum += (1-support[i]);
+      croots_count++;
+    }
+    else if (mlcroots[i] == MPTP_TIP_CROOT)
+    {
+      sum += support[i];
       croots_count++;
     }
   }
@@ -51,14 +59,20 @@ static void extract_croots_recursive(rtree_t * node,
     if (node->event == EVENT_COALESCENT &&
         node->parent->event == EVENT_SPECIATION)
     {
-      outbuffer[*index] = 1;
+      outbuffer[*index] = MPTP_INNER_CROOT;
     }
+    else
+    {
+      if ((node->event == EVENT_SPECIATION) && (node->left->edge_count == 0 || node->right->edge_count == 0))
+        outbuffer[*index] = MPTP_TIP_CROOT;
+    }
+
   }
   else
   {
     outbuffer[*index] = 0;
     if (node->event == EVENT_COALESCENT)
-      outbuffer[*index] = 1;
+      outbuffer[*index] = MPTP_INNER_CROOT;
   }
   
   *index = *index+1;
