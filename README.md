@@ -59,7 +59,7 @@ On a Debian-based Linux system, the four packages can be installed
 using the command
 
 ```bash
-sudo apt-get install libgsl0-dev flex bison autotools-dev
+sudo apt-get install libgsl0-dev flex bison autotools-dev autoconf
 ```
 
 Optionally, you can install the bash auto-completion for mptp. To do that,
