@@ -1,4 +1,4 @@
-# Species Delimitation
+# Species delimitation using the multi-rate Poisson Tree Processes (mPTP)
 
 [![License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0.en.html)
 [![Build Status](https://travis-ci.org/Pas-Kapli/mptp.svg?branch=master)](https://travis-ci.com/Pas-Kapli/mptp)
@@ -121,6 +121,13 @@ and `doc`. We recommend making a copy or a symbolic link to the mptp binary
 to the mptp man page `man/mptp.1` in a folder included in your `$MANPATH`. The
 PDF version of the manual is available in `doc/mptp_manual.pdf`.
 
+## Implementation details and method description
+
+Please see the manuscript for details:
+
+Kapli T, Lutteropp S, Zhang J, Kobert K, Pavlidis P, Stamatakis A, Flouri T. (2016) Multi-rate Poisson tree processes for single-locus species delimitation under maximum likelihood and Markov chain Monte Carlo. Bioinformatics 33(11):1630-1638. doi:[10.1093/bioinformatics/btx025](https://doi.org/10.1093/bioinformatics/btx025)
+
+
 
 
 ## Command-line options
@@ -193,30 +200,30 @@ The code is currently licensed under the [GNU Affero General Public License vers
 
 ## Code
 
-    File            | Description
---------------------|----------------
-**arch.c**          | Architecture specific code (Mac/Linux).
-**auto.c**          | Code for auto-detecting minimum branch length.
-**aic.c**           | Code for Bayesian Single- and multi-rate PTP.
-**mptp.c**          | Main file handling command-line parameters and executing corresponding parts.
-**mptp.h**          | MPTP Header file.
-**dp.c**            | Single- and multi-rate DP heuristics for solving the PTP problem.
-**fasta.c**         | Code for reading FASTA files.
-**lex_rtree.l**     | Lexical analyzer parsing newick rooted trees.
-**lex_utree.l**     | Lexical analyzer parsing newick unrooted trees.
-**likelihood.c**    | Likelihood rated functions.
-**Makefile.am**     | Automake file for generating Makefile.in.
-**maps.c**          | Character mapping arrays for converting sequences to the internal representation.
-**multirun.c**      | Functions to execute multiple MCMC runs and compute ASD of support values.
-**output.c**        | Output related files.
-**parse_rtree.y**   | Functions for parsing rooted trees in newick format.
-**parse_utree.y**   | Functions for parsing unrooted trees in newick format.
-**random.c**        | Functions for creating a random delimitation.
-**rtree.c**         | Rooted tree manipulation functions.
-**svg.c**           | SVG visualization of delimited tree.
-**svg_landscape.c** | SVG visualization of likelihood landscape.
-**util.c**          | Various common utility functions.
-**utree.c**         | Unrooted tree manipulation functions.
+|     File            | Description                                                                       |
+| --------------------| --------------------------------------------------------------------------------- |
+| **arch.c**          | Architecture specific code (Mac/Linux).                                           |
+| **auto.c**          | Code for auto-detecting minimum branch length.                                    |
+| **aic.c**           | Code for Bayesian Single- and multi-rate PTP.                                     |
+| **mptp.c**          | Main file handling command-line parameters and executing corresponding parts.     |
+| **mptp.h**          | MPTP Header file.                                                                 |
+| **dp.c**            | Single- and multi-rate DP heuristics for solving the PTP problem.                 |
+| **fasta.c**         | Code for reading FASTA files.                                                     |
+| **lex_rtree.l**     | Lexical analyzer parsing newick rooted trees.                                     |
+| **lex_utree.l**     | Lexical analyzer parsing newick unrooted trees.                                   |
+| **likelihood.c**    | Likelihood rated functions.                                                       |
+| **Makefile.am**     | Automake file for generating Makefile.in.                                         |
+| **maps.c**          | Character mapping arrays for converting sequences to the internal representation. |
+| **multirun.c**      | Functions to execute multiple MCMC runs and compute ASD of support values.        |
+| **output.c**        | Output related files.                                                             |
+| **parse_rtree.y**   | Functions for parsing rooted trees in newick format.                              |
+| **parse_utree.y**   | Functions for parsing unrooted trees in newick format.                            |
+| **random.c**        | Functions for creating a random delimitation.                                     |
+| **rtree.c**         | Rooted tree manipulation functions.                                               |
+| **svg.c**           | SVG visualization of delimited tree.                                              |
+| **svg_landscape.c** | SVG visualization of likelihood landscape.                                        |
+| **util.c**          | Various common utility functions.                                                 |
+| **utree.c**         | Unrooted tree manipulation functions.                                             |
 
 ## The team
 
@@ -227,6 +234,12 @@ The code is currently licensed under the [GNU Affero General Public License vers
 * Jiajie Zhang
 * Alexandros Stamatakis
 * Tom&aacute;&scaron; Flouri
+
+## Citing mPTP
+
+Please cite the following publication if you use mPTP:
+
+Kapli T, Lutteropp S, Zhang J, Kobert K, Pavlidis P, Stamatakis A, Flouri T. (2016) Multi-rate Poisson tree processes for single-locus species delimitation under maximum likelihood and Markov chain Monte Carlo. Bioinformatics 33(11):1630-1638. doi:[10.1093/bioinformatics/btx025](https://doi.org/10.1093/bioinformatics/btx025)
 
 # References
 
