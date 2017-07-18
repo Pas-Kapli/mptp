@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2015 Tomas Flouri
+    Copyright (C) 2015-2017 Tomas Flouri
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -159,30 +159,6 @@ static int cb_short_trees(rtree_t * node)
 
 }
 
-static void hash_tips(rtree_t * root)
-{
-  int i;
-
-  /*  obtain an array of pointers to tip names */
-  rtree_t ** tipnodes = (rtree_t  **)xmalloc((size_t)(root->leaves) *
-                                             sizeof(rtree_t *));
-  rtree_query_tipnodes(root, tipnodes);
-
-  /* create a libc hash table of size tip_count */
-  hcreate(2*(size_t)(root->leaves));
-
-  /* populate a libc hash table with tree tip labels */
-  for (i = 0; i < root->leaves; ++i)
-  {
-    ENTRY entry;
-    entry.key = tipnodes[i]->label;
-    entry.data = (void *)(tipnodes[i]);
-    hsearch(entry, ENTER);
-  }
-  free(tipnodes);
-}
-
-
 static void set_encode_sequence(rtree_t * node,
                                 char * sequence,
                                 long seqlen,
@@ -211,22 +187,47 @@ static void link_sequences(rtree_t * root, char ** headers, char ** sequence, lo
 {
   int i;
 
+  /*  obtain an array of pointers to tip names */
+  rtree_t ** tipnodes = (rtree_t  **)xmalloc((size_t)(root->leaves) *
+                                             sizeof(rtree_t *));
+  rtree_query_tipnodes(root, tipnodes);
+
+  /* create a libc hash table of size tip_count */
+  hashtable_t * ht = hashtable_create(root->leaves);
+
+  /* populate a libc hash table with tree tip labels */
   for (i = 0; i < root->leaves; ++i)
   {
-    ENTRY query;
-//    printf("Linking %s\n", headers[i]);
-    query.key = headers[i];
-    ENTRY * found = NULL;
+    pair_t * pair = (pair_t *)xmalloc(sizeof(pair_t));
+    pair->label = tipnodes[i]->label;
+    pair->index = i;
 
-    found = hsearch(query,FIND);
+    if (!hashtable_insert(ht,
+                          (void *)pair,
+                          hash_fnv(tipnodes[i]->label),
+                          hashtable_paircmp))
+      fatal("Duplicate taxon (%s)\n", tipnodes[i]->label);
 
-    if (!found)
+  }
+
+  for (i = 0; i < root->leaves; ++i)
+  {
+    pair_t * query = hashtable_find(ht,
+                                    headers[i],
+                                    hash_fnv(headers[i]),
+                                    hashtable_paircmp);
+
+
+    if (!query)
       fatal("Sequence with header %s does not appear in the tree", headers[i]);
         
-    set_encode_sequence((rtree_t *)(found->data), sequence[i], seqlen, pll_map_nt);
+    set_encode_sequence(tipnodes[query->index], sequence[i], seqlen, pll_map_nt);
   }
-}
 
+  free(tipnodes);
+
+  hashtable_destroy(ht,free);
+}
 
 static int all_pairwise_dist(rtree_t ** tip_node_list, int tip_list_count, long seqlen)
 {
@@ -263,13 +264,8 @@ void detect_min_bl(rtree_t * rtree)
 
   seqlen = load_fasta(rtree->leaves, headers, seqdata);
 
-  hash_tips(rtree);
-
   /* find sequences in hash table and link them with the corresponding taxa */
   link_sequences(rtree, headers, seqdata, seqlen);
-
-  /* destroy hash table */
-  hdestroy();
 
   /* get inner nodes that are roots of of the largest short subtrees. Short are
      such subtrees where all branch lengths within them are less or equal to

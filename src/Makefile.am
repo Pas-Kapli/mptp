@@ -26,4 +26,6 @@ rtree.c \
 svg.c \
 svg_landscape.c \
 util.c \
-utree.c
+utree.c \
+hash.c \
+list.c

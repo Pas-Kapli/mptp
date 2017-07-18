@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2015 Tomas Flouri
+    Copyright (C) 2015-2017 Tomas Flouri
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -471,8 +471,6 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
   char * taxon;
   size_t taxon_len;
 
-  ENTRY * found = NULL;
-
   for (i = 0; i < strlen(tipstring); ++i)
     if (tipstring[i] == ',')
       commas_count++;
@@ -485,14 +483,19 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
                                                    sizeof(utree_t *));
 
   /* create a hashtable of tip labels */
-  hcreate(2 * (size_t)utree_tip_count);
+  hashtable_t * ht = hashtable_create(utree_tip_count);
 
   for (i = 0; i < (unsigned int)utree_tip_count; ++i)
   {
-    ENTRY entry;
-    entry.key  = node_list[i]->label;
-    entry.data = node_list[i];
-    hsearch(entry,ENTER);
+    pair_t * pair = (pair_t *)xmalloc(sizeof(pair_t));
+    pair->label = node_list[i]->label;
+    pair->index = i;
+
+    if (!hashtable_insert(ht,
+                          (void *)pair,
+                          hash_fnv(node_list[i]->label),
+                          hashtable_paircmp))
+      fatal("Duplicate taxon (%s)\n", node_list[i]->label);
   }
 
   char * s = tipstring;
@@ -508,16 +511,16 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
     taxon = xstrndup(s, taxon_len);
 
     /* search tip in hash table */
-    ENTRY query;
-    query.key = taxon;
-    found = NULL;
-    found = hsearch(query,FIND);
+    pair_t * query = hashtable_find(ht,
+                                    taxon,
+                                    hash_fnv(taxon),
+                                    hashtable_paircmp);
 
-    if (!found)
+    if (!query)
       fatal("Taxon %s does not appear in the tree", taxon);
 
     /* store pointer in output list */
-    out_node_list[k++] = (utree_t *)(found->data);
+    out_node_list[k++] = node_list[query->index];
 
     /* free tip label, and move to the beginning of next tip if available */
     free(taxon);
@@ -527,7 +530,7 @@ static utree_t ** utree_tipstring_nodes(utree_t * root,
   }
 
   /* kill the hash table */
-  hdestroy();
+  hashtable_destroy(ht,free);
 
   free(node_list);
 

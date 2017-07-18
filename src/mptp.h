@@ -177,6 +177,38 @@ typedef struct pll_fasta
   long stripped[256];
 } pll_fasta_t;
 
+typedef struct list_item_s
+{
+  void * data;
+  struct list_item_s * next;
+} list_item_t;
+
+typedef struct list_s
+{
+  list_item_t * head;
+  list_item_t * tail;
+  long count;
+} list_t;
+
+typedef struct ht_item_s
+{
+  unsigned long key;
+  void * value;
+} ht_item_t;
+
+typedef struct hashtable_s
+{
+  unsigned long table_size;
+  unsigned long entries_count;
+  list_t ** entries;
+} hashtable_t;
+
+typedef struct pair_s
+{
+  char * label;
+  int index;
+} pair_t;
+
 /* macros */
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -313,9 +345,6 @@ rtree_t * rtree_clone(rtree_t * node, rtree_t * parent);
 int rtree_traverse_postorder(rtree_t * root,
                              int (*cbtrav)(rtree_t *),
                              rtree_t ** outbuffer);
-rtree_t ** rtree_tipstring_nodes(rtree_t * root,
-                                 char * tipstring,
-                                 unsigned int * tiplist_count);
 rtree_t * get_outgroup_lca(rtree_t * root);
 rtree_t * rtree_lca(rtree_t * root,
                     rtree_t ** tip_nodes,
@@ -417,3 +446,40 @@ void aic_mcmc(rtree_t * tree,
               long seed,
               double * mcmc_min_logl,
               double * mcmc_max_logl);
+
+/* functions in hash.c */
+
+unsigned long hash_djb2a(char * s);
+
+unsigned long hash_fnv(char * s);
+
+int hashtable_strcmp(void * x, void * y);
+
+int hashtable_ptrcmp(void * x, void * y);
+
+int hashtable_paircmp(void * stored, void * query);
+
+void * hashtable_find(hashtable_t * ht,
+                      void * x,
+                      unsigned long hash,
+                      int (*cb_cmp)(void *, void *));
+
+hashtable_t * hashtable_create(unsigned long items_count);
+
+int hashtable_insert(hashtable_t * ht,
+                     void * x,
+                     unsigned long hash,
+                     int (*cb_cmp)(void *, void *));
+
+
+/* functions in list.c */
+
+void list_append(list_t * list, void * data);
+
+void list_prepend(list_t * list, void * data);
+
+void list_clear(list_t * list, void (*cb_dealloc)(void *));
+
+list_t * list_create(void * data);
+
+void hashtable_destroy(hashtable_t * ht, void (*cb_dealloc)(void *));

@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2015 Tomas Flouri
+    Copyright (C) 2015-2017 Tomas Flouri
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -427,9 +427,9 @@ rtree_t * rtree_clone(rtree_t * node, rtree_t * parent)
   return clone;
 }
 
-rtree_t ** rtree_tipstring_nodes(rtree_t * root,
-                                 char * tipstring,
-                                 unsigned int * tiplist_count)
+static rtree_t ** rtree_tipstring_nodes(rtree_t * root,
+                                        char * tipstring,
+                                        unsigned int * tiplist_count)
 {
   size_t i;
   unsigned int k;
@@ -437,8 +437,6 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
 
   char * taxon;
   unsigned long taxon_len;
-
-  ENTRY * found = NULL;
 
   for (i = 0; i < strlen(tipstring); ++i)
     if (tipstring[i] == ',')
@@ -452,14 +450,19 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
                                                  sizeof(rtree_t *));
 
   /* create a hashtable of tip labels */
-  hcreate(2 * (size_t)(root->leaves));
+  hashtable_t * ht = hashtable_create(root->leaves);
 
   for (i = 0; i < (unsigned int)(root->leaves); ++i)
   {
-    ENTRY entry;
-    entry.key  = node_list[i]->label;
-    entry.data = node_list[i];
-    hsearch(entry,ENTER);
+    pair_t * pair = (pair_t *)xmalloc(sizeof(pair_t));
+    pair->label = node_list[i]->label;
+    pair->index = i;
+
+    if (!hashtable_insert(ht,
+                          (void *)pair,
+                          hash_fnv(node_list[i]->label),
+                          hashtable_paircmp))
+      fatal("Duplicate taxon (%s)\n", node_list[i]->label);
   }
 
   char * s = tipstring;
@@ -475,16 +478,16 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
     taxon = xstrndup(s, taxon_len);
 
     /* search tip in hash table */
-    ENTRY query;
-    query.key = taxon;
-    found = NULL;
-    found = hsearch(query,FIND);
+    pair_t * query = hashtable_find(ht,
+                                    taxon,
+                                    hash_fnv(taxon),
+                                    hashtable_paircmp);
 
-    if (!found)
+    if (!query)
       fatal("Taxon %s in does not appear in the tree", taxon);
 
     /* store pointer in output list */
-    out_node_list[k++] = (rtree_t *)(found->data);
+    out_node_list[k++] = node_list[query->index];
 
     /* free tip label, and move to the beginning of next tip if available */
     free(taxon);
@@ -494,7 +497,7 @@ rtree_t ** rtree_tipstring_nodes(rtree_t * root,
   }
 
   /* kill the hash table */
-  hdestroy();
+  hashtable_destroy(ht,free);
 
   free(node_list);
 
