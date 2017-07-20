@@ -1,7 +1,7 @@
 # Species delimitation using the multi-rate Poisson Tree Processes (mPTP)
 
 [![License](https://img.shields.io/badge/license-AGPL-blue.svg)](http://www.gnu.org/licenses/agpl-3.0.en.html)
-[![Build Status](https://travis-ci.org/Pas-Kapli/mptp.svg?branch=master)](https://travis-ci.com/Pas-Kapli/mptp)
+[![Build Status](https://travis-ci.org/Pas-Kapli/mptp.svg?branch=master)](https://travis-ci.org/Pas-Kapli/mptp)
 
 ## Introduction
 
