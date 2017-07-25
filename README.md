@@ -78,9 +78,9 @@ where `DIR` is the directory where bash autocompletion is stored. You can use
 and the documentation, use the following commands:
 
 ```bash
-wget https://github.com/Pas-Kapli/mptp/releases/download/v0.2.2/mptp-src-0.2.2.tar.gz
-tar zxvf mptp-src-0.2.2.tar.gz
-cd mptp-src-0.2.2
+wget https://github.com/Pas-Kapli/mptp/releases/download/v0.2.3/mptp-src-0.2.3.tar.gz
+tar zxvf mptp-src-0.2.3.tar.gz
+cd mptp-src-0.2.3
 ./configure
 make
 make install  # as root, or run sudo make install
@@ -110,12 +110,12 @@ To use the pre-compiled binary, download the appropriate executable for your
 system using the following commands if you are using a Linux system:
 
 ```bash
-wget https://github.com/Pas-Kapli/mptp/releases/download/v0.2.2/mptp-0.2.2-linux-x86_64.tar.gz
-tar zxvf mptp-0.2.2-linux-x86_64.tar.gz
+wget https://github.com/Pas-Kapli/mptp/releases/download/v0.2.3/mptp-0.2.3-linux-x86_64.tar.gz
+tar zxvf mptp-0.2.3-linux-x86_64.tar.gz
 ```
 
 You will now have the binary distribution in a folder called
-`mptp-0.2.2-linux-x86_64` in which you will find three subfolders `bin`, `man`
+`mptp-0.2.3-linux-x86_64` in which you will find three subfolders `bin`, `man`
 and `doc`. We recommend making a copy or a symbolic link to the mptp binary
 `bin/mptp` in a folder included in your `$PATH`, and a copy or a symbolic link
 to the mptp man page `man/mptp.1` in a folder included in your `$MANPATH`. The
