@@ -2,6 +2,11 @@
 All notable changes to `mptp` will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.3] - 2017-07-25
+### Fixed
+ - Replaced hsearch which was causing problems on APPLE with custom hashtable
+ - Corrected file name in error messages when failing to open files
+
 ## [0.2.2] - 2017-01-31
 ### Fixed
  - Regular expressions now allow scientific notation when parsing branch lengths
