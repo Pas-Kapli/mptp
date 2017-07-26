@@ -186,7 +186,6 @@ void dp_ptp(rtree_t * tree, long method)
   dp_vector_t * vec = tree->vector;
   if (method == PTP_METHOD_MULTI)
   {
-    max = vec[0].score_multi;
     double min_aic_score = aic(vec[0].score_multi, vec[0].species_count, tree->leaves+2);
     for (i = 1; i < tree->edge_count; i++)
     {
@@ -201,6 +200,7 @@ void dp_ptp(rtree_t * tree, long method)
         }
       }
     }
+    max = vec[best_index].score_multi;
   }
   else
   {
