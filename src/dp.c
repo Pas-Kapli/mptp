@@ -223,10 +223,12 @@ void dp_ptp(rtree_t * tree, long method)
            tree->edge_count,
            2 * tree->leaves - 2);
     printf("Score Null Model: %.6f\n", tree->coal_logl);
-    fprintf(stdout, "Best score for single coalescent rate: %.6f\n",
-                    vec[best_index].score_single);
-    fprintf(stdout, "Best score for multi coalescent rate: %.6f\n",
-                    vec[best_index].score_multi);
+    if (method == PTP_METHOD_SINGLE)
+      fprintf(stdout, "Best score for single coalescent rate: %.6f\n",
+                      vec[best_index].score_single);
+    else
+      fprintf(stdout, "Best score for multi coalescent rate: %.6f\n",
+                      vec[best_index].score_multi);
   }
 
   /* do a Likelihood Ratio Test (lrt) and return the computed p-value */
