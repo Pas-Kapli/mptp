@@ -155,7 +155,7 @@ void multirun(rtree_t * root, long method)
   /* generate one seed for each run */
   seeds = (long *)xmalloc((size_t)opt_mcmc_runs * sizeof(long));
   for (i = 0; i < opt_mcmc_runs; ++i)
-    seeds[i] = nrand48(global_xsubi);
+    seeds[i] = mptp_nrand48(global_xsubi);
     
   if (opt_mcmc_runs == 1)
     seeds[0] = opt_seed;

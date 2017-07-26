@@ -205,7 +205,7 @@ static void rtree_traverse_recursive(rtree_t * node,
     return;
   }
 
-  rand_double = erand48(rstate);
+  rand_double = mptp_erand48(rstate);
   if (rand_double >= 0.5)
   {
     rtree_traverse_recursive(node->left, cbtrav, index, rstate, outbuffer);

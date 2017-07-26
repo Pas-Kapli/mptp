@@ -321,6 +321,8 @@ char * xstrndup(const char * s, size_t len);
 long getusec(void);
 FILE * xopen(const char * filename, const char * mode);
 void random_init(unsigned short * rstate, long seedval);
+double mptp_erand48(unsigned short * rstate);
+long mptp_nrand48(unsigned short * rstate); 
 
 /* functions in mptp.c */
 

@@ -21,6 +21,11 @@
 
 #include "mptp.h"
 
+#define MPTP_RAND48_MULT_0   (0xe66d)
+#define MPTP_RAND48_MULT_1   (0xdeec)
+#define MPTP_RAND48_MULT_2   (0x0005)
+#define MPTP_RAND48_ADD      (0x000b)
+
 static const char * progress_prompt;
 static unsigned long progress_next;
 static unsigned long progress_size;
@@ -159,4 +164,43 @@ void random_init(unsigned short * rstate, long seedval)
   rstate[0] = 0x330e;
   rstate[1] = seedval & 0xffffl;
   rstate[2] = seedval >> 16;
+}
+
+static void mptp_randomize(unsigned short * rstate) 
+{
+  unsigned long accu;
+  unsigned short temp[2];
+
+  accu = MPTP_RAND48_MULT_0 * (unsigned long)rstate[0] +
+         MPTP_RAND48_ADD;
+  temp[0] = (unsigned short)accu;        /* lower 16 bits */
+
+  accu >>= sizeof(unsigned short) * 8;
+  accu += (unsigned long)MPTP_RAND48_MULT_0 * (unsigned long)rstate[1] +
+          (unsigned long)MPTP_RAND48_MULT_1 * (unsigned long)rstate[0];
+  temp[1] = (unsigned short)accu;        /* middle 16 bits */
+
+  accu >>= sizeof(unsigned short) * 8;
+  accu += MPTP_RAND48_MULT_0 * rstate[2] +
+          MPTP_RAND48_MULT_1 * rstate[1] +
+          MPTP_RAND48_MULT_2 * rstate[0];
+
+  rstate[0] = temp[0];
+  rstate[1] = temp[1];
+  rstate[2] = (unsigned short)accu;
+}
+
+double mptp_erand48(unsigned short * rstate)
+{
+  mptp_randomize(rstate);
+
+  return ldexp((double)rstate[0], -48) +
+         ldexp((double)rstate[1], -32) +
+         ldexp((double)rstate[2], -16);
+}
+
+long mptp_nrand48(unsigned short * rstate) 
+{
+  mptp_randomize(rstate);
+  return ((long)rstate[2] << 15) + ((long)rstate[1] >> 1);
 }

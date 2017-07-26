@@ -51,7 +51,7 @@ static int cb_node_select(rtree_t * node)
   }
 
   /* otherwise, we just throw a coin and select one of the two cases */
-  rand_double = erand48(g_rstate);
+  rand_double = mptp_erand48(g_rstate);
   if (rand_double >= 0.5)
   {
     /* don't select */
@@ -86,7 +86,7 @@ double random_delimitation(rtree_t * root,
   max_species = root->max_species_count;
   g_rstate = rstate;
 
-  rand_long = nrand48(rstate);
+  rand_long = mptp_nrand48(rstate);
   if (!root->max_species_count)
     species_count = (rand_long % root->leaves) + 1;
   else
