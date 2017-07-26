@@ -22,7 +22,8 @@
 #define _GNU_SOURCE
 
 #include <assert.h>
-#include <search.h>
+#include <ctype.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -33,10 +34,11 @@
 #include <limits.h>
 #include <locale.h>
 #include <math.h>
+#include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/resource.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <time.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -51,11 +53,39 @@
 #define PROG_NAME PACKAGE
 #define PROG_VERSION PACKAGE_VERSION
 
-#ifdef __APPLE__
-#define PROG_ARCH "macosx_x86_64"
+#ifdef __PPC__
+
+#ifdef __LITTLE_ENDIAN__
+#define PROG_CPU "ppc64le"
 #else
-#define PROG_ARCH "linux_x86_64"
+#error "Big endian ppc64 CPUs not supported"
 #endif
+
+#else
+
+#define PROG_CPU "x86_64"
+
+#endif
+
+#ifdef __APPLE__
+#define PROG_OS "osx"
+#include <sys/resource.h>
+#include <sys/sysctl.h>
+#endif
+
+#ifdef __linux__
+#define PROG_OS "linux"
+#include <sys/resource.h>
+#include <sys/sysinfo.h>
+#endif
+
+#ifdef _WIN32
+#define PROG_OS "win"
+#include <windows.h>
+#include <psapi.h>
+#endif
+
+#define PROG_ARCH PROG_OS "_" PROG_CPU
 
 #define PLL_FAILURE  0
 #define PLL_SUCCESS  1
@@ -206,7 +236,7 @@ typedef struct hashtable_s
 typedef struct pair_s
 {
   char * label;
-  int index;
+  size_t index;
 } pair_t;
 
 /* macros */
@@ -289,7 +319,6 @@ char * xstrchrnul(char *s, int c);
 char * xstrdup(const char * s);
 char * xstrndup(const char * s, size_t len);
 long getusec(void);
-void show_rusage(void);
 FILE * xopen(const char * filename, const char * mode);
 void random_init(unsigned short * rstate, long seedval);
 
@@ -366,6 +395,7 @@ void lca_destroy(void);
 
 unsigned long arch_get_memused(void);
 unsigned long arch_get_memtotal(void);
+long arch_get_cores(void);
 
 /* functions in dp.c */
 

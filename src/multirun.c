@@ -174,7 +174,7 @@ void multirun(rtree_t * root, long method)
      across all MCMC runs */
   double * combined_val;
   combined_val = (double *)xmalloc((size_t)(root->leaves-1) * sizeof(double));
-  memset(combined_val,0,(root->leaves-1)*sizeof(double));
+  memset(combined_val,0,(unsigned long)(root->leaves-1)*sizeof(double));
 
   rtree_t ** inner_node_list = (rtree_t **)xmalloc((size_t)(root->leaves-1) *
                                                    sizeof(rtree_t *));
@@ -291,7 +291,6 @@ void multirun(rtree_t * root, long method)
   double mean, var, stdev, avg_stdev = 0;
   for (i = 0; i < support_count; ++i)
   {
-    int j;
     mean = var = stdev = 0;
     for (j = 0; j < opt_mcmc_runs; ++j)
       mean += support[j][i];

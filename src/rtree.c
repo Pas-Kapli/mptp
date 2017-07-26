@@ -450,7 +450,7 @@ static rtree_t ** rtree_tipstring_nodes(rtree_t * root,
                                                  sizeof(rtree_t *));
 
   /* create a hashtable of tip labels */
-  hashtable_t * ht = hashtable_create(root->leaves);
+  hashtable_t * ht = hashtable_create((unsigned long)(root->leaves));
 
   for (i = 0; i < (unsigned int)(root->leaves); ++i)
   {

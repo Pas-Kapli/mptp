@@ -193,7 +193,7 @@ static void link_sequences(rtree_t * root, char ** headers, char ** sequence, lo
   rtree_query_tipnodes(root, tipnodes);
 
   /* create a libc hash table of size tip_count */
-  hashtable_t * ht = hashtable_create(root->leaves);
+  hashtable_t * ht = hashtable_create((unsigned long)(root->leaves));
 
   /* populate a libc hash table with tree tip labels */
   for (i = 0; i < root->leaves; ++i)

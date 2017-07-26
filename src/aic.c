@@ -258,7 +258,7 @@ static void mcmc_finalize(rtree_t * root,
   free(densities);
 }
 
-static void dp_recurse(rtree_t * node, int method)
+static void dp_recurse(rtree_t * node, long method)
 {
   int k,j;
 
