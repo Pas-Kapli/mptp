@@ -4,9 +4,7 @@ libparse_utree_a_SOURCES = parse_utree.y lex_utree.l
 libparse_rtree_a_SOURCES = parse_rtree.y lex_rtree.l
 noinst_LIBRARIES = libparse_utree.a libparse_rtree.a
 
-
 AM_CFLAGS=-I${srcdir} -O3 -mtune=native -Wall -Wsign-compare -g
-AM_LDFLAGS=${LIBS}
 AM_YFLAGS = -d -p `${SED} -n 's/.*_\(.*\)/\1_/p' <<<"$*"`
 AM_LFLAGS = -o lex.yy.c
 

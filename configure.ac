@@ -9,6 +9,8 @@ AC_CONFIG_SRCDIR([src/mptp.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CANONICAL_HOST
 
+${CFLAGS=""}
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_RANLIB
@@ -71,6 +73,18 @@ AS_IF([test "x$enable_pdfman" != "xno"], [
     have_ps2pdf=no
   fi
 ])
+
+# Various OS-related dependencies
+case "${host_os}" in
+    linux*)
+        ;;
+    cygwin*|mingw*)
+        AC_CHECK_LIB([psapi],[GetProcessMemoryInfo])
+        ;;
+    darwin*)
+        ;;
+esac
+
 
 AM_CONDITIONAL(HAVE_PS2PDF, test "x${have_ps2pdf}" = "xyes")
 AM_PROG_CC_C_O
