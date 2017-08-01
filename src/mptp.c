@@ -20,6 +20,7 @@
 */
 
 #include "mptp.h"
+#include "float.h"
 
 static char * progname;
 static char progheader[80];
@@ -57,6 +58,8 @@ long opt_mcmc;
 long opt_ml;
 long opt_multi;
 long opt_single;
+long opt_weirdo;
+long opt_restrict;
 long opt_crop;
 long opt_svg;
 long opt_svg_width;
@@ -113,6 +116,8 @@ static struct option long_options[] =
   {"single",             no_argument,       0, 0 },  /* 32 */
   {"multi",              no_argument,       0, 0 },  /* 33 */
   {"mcmc_startml",       no_argument,       0, 0 },  /* 34 */
+  {"weirdo",             no_argument,       0, 0 },  /* 35 */
+  {"restrict",           no_argument,       0, 0 },  /* 36 */
   { 0, 0, 0, 0 }
 };
 
@@ -153,6 +158,8 @@ void args_init(int argc, char ** argv)
   opt_method = PTP_METHOD_MULTI;
   opt_multi = 0;
   opt_single = 0;
+  opt_weirdo = 0;
+  opt_restrict = 0;
 
   opt_svg_width = 1920;
   opt_svg_fontsize = 12;
@@ -321,6 +328,14 @@ void args_init(int argc, char ** argv)
         opt_mcmc_startml = 1;
         break;
 
+      case 35:
+    	opt_weirdo = 1;
+    	break;
+
+      case 36:
+    	opt_restrict = 1;
+    	break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -348,6 +363,8 @@ void args_init(int argc, char ** argv)
     commands++;
   if (opt_ml)
     commands++;
+  if (opt_weirdo)
+	commands++;
 
   /* if more than one independent command, fail */
   if (commands > 1)
@@ -407,6 +424,8 @@ void cmd_help()
           "  --quiet                   only output warnings and fatal errors to stderr.\n"
           "  --precision INT           Precision of floating point numbers on output (default: 7).\n"
           "  --seed                    Seed for pseudo-random number generator.\n"
+		  "  --weirdo                  Weird extra-mode: Try to automatically root the tree such that delimitation score is optimized.\n"
+		  "  --restrict                Enforce that average speciation branch length is larger than average coalescent branch length.\n"
           "\n"
           "Input and output options:\n"
           "  --tree_file FILENAME      tree file in newick format.\n"
@@ -504,6 +523,31 @@ static rtree_t * load_tree(void)
   return rtree;
 }
 
+static utree_t * load_tree_weirdo(unsigned int * tips)
+{
+  /* parse tree */
+  if (!opt_quiet)
+  {
+    fprintf(stdout, "Parsing tree file...\n");
+  }
+
+  unsigned int tip_count;
+  utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
+  if (!utree)
+  {
+    fatal("Tree is not unrooted.");
+  }
+
+  if (!opt_quiet)
+  {
+    fprintf(stdout, "Loaded unrooted tree...\n");
+  }
+
+  *tips = tip_count;
+
+  return utree;
+}
+
 void cmd_auto()
 {
   rtree_t * rtree = load_tree();
@@ -514,13 +558,143 @@ void cmd_auto()
   rtree_destroy(rtree);
 }
 
+static int cb_allnodes_utree(utree_t * node)
+{
+  return 1;
+}
+
+static int cb_descending(const void * a, const void * b)
+{
+  if (*(double *)(a) > *(double *)(b))
+    return -1;
+  else if (*(double *)(a) < *(double *)(b))
+    return 1;
+
+  return 0;
+}
+
+void cmd_weirdo(void)
+{
+  // The auto-rooting stuff Alexis wanted.
+  unsigned int tip_count = 0;
+  utree_t * utree = load_tree_weirdo(&tip_count);
+  utree_t * actnode = utree;
+
+  unsigned int best_species = 0;
+  double best_score = (opt_method == PTP_METHOD_MULTI) ? DBL_MAX : 0;
+  utree_t * best_node = actnode;
+  double best_ratio = 0.5;
+
+  // try to grab all nodes in the tree
+  utree_t ** all_nodes_list = (utree_t **) xmalloc((size_t) (2 * tip_count - 1) *
+          sizeof(utree_t *));
+  unsigned int n_nodes = utree_traverse(utree, cb_allnodes_utree, all_nodes_list);
+
+  // collect the 10% longest branches from the branches larger than opt_minbr
+  double * branch_lengths = (double *)xmalloc((size_t)(2*tip_count-1) *
+                                                sizeof(double));
+  unsigned int bl_index = 0;
+  for (unsigned int i = 0; i < n_nodes; ++i)
+  {
+	if (all_nodes_list[i]->length > opt_minbr)
+	{
+      branch_lengths[bl_index] = all_nodes_list[i]->length;
+      bl_index++;
+	}
+  }
+  qsort(branch_lengths, (size_t)bl_index, sizeof(double), cb_descending);
+  unsigned int ten_percent = floor(0.1 * bl_index);
+  double smallest_accept = branch_lengths[ten_percent];
+  free(branch_lengths);
+
+  //printf("n_nodes: %d\n", n_nodes);
+
+  for (unsigned int i = 0; i < n_nodes; ++i) // iterate over the nodes
+  {
+	//printf("i: %d\n", i);
+	actnode = all_nodes_list[i];
+	if (actnode->length >= smallest_accept && actnode->length > opt_minbr)
+	{
+	  for (double ratio = 0.1; ratio < 1.0; ratio += 0.1)
+	  //double ratio = 0.5;
+	  {
+	    if (ratio * actnode->length <= opt_minbr || (1-ratio) * actnode->length <= opt_minbr)
+	    {
+	      continue;
+	    }
+
+        // root the tree at the current node
+        rtree_t * rtree = utree_convert_rtree_weirdo(actnode, ratio);
+        // run the dp heuristic with this rooted tree
+        dp_init(rtree);
+        dp_set_pernode_spec_edges(rtree);
+        unsigned int species;
+        double score;
+        dp_ptp_weirdo(rtree, opt_method, &species, &score, opt_restrict);
+        dp_free(rtree);
+
+        if (opt_method == PTP_METHOD_MULTI)
+        {
+          if (score < best_score || (score == best_score && species > best_species))
+          {
+    	    best_score = score;
+    	    best_species = species;
+    	    best_node = actnode;
+    	    best_ratio = ratio;
+    	    printf("Found better species count: %d\n", species);
+          }
+        }
+        else
+        {
+          if (score > best_score || (score == best_score && species > best_species))
+          {
+            best_score = score;
+            best_species = species;
+            best_node = actnode;
+            best_ratio = ratio;
+            printf("Found better species count: %d\n", species);
+          }
+        }
+        rtree_destroy(rtree);
+	  }
+	}
+  }
+
+  if (opt_method == PTP_METHOD_MULTI)
+  {
+    printf("Best AIC-Score found: %.6f\n", best_score);
+  }
+
+  free(all_nodes_list);
+
+  // do standard dp heuristic stuff on the best rooting we found
+  rtree_t * rtree = utree_convert_rtree_weirdo(best_node, best_ratio);
+  dp_init(rtree);
+  dp_set_pernode_spec_edges(rtree);
+  dp_ptp(rtree, opt_method, opt_restrict);
+  dp_free(rtree);
+  if (opt_treeshow)
+  {
+    rtree_show_ascii(rtree);
+  }
+  cmd_svg(rtree, opt_seed, "svg");
+  /* deallocate tree structure */
+  rtree_destroy(rtree);
+  if (!opt_quiet)
+  {
+    fprintf(stdout, "Done...\n");
+  }
+
+  utree_destroy(utree);
+}
+
 void cmd_ml(void)
 {
   rtree_t * rtree = load_tree();
 
   dp_init(rtree);
   dp_set_pernode_spec_edges(rtree);
-  dp_ptp(rtree, opt_method);
+  dp_ptp(rtree, opt_method, opt_restrict);
   dp_free(rtree);
 
   if (opt_treeshow)
@@ -545,6 +719,9 @@ void cmd_multirun(void)
 
   if (opt_mcmc_credible < 0 || opt_mcmc_credible > 1)
     fatal("--opt_mcmc_credible must be a real number between 0 and 1");
+
+  if (opt_restrict)
+	fatal("mcmc does not work in restricted mode!");
 
   rtree_t * rtree = load_tree();
 
@@ -619,6 +796,10 @@ int main (int argc, char * argv[])
   else if (opt_ml)
   {
     cmd_ml();
+  }
+  else if (opt_weirdo)
+  {
+	cmd_weirdo();
   }
 
   free(cmdline);

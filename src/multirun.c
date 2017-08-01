@@ -258,7 +258,7 @@ void multirun(rtree_t * root, long method)
   /* compute ML tree */
   dp_init(mltree);
   dp_set_pernode_spec_edges(mltree);
-  dp_ptp(mltree, method);
+  dp_ptp(mltree, method, 0);
   int * mlcroots = (int *)xmalloc((size_t)(mltree->leaves) * sizeof(int));
   int croots_count = extract_croots(mltree, mlcroots);
 

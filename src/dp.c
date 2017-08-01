@@ -23,14 +23,17 @@
 
 static unsigned int species_iter = 0;
 
-static void dp_recurse(rtree_t * node, long method)
+static unsigned int total_spec_edges_num = 0;
+static double total_spec_edges_sum = 0.0;
+
+static void dp_recurse(rtree_t * node, long method, long restricted)
 {
   int k,j;
 
   /* bottom-up recursion */
 
-  if (node->left)  dp_recurse(node->left,  method);
-  if (node->right) dp_recurse(node->right, method);
+  if (node->left)  dp_recurse(node->left,  method, restricted);
+  if (node->right) dp_recurse(node->right, method, restricted);
 
   /*                u_vec
                 *
@@ -43,12 +46,26 @@ static void dp_recurse(rtree_t * node, long method)
   double spec_logl = loglikelihood(node->spec_edge_count,
                                    node->spec_edgelen_sum);
 
-  u_vec[0].spec_edgelen_sum = 0;
-  u_vec[0].score_multi = node->coal_logl + spec_logl;
-  u_vec[0].score_single = node->coal_logl + spec_logl;
-  u_vec[0].coal_multi_logl = node->coal_logl;
-  u_vec[0].species_count = 1;
-  u_vec[0].filled = 1;
+  int okay = 1;
+  if (restricted) // ensure that the lambdas are fine.
+  {
+	double spec_lambda = (double) node->spec_edge_count / node->spec_edgelen_sum;
+	double coal_lambda = (double) node->edge_count / node->edgelen_sum;
+	if (spec_lambda > coal_lambda)
+	{
+	  okay = 0;
+	}
+  }
+
+  if (okay)
+  {
+    u_vec[0].spec_edgelen_sum = 0;
+    u_vec[0].score_multi = node->coal_logl + spec_logl;
+    u_vec[0].score_single = node->coal_logl + spec_logl;
+    u_vec[0].coal_multi_logl = node->coal_logl;
+    u_vec[0].species_count = 1;
+    u_vec[0].filled = 1;
+  }
 
   if (!node->left) return;
 
@@ -111,6 +128,16 @@ static void dp_recurse(rtree_t * node, long method)
       spec_logl = loglikelihood(spec_edge_count,spec_edgelen_sum);
 
 
+      if (restricted) // ensure that the lambdas are fine.
+      {
+    	double spec_lambda = (double) spec_edge_count / spec_edgelen_sum;
+    	double coal_lambda = (double) coal_edge_count / coal_edgelen_sum;
+    	if (spec_lambda > coal_lambda)
+    	{
+    	  continue;
+    	}
+      }
+
       /* compute single- and multi-rate scores */
       double score_multi = coal_multi_logl + spec_logl;
       double score_single = coal_single_logl + spec_logl;
@@ -151,6 +178,9 @@ static void backtrack(rtree_t * node,
   {
     node->event = EVENT_SPECIATION;
 
+    total_spec_edges_num++;
+    total_spec_edges_sum += node->length;
+
     if (node->length <= opt_minbr && node->parent) *warning_minbr = true;
 
     backtrack(node->left, vec[index].vec_left, warning_minbr, out);
@@ -162,16 +192,19 @@ static void backtrack(rtree_t * node,
     node->event = EVENT_COALESCENT;
 
     fprintf(out, "\nSpecies %d:\n", species_iter);
+
+    double lambda = (double) node->edge_count / node->edgelen_sum;
+    printf("Species %d has lambda: %.6f\n", species_iter, lambda);
+
     rtree_print_tips(node,out);
   }
 }
 
-void dp_ptp(rtree_t * tree, long method)
+void dp_ptp_weirdo(rtree_t * tree, long method, unsigned int * species_res, double * score_res, long restricted)
 {
   int i;
   int lrt_pass;
   int best_index = 0;
-  unsigned int species_count;
   double max = 0;
   double pvalue = -1;
 
@@ -180,7 +213,77 @@ void dp_ptp(rtree_t * tree, long method)
   species_iter = 0;
 
   /* fill DP table */
-  dp_recurse(tree, method);
+  dp_recurse(tree, method, restricted);
+
+  /* obtain best entry in the root DP table */
+  dp_vector_t * vec = tree->vector;
+  if (method == PTP_METHOD_MULTI)
+  {
+	max = vec[0].score_multi;
+	double min_aic_score = aic(vec[0].score_multi, vec[0].species_count, tree->leaves+2);
+	for (i = 1; i < tree->edge_count; i++)
+	{
+	  if (vec[i].filled)
+	  {
+		double aic_score = aic(vec[i].score_multi, vec[i].species_count, tree->leaves+2);
+		//printf("edges: %d logl: %f aic: %f species: %d\n", i, vec[i].score_multi, aic_score, vec[i].species_count);
+		if (aic_score < min_aic_score)
+		{
+		  min_aic_score = aic_score;
+		  best_index = i;
+		}
+	  }
+	}
+  }
+  else
+  {
+	max = vec[0].score_single;
+	for (i = 1; i < tree->edge_count; i++)
+	{
+	  if (max < vec[i].score_single && vec[i].filled)
+	  {
+		max = vec[i].score_single;
+		best_index = i;
+	  }
+	}
+  }
+
+  *species_res = vec[best_index].species_count;
+  // only do LRT for PTP, not for mPTP
+  lrt_pass = (method == PTP_METHOD_MULTI) ? 1 : lrt(tree->coal_logl,
+  			  vec[best_index].score_single, 1, &pvalue);
+  if (method == PTP_METHOD_MULTI)
+  {
+	*score_res = aic(vec[best_index].score_multi, vec[best_index].species_count, tree->leaves+2);
+  }
+  else
+  {
+	  if (lrt_pass)
+	  {
+	    *score_res = vec[best_index].score_single;
+	  }
+	  else
+	  {
+		  *score_res = tree->coal_logl;
+		  *species_res = 1;
+	  }
+  }
+}
+
+void dp_ptp(rtree_t * tree, long method, long restricted)
+{
+  int i;
+  int lrt_pass;
+  int best_index = 0;
+  unsigned int species_count;
+  double max = 0;
+  double pvalue = -1;
+
+  /* reset species counter */
+  species_iter = 0;
+
+  /* fill DP table */
+  dp_recurse(tree, method, restricted);
 
   /* obtain best entry in the root DP table */
   dp_vector_t * vec = tree->vector;
@@ -198,9 +301,12 @@ void dp_ptp(rtree_t * tree, long method)
         {
           min_aic_score = aic_score;
           best_index = i;
+          max = vec[i].score_multi;
         }
       }
     }
+
+    printf("DEBUG: Best AIC Score: %.6f\n", min_aic_score);
   }
   else
   {
@@ -269,6 +375,10 @@ void dp_ptp(rtree_t * tree, long method)
   {
     bool warning_minbr = false;
     backtrack(tree, best_index, &warning_minbr,out);
+
+    double speciation_lambda = (double) total_spec_edges_num / total_spec_edges_sum;
+    printf("Speciation lambda: %.6f\n", speciation_lambda);
+
     if (warning_minbr)
       fprintf(stderr,"WARNING: A speciation edge is smaller than the specified "
                      "minimum branch length.\n");

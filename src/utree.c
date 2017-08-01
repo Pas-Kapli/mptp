@@ -456,7 +456,39 @@ rtree_t * utree_convert_rtree(utree_t * outgroup)
   rtree_reset_info(root);
 
   return root;
+}
 
+rtree_t * utree_convert_rtree_weirdo(utree_t * outgroup, double ratio)
+{
+  if (ratio < 0)
+  {
+    fatal("ratio is < 0");
+  }
+  if (ratio > 1.0)
+  {
+	  fatal("ratio is > 1.0");
+  }
+  rtree_t * root = (rtree_t *)xcalloc(1,sizeof(rtree_t));
+  root->left   = utree_rtree(outgroup);
+  root->right  = utree_rtree(outgroup->back);
+
+  root->left->parent  = root;
+  root->right->parent = root;
+
+  root->left->length *= ratio;
+  root->right->length *= (1.0 - ratio);
+
+  root->label  = NULL;
+  root->length = 0;
+  root->parent = NULL;
+  root->event  = EVENT_COALESCENT;
+  root->data   = NULL;
+  root->mark   = 0;
+
+  /* reset per-node leaves and valid edges */
+  rtree_reset_info(root);
+
+  return root;
 }
 
 static utree_t ** utree_tipstring_nodes(utree_t * root,

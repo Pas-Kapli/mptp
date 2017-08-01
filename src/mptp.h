@@ -322,6 +322,7 @@ char * utree_export_newick(utree_t * root);
 int utree_query_tipnodes(utree_t * root, utree_t ** node_list);
 int utree_query_innernodes(utree_t * root, utree_t ** node_list);
 rtree_t * utree_convert_rtree(utree_t * root);
+rtree_t * utree_convert_rtree_weirdo(utree_t * root, double ratio);
 int utree_traverse(utree_t * root,
                    int (*cbtrav)(utree_t *),
                    utree_t ** outbuffer);
@@ -371,7 +372,8 @@ unsigned long arch_get_memtotal(void);
 
 void dp_init(rtree_t * tree);
 void dp_free(rtree_t * tree);
-void dp_ptp(rtree_t * rtree, long method);
+void dp_ptp(rtree_t * rtree, long method, long restricted);
+void dp_ptp_weirdo(rtree_t * tree, long method, unsigned int * species_res, double * score_res, long restricted);
 void dp_set_pernode_spec_edges(rtree_t * node);
 
 /* functions in svg.c */
