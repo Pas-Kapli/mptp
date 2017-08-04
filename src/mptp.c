@@ -60,6 +60,7 @@ long opt_multi;
 long opt_single;
 long opt_weirdo;
 long opt_restrict;
+long opt_lite;
 long opt_crop;
 long opt_svg;
 long opt_svg_width;
@@ -118,6 +119,7 @@ static struct option long_options[] =
   {"mcmc_startml",       no_argument,       0, 0 },  /* 34 */
   {"weirdo",             no_argument,       0, 0 },  /* 35 */
   {"restrict",           no_argument,       0, 0 },  /* 36 */
+  {"lite",               no_argument,       0, 0 },  /* 37 */
   { 0, 0, 0, 0 }
 };
 
@@ -160,6 +162,7 @@ void args_init(int argc, char ** argv)
   opt_single = 0;
   opt_weirdo = 0;
   opt_restrict = 0;
+  opt_lite = 0;
 
   opt_svg_width = 1920;
   opt_svg_fontsize = 12;
@@ -336,6 +339,10 @@ void args_init(int argc, char ** argv)
     	opt_restrict = 1;
     	break;
 
+      case 37:
+    	opt_lite = 1;
+    	break;
+
       default:
         fatal("Internal error in option parsing");
     }
@@ -426,6 +433,7 @@ void cmd_help()
           "  --seed                    Seed for pseudo-random number generator.\n"
 		  "  --weirdo                  Weird extra-mode: Try to automatically root the tree such that delimitation score is optimized.\n"
 		  "  --restrict                Enforce that average speciation branch length is larger than average coalescent branch length.\n"
+		  "  --lite                    Do not create svg output. This option only affects --ml mode.\n"
           "\n"
           "Input and output options:\n"
           "  --tree_file FILENAME      tree file in newick format.\n"
@@ -700,7 +708,8 @@ void cmd_ml(void)
   if (opt_treeshow)
     rtree_show_ascii(rtree);
 
-  cmd_svg(rtree, opt_seed, "svg");
+  if (!opt_lite)
+    cmd_svg(rtree, opt_seed, "svg");
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
