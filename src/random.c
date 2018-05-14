@@ -115,7 +115,14 @@ double random_delimitation(rtree_t * root,
                         root->edgelen_sum - edgelen_sum);
 
   free(inner_node_list);
-
+  
+  assert(count <= species_count);
+  if (count < species_count)
+  {
+    /* TODO: This fixes issue #82, but we should implement a better, non-biased
+       way of generatng random starting delimitations */
+    species_count = count;
+  }
   assert(count == species_count);
 
   *delimited_species = species_count;

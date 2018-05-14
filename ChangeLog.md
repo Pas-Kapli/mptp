@@ -2,6 +2,12 @@
 All notable changes to `mptp` will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.4] - 2018-05-14
+### Fixed
+ - If we do not manage to generate a random starting delimitation with the
+   wanted number of species (randomly chosen), we use the currently generated
+   delimitation instead.
+
 ## [0.2.3] - 2017-07-25
 ### Fixed
  - Replaced hsearch which was causing problems on APPLE with custom hashtable

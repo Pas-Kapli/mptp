@@ -1,6 +1,6 @@
 .\" -*- coding: utf-8 -*-
 .\" ============================================================================
-.TH mptp 1 "January 31, 2017" "mptp 0.2.2" "USER COMMANDS"
+.TH mptp 1 "May 14, 2018" "mptp 0.2.4" "USER COMMANDS"
 .\" ============================================================================
 .SH NAME
 mptp \(em single-locus species delimitation
@@ -354,5 +354,10 @@ incorrectly formatted trees.
 .TP
 .BR v0.2.3\~ "released July 25th, 2017"
 Replaced hsearch() with custom hashtable. Fixed minor output error messages.
+.TP
+.BR v0.2.4\~ "released May 14th, 2018"
+If we do not manage to generate a random starting delimitation with the wanted
+number of species (randomly chosen), we use the currently generated
+delimitation instead.
 .RE
 .LP
