@@ -351,7 +351,10 @@ void args_init(int argc, char ** argv)
 
   /* if more than one independent command, fail */
   if (commands > 1)
-    fatal("More than one command specified");
+  {
+    if (!(commands == 2 && opt_pdist_file && (opt_ml || opt_mcmc)))
+      fatal("More than one command specified");
+  }
 
   /* if more than one independent command, fail */
   if (opt_mcmc_startrandom + opt_mcmc_startnull + opt_mcmc_startml > 1)
@@ -508,7 +511,7 @@ void cmd_auto()
 {
   rtree_t * rtree = load_tree();
 
-  detect_min_bl(rtree);
+  detect_min_bl(rtree, 0);
 
   /* deallocate tree structure */
   rtree_destroy(rtree);
@@ -517,6 +520,8 @@ void cmd_auto()
 void cmd_ml(void)
 {
   rtree_t * rtree = load_tree();
+  if (opt_pdist_file)
+    opt_minbr = detect_min_bl(rtree, 1);
 
   dp_init(rtree);
   dp_set_pernode_spec_edges(rtree);
@@ -547,6 +552,9 @@ void cmd_multirun(void)
     fatal("--opt_mcmc_credible must be a real number between 0 and 1");
 
   rtree_t * rtree = load_tree();
+
+  if (opt_pdist_file)
+    opt_minbr = detect_min_bl(rtree, 1);
 
   multirun(rtree, opt_method);
 
@@ -608,7 +616,7 @@ int main (int argc, char * argv[])
   {
     cmd_help();
   }
-  else if (opt_pdist_file)
+  else if (opt_pdist_file && !(opt_mcmc || opt_ml))
   {
     cmd_auto();
   }

@@ -468,7 +468,7 @@ int pll_fasta_rewind(pll_fasta_t * fd);
 
 /* functions in auto.c */
 
-void detect_min_bl(rtree_t * rtree);
+double detect_min_bl(rtree_t * rtree, int quiet);
 
 /* functions in aic.c */
 

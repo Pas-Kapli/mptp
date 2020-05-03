@@ -53,7 +53,8 @@ void output_info(FILE * out,
 {
   fprintf(out, "Command: %s\n", cmdline);
   fprintf(out,
-          "Number of edges greater than minimum branch length: %d / %d\n",
+          "Number of edges greater than minimum branch length %.6f: %d / %d\n",
+           opt_minbr,
            root->edge_count,
            2 * root->leaves - 2);
   fprintf(out, "Null-model score: %.6f\n", nullmodel_logl);

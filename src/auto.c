@@ -241,7 +241,7 @@ static int all_pairwise_dist(rtree_t ** tip_node_list, int tip_list_count, long 
   return 0;
 }
 
-void detect_min_bl(rtree_t * rtree)
+double detect_min_bl(rtree_t * rtree, int quiet)
 {
   rtree_t ** inner_node_list;
   rtree_t ** tip_node_list = NULL;
@@ -255,7 +255,7 @@ void detect_min_bl(rtree_t * rtree)
   /* for p-distance computation load an alignment from a FASTA file and map
      the sequences to the tree tips */
 
-  if (!opt_quiet)
+  if (!opt_quiet && !quiet)
     fprintf(stdout, "Parsing FASTA file %s...\n", opt_pdist_file);
   
   /* allocate arrays to store FASTA headers and sequences */
@@ -292,7 +292,8 @@ void detect_min_bl(rtree_t * rtree)
   free(allnodes_list);
 
 
-  printf("Computing all pairwise p-distances ...\n");
+  if (!quiet)
+    printf("Computing all pairwise p-distances ...\n");
 
   tip_node_list = (rtree_t **)xmalloc((size_t)(rtree->leaves) *
                                       sizeof(rtree_t *));
@@ -316,11 +317,19 @@ void detect_min_bl(rtree_t * rtree)
     }
   }
 
+  double minbl = 0.0;
   if (minfound && n != 1)
-    printf("Minimum branch length (--minbr) should be set to %.10f\n", branch_lengths[n-1]);
+  {
+    minbl = branch_lengths[n-1];
+    if (!quiet)
+      printf("Minimum branch length (--minbr) should be set to %.10f\n", branch_lengths[n-1]);
+  }
   else
-    printf("Minimum branch length (--minbr) should be set to 0\n");
-
+  {
+    minbl = 0.0;
+    if (!quiet)
+      printf("Minimum branch length (--minbr) should be set to 0\n");
+  }
 
   free(branch_lengths);
   free(inner_node_list);
@@ -333,4 +342,5 @@ void detect_min_bl(rtree_t * rtree)
   }
   free(seqdata);
   free(headers);
+  return minbl;
 }
