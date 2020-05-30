@@ -20,35 +20,9 @@
 */
 
 #include "mptp.h"
-#include "cvector.h"
 #include "math.h"
 
 static unsigned int species_iter = 0;
-
-#define CVECTOR_LOGARITHMIC_GROWTH
-
-void collect_children_recursive(rtree_t * node, cvector_vector_type(rtree_t*) v) {
-  if (!node)
-  {
-    return;
-  }
-  if (node->length >= opt_minbr || (!node->left && !node->right))
-  {
-    cvector_push_back(v, node);
-  }
-  else
-  {
-    collect_children_recursive(node->left, v);
-    collect_children_recursive(node->right, v);
-  }
-}
-
-cvector_vector_type(rtree_t*) collect_children(rtree_t * node) {
-  cvector_vector_type(rtree_t*) v = NULL;
-  collect_children_recursive(node->left, v);
-  collect_children_recursive(node->right, v);
-  return v;
-}
 
 static void dp_recurse(rtree_t * node, long method)
 {
