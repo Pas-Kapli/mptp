@@ -79,10 +79,6 @@ static void dp_recurse(rtree_t * node, long method)
       /* if at least one of the two entries is not valid/filled, skip */
       if (!v_vec[j].filled || !w_vec[k].filled) continue;
 
-      /* Fix species roots at randomlyresolved multifurcations */
-      if (node->left->length == 0 && node->left->left && v_vec[j].species_count == 1) continue;
-      if (node->right->length == 0 && node->right->left && w_vec[k].species_count == 1) continue;
-
       int i = j + k + u_edge_count;
 
       /* set the number of species */
