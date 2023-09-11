@@ -22,6 +22,7 @@
 #include "mptp.h"
 
 static unsigned int species_iter = 0;
+static unsigned int coal_param_count = 0;
 
 static void dp_recurse(rtree_t * node, long method)
 {
@@ -166,6 +167,47 @@ static void backtrack(rtree_t * node,
   }
 }
 
+long multi_coalpopedgecount(rtree_t * node)
+{
+  long edges = 0;
+
+  if (node->left)
+  {
+    if (node->left->length > opt_minbr)
+      ++edges;
+    edges += multi_coalpopedgecount(node->left);
+  }
+  if (node->right)
+  {
+    if (node->right->length > opt_minbr)
+      ++edges;
+    edges += multi_coalpopedgecount(node->right);
+  }
+
+  return edges;
+
+}
+void multi_getcoalparamscount(rtree_t * node, int index)
+{
+  dp_vector_t * vec = node->vector;
+
+  if ((vec[index].vec_left != -1) && (vec[index].vec_right != -1))
+  {
+    node->event = EVENT_SPECIATION;
+
+    multi_getcoalparamscount(node->left, vec[index].vec_left);
+    multi_getcoalparamscount(node->right,vec[index].vec_right);
+  }
+  else
+  {
+    node->event = EVENT_COALESCENT;
+
+    long edges = multi_coalpopedgecount(node);
+    if (edges)
+      coal_param_count++; 
+  }
+}
+
 void dp_ptp(rtree_t * tree, long method)
 {
   int i;
@@ -234,19 +276,16 @@ void dp_ptp(rtree_t * tree, long method)
   /* do a Likelihood Ratio Test (lrt) and return the computed p-value */
   species_count = vec[best_index].species_count;
 
-  // only do LRT for PTP, not for mPTP
-  lrt_pass = (method == PTP_METHOD_MULTI) ? 1 : lrt(tree->coal_logl,
-                 vec[best_index].score_single, 1, &pvalue);
+  /* fills the coal_param_count variable with # coalescent pop parameters */
+  coal_param_count = 0;
+  multi_getcoalparamscount(tree,best_index);
 
-#ifndef HAVE_LIBGSL
-  fprintf(stderr, "WARNING: delimit was not compiled with libgsl. "
-                  "Likelihood ratio test disabled.\n");
-#endif
+  /* likelihood ratio test */
+  unsigned int df = (method == PTP_METHOD_SINGLE) ? 1 : coal_param_count;
+  lrt_pass = lrt(tree->coal_logl,max,df,&pvalue);
 
-#ifdef HAVE_LIBGSL
-  if (!opt_quiet && method == PTP_METHOD_SINGLE)
+  if (!opt_quiet)
     fprintf(stdout,"LRT computed p-value: %.6f\n", pvalue);
-#endif
 
   /* initialize file name */
   FILE * out = open_file_ext("txt", opt_seed);

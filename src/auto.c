@@ -317,9 +317,15 @@ void detect_min_bl(rtree_t * rtree)
   }
 
   if (minfound && n != 1)
+  {
     printf("Minimum branch length (--minbr) should be set to %.10f\n", branch_lengths[n-1]);
+    output_minbr(branch_lengths[n-1]);
+  }
   else
+  {
     printf("Minimum branch length (--minbr) should be set to 0\n");
+    output_minbr(0);
+  }
 
 
   free(branch_lengths);

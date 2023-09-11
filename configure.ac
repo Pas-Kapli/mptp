@@ -42,8 +42,6 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memmove memcpy gettimeofday memchr memset pow regcomp strcasecmp strchr strcspn sysinfo])
 
 AC_CHECK_LIB([m],[cos])
-AC_CHECK_LIB([gslcblas], [cblas_dgemm])
-AC_CHECK_LIB([gsl], [gsl_cdf_chisq_P])
 
 # Bash completions
 AC_ARG_WITH([bash-completions],

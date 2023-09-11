@@ -44,10 +44,6 @@
 #include "config.h"
 #endif
 
-#if (defined(HAVE_CONFIG_H) && defined(HAVE_LIBGSL))
-#include <gsl/gsl_cdf.h>
-#endif
-
 /* constants */
 
 #define PROG_NAME PACKAGE
@@ -426,6 +422,7 @@ void output_info(FILE * out,
 		 int lrt_result,
                  rtree_t * root,
                  unsigned int species_count);
+void output_minbr(double minbr);
 
 FILE * open_file_ext(const char * extension, long seed);
 

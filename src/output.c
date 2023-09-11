@@ -62,12 +62,25 @@ void output_info(FILE * out,
           (method == PTP_METHOD_SINGLE) ?
             "single" : "multi",
           logl);
-#ifdef HAVE_LIBGSL
-  if (method == PTP_METHOD_SINGLE)
-  {
-    fprintf(out, "LRT computed p-value: %.6f\n", pvalue);
-    fprintf(out, "LRT: %s\n", lrt_result ? "passed" : "failed");
-  }
-#endif
+  fprintf(out, "LRT computed p-value: %.6f\n", pvalue);
+  fprintf(out, "LRT: %s\n", lrt_result ? "passed" : "failed");
   fprintf(out, "Number of delimited species: %d\n", species_count);
+}
+
+void output_minbr(double minbr)
+{
+  FILE * fp_out;
+  char * filename = NULL;
+
+  if (asprintf(&filename, "%s.%s", opt_outfile, "txt") == -1)
+    fatal("Unable to allocate enough memory.");
+
+  fp_out = xopen(filename,"w");
+  free(filename);
+
+  fprintf(fp_out, "Command: %s\n", cmdline);
+  if (minbr == 0)
+    fprintf(fp_out, "Minimum branch length (--minbr) should be set to 0\n");
+  else
+    fprintf(fp_out, "Minimum branch length (--minbr) should be set to %f\n",minbr);
 }
