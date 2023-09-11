@@ -1,6 +1,6 @@
 .\" -*- coding: utf-8 -*-
 .\" ============================================================================
-.TH mptp 1 "May 14, 2018" "mptp 0.2.4" "USER COMMANDS"
+.TH mptp 1 "Sep 11, 2023" "mptp 0.2.5" "USER COMMANDS"
 .\" ============================================================================
 .SH NAME
 mptp \(em single-locus species delimitation
@@ -359,5 +359,9 @@ Replaced hsearch() with custom hashtable. Fixed minor output error messages.
 If we do not manage to generate a random starting delimitation with the wanted
 number of species (randomly chosen), we use the currently generated
 delimitation instead.
+.TP
+.BR v0.2.5\~ "released Sep 9th, 2023"
+Added likelihood ratio test for the multi method. Added implementation for the
+incomplete gamma function, and removed dependency for GNU scientific library.
 .RE
 .LP

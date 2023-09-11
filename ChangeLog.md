@@ -2,6 +2,13 @@
 All notable changes to `mptp` will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.5] - 2023-09-11
+### Added
+ - Likelihood ratio test for the multi method
+ - Added implementation for the incomplete gamma function
+### Removed
+ - Dependency for GNU scientific library
+
 ## [0.2.4] - 2018-05-14
 ### Fixed
  - If we do not manage to generate a random starting delimitation with the
