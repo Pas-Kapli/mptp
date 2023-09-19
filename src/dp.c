@@ -291,7 +291,12 @@ void dp_ptp(rtree_t * tree, long method)
   FILE * out = open_file_ext("txt", opt_seed);
 
   if (!opt_quiet)
-    fprintf(stdout, "Writing delimitation file %s.txt ...\n", opt_outfile);
+  {
+    if (opt_mcmc)
+      fprintf(stdout, "Writing delimitation file %s.%ld.txt ...\n", opt_outfile, opt_seed);
+    else
+      fprintf(stdout, "Writing delimitation file %s.txt ...\n", opt_outfile);
+  }
 
   /* write information about delimitation to file */
   output_info(out,
