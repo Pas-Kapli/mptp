@@ -347,7 +347,7 @@ void dp_init(rnode_t * tree)
   // TODO: Check whether this is the best way to handle those
   //   nasty zero-length edges.
 
-  tree->vector = calloc((size_t)(tree->edge_count + 1), sizeof(dp_vector_t));
+  tree->vector = xcalloc((size_t)(tree->edge_count + 1), sizeof(dp_vector_t));
 
   for (i = 0; i <= tree->edge_count; i++)
   {

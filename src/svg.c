@@ -271,20 +271,18 @@ static void svg_rnode_plot(rnode_t * node)
   }
 }
 
-static void rnode_scaler_init(rnode_t * root)
+static void rnode_scaler_init(rtree_t * tree)
 {
   double len = 0;
   double label_len;
-  int i;
+  unsigned int i;
+  rnode_t * root = tree->root;
 
-  rnode_t ** node_list = (rnode_t **)malloc((size_t)(2 * root->leaves - 1) *
-                                             sizeof(rnode_t *));
-
-  rnode_query_tipnodes(root, node_list);
+  rnode_t ** node_list = tree->nodes;
 
   /* find longest path to root */
 
-  for (i = 0; i < root->leaves; ++i)
+  for (i = 0; i < tree->tip_count; ++i)
   {
     rnode_t * node = node_list[i];
 
@@ -316,21 +314,21 @@ static void rnode_scaler_init(rnode_t * root)
         max_font_len = label_len;
       }
   }
-  free(node_list);
 }
 
-static void svg_rnode_init(rnode_t * root)
+static void svg_rnode_init(rtree_t * tree)
 {
   long svg_height;
+  rnode_t * root = tree->root;
 
   canvas_width = opt_svg_width - opt_svg_marginleft - opt_svg_marginright;
 
   /* initialize pixel scaler (scaler) and compute max tree
      length (max_tree_len) */
-  rnode_scaler_init(root);
+  rnode_scaler_init(tree);
 
   svg_height = opt_svg_margintop + legend_spacing + opt_svg_marginbottom +
-               opt_svg_tipspace * root->leaves;
+               opt_svg_tipspace * tree->tip_count;
 
 
   /* print svg header tag with dimensions and grey border */
@@ -377,7 +375,7 @@ static void svg_rnode_init(rnode_t * root)
 }
 
 
-void cmd_svg(rnode_t * root, long seed, const char * ext)
+void cmd_svg(rtree_t * tree, long seed, const char * ext)
 {
 
   /* reset tip occurrence */
@@ -398,7 +396,7 @@ void cmd_svg(rnode_t * root, long seed, const char * ext)
 
   svg_fp = open_file_ext(ext, seed);
 
-  svg_rnode_init(root);
+  svg_rnode_init(tree);
 
   fclose(svg_fp);
 }

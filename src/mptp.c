@@ -442,7 +442,7 @@ void cmd_auto()
 {
   rtree_t * tree = load_tree();
 
-  detect_min_bl(tree->root);
+  detect_min_bl(tree);
 
   /* deallocate tree structure */
   rtree_destroy(tree);
@@ -460,7 +460,7 @@ void cmd_ml(void)
   if (opt_treeshow)
     rtree_show_ascii(tree);
 
-  cmd_svg(tree->root, opt_seed, "svg");
+  cmd_svg(tree, opt_seed, "svg");
 
   /* deallocate tree structure */
   rtree_destroy(tree);

@@ -396,7 +396,7 @@ void dp_set_pernode_spec_edges(rnode_t * node);
 
 /* functions in svg.c */
 
-void cmd_svg(rnode_t * rtree, long seed, const char * ext);
+void cmd_svg(rtree_t * tree, long seed, const char * ext);
 
 /* functions in likelihood.c */
 
@@ -457,7 +457,7 @@ int pll_fasta_rewind(pll_fasta_t * fd);
 
 /* functions in auto.c */
 
-void detect_min_bl(rnode_t * rtree);
+void detect_min_bl(rtree_t * tree);
 
 /* functions in aic.c */
 

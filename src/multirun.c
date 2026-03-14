@@ -219,7 +219,7 @@ void multirun(rtree_t * tree, long method)
     fprintf(newick_fp, "%s\n", newick);
     fclose(newick_fp);
 
-    cmd_svg(trees[i]->root, seeds[i], "svg");
+    cmd_svg(trees[i], seeds[i], "svg");
 
     free(newick);
   }
@@ -339,7 +339,7 @@ void multirun(rtree_t * tree, long method)
   free(newick);
 
   /* create an SVG of the combined tree with support values */
-  cmd_svg(ctree->root, opt_seed, "combined.svg");
+  cmd_svg(ctree, opt_seed, "combined.svg");
 
 
   /* destroy combined tree */
