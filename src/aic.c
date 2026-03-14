@@ -634,7 +634,7 @@ static double aic_weight_nominator(double aic_score)
   return exp(-0.5 * aic_score);
 }
 
-void aic_mcmc(rnode_t * tree,
+void aic_mcmc(rtree_t * tree,
               long method,
               unsigned short * rstate,
               long seed,
@@ -650,6 +650,8 @@ void aic_mcmc(rnode_t * tree,
 
   double aic_weight_prefix_sum = 0.0;
 
+  rnode_t * root = tree->root;
+
   *mcmc_max_logl = 0;
   *mcmc_min_logl = 0;
 
@@ -657,29 +659,29 @@ void aic_mcmc(rnode_t * tree,
     fprintf(stdout,"Computing initial delimitation...\n");
 
   /* check whether all edges are smaller or equal than minbr */
-  if (!tree->edge_count)
+  if (!root->edge_count)
   {
     fprintf(stderr,"WARNING: All branch lengths are smaller or equal to the "
                    "threshold specified by --minbr. Delimitation equals to "
                    "the null model\n");
-    tree->support = 1;
-    tree->aic_support = 1;
-    tree->event = EVENT_COALESCENT;
+    root->support = 1;
+    root->aic_support = 1;
+    root->event = EVENT_COALESCENT;
 
     return;
   }
 
-  mcmc_init(tree, seed);
+  mcmc_init(root, seed);
 
   /* fill DP table */
-  dp_recurse(tree, method);
+  dp_recurse(root, method);
 
   /* obtain best entry in the root DP table */
-  dp_vector_t * vec = tree->vector;
+  dp_vector_t * vec = root->vector;
   if (method == PTP_METHOD_MULTI)
   {
     max = vec[0].score_multi;
-    for (i = 1; i < tree->edge_count; i++)
+    for (i = 1; i < root->edge_count; i++)
     {
       if (max < vec[i].score_multi && vec[i].filled)
       {
@@ -691,7 +693,7 @@ void aic_mcmc(rnode_t * tree,
   else
   {
     max = vec[0].score_single;
-    for (i = 1; i < tree->edge_count; i++)
+    for (i = 1; i < root->edge_count; i++)
     {
       //printf("vec[%d].score_single: %.6f\n", i, vec[i].score_single);
       if (max < vec[i].score_single && vec[i].filled)
@@ -705,7 +707,7 @@ void aic_mcmc(rnode_t * tree,
 
   double max_logl_aic = (method == PTP_METHOD_MULTI) ?
               vec[best_index].score_multi : vec[best_index].score_single;
-  double max_aic = aic(max_logl_aic, species_count, tree->leaves+2);
+  double max_aic = aic(max_logl_aic, species_count, tree->tip_count+2);
 
 
   long coal_edge_count = 0;
@@ -720,22 +722,22 @@ void aic_mcmc(rnode_t * tree,
   }
   else if (opt_mcmc_startnull)
   {
-    tree->event = EVENT_COALESCENT;
+    root->event = EVENT_COALESCENT;
 
-    crnodes[crnodes_count++] = tree;
-    logl = tree->coal_logl;
+    crnodes[crnodes_count++] = root;
+    logl = root->coal_logl;
     best_index = 0;
     species_count = 1;
 
     /* set parameters */
-    coal_edge_count = tree->edge_count;
+    coal_edge_count = root->edge_count;
     spec_edge_count = 0;
     spec_edgelen_sum = 0;
-    coal_edgelen_sum = tree->edgelen_sum;
-    coal_score = tree->coal_logl;
+    coal_edgelen_sum = root->edgelen_sum;
+    coal_score = root->coal_logl;
 
     /* set all nodes to coalescent */
-    init_null(tree);
+    init_null(root);
 
     /* log log-likelihood at step 0 */
     if (opt_mcmc_burnin == 1)
@@ -746,7 +748,7 @@ void aic_mcmc(rnode_t * tree,
   else if (opt_mcmc_startrandom)
   {
     bool warning_minbr = false;
-    logl = random_delimitation(tree,
+    logl = random_delimitation(root,
                                &species_count,
                                &coal_edge_count,
                                &coal_edgelen_sum,
@@ -754,7 +756,7 @@ void aic_mcmc(rnode_t * tree,
                                &spec_edgelen_sum,
                                &coal_score,
                                rstate);
-    backtrack_random(tree, &warning_minbr);
+    backtrack_random(root, &warning_minbr);
     if (warning_minbr)
       fprintf(stderr,"WARNING: A speciation edge is smaller than the specified "
                      "minimum branch length.\n");
@@ -767,7 +769,7 @@ void aic_mcmc(rnode_t * tree,
   {
     /* ML starting delimitation */
     bool warning_minbr = false;
-    backtrack(tree, best_index, &warning_minbr);
+    backtrack(root, best_index, &warning_minbr);
     if (warning_minbr)
       fprintf(stderr,"WARNING: A speciation edge is smaller than the specified "
                      "minimum branch length.\n");
@@ -784,16 +786,16 @@ void aic_mcmc(rnode_t * tree,
   {
     if (method == PTP_METHOD_SINGLE)
     {
-      coal_edge_count = tree->edge_count - best_index;
+      coal_edge_count = root->edge_count - best_index;
       spec_edge_count = best_index;
-      spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
-      coal_edgelen_sum = tree->edgelen_sum - spec_edgelen_sum;
+      spec_edgelen_sum = root->vector[best_index].spec_edgelen_sum;
+      coal_edgelen_sum = root->edgelen_sum - spec_edgelen_sum;
     }
     else
     {
       spec_edge_count = best_index;
-      spec_edgelen_sum = tree->vector[best_index].spec_edgelen_sum;
-      coal_score = tree->vector[best_index].score_multi -
+      spec_edgelen_sum = root->vector[best_index].spec_edgelen_sum;
+      coal_score = root->vector[best_index].score_multi -
                         loglikelihood(spec_edge_count, spec_edgelen_sum);
     }
   }
@@ -814,7 +816,7 @@ void aic_mcmc(rnode_t * tree,
   if (opt_mcmc_burnin == 1)
   {
     //densities[species_count].logl += logl;
-    densities[species_count].logl += -aic(logl, species_count, tree->leaves+2);
+    densities[species_count].logl += -aic(logl, species_count, tree->tip_count+2);
   }
 
   if (opt_mcmc_sample == 1)
@@ -823,7 +825,7 @@ void aic_mcmc(rnode_t * tree,
       printf("1 Log-L: %f\n", logl);
   }
 
-  mcmc_stats_init(tree);
+  mcmc_stats_init(root);
 
   for (i = 1; i < opt_mcmc_steps; ++i)
   {
@@ -886,7 +888,7 @@ void aic_mcmc(rnode_t * tree,
       /* compute new log-likelihood */
       double new_logl;
       if (spec_edge_count == 0 || (method == PTP_METHOD_SINGLE && coal_edge_count == 0))
-        new_logl = tree->coal_logl;
+        new_logl = root->coal_logl;
       else
       {
         assert((method == PTP_METHOD_MULTI) || (coal_edge_count > 0));
@@ -909,8 +911,8 @@ void aic_mcmc(rnode_t * tree,
         *mcmc_min_logl = new_logl;
 
 
-      double aic_new_logl = -aic(new_logl, species_count+1, tree->leaves+2);
-      double aic_logl = -aic(logl, species_count, tree->leaves+2);
+      double aic_new_logl = -aic(new_logl, species_count+1, tree->tip_count+2);
+      double aic_logl = -aic(logl, species_count, tree->tip_count+2);
 
       /* Hastings ratio */
       double a = exp(aic_new_logl - aic_logl) * (old_crnodes_count / new_snodes_count);
@@ -1027,7 +1029,7 @@ void aic_mcmc(rnode_t * tree,
       /* compute new log-likelihood */
       double new_logl;
       if (spec_edge_count == 0 || (method == PTP_METHOD_SINGLE && coal_edge_count == 0))
-        new_logl = tree->coal_logl;
+        new_logl = root->coal_logl;
       else
       {
         assert((method == PTP_METHOD_MULTI) || (coal_edge_count > 0));
@@ -1049,8 +1051,8 @@ void aic_mcmc(rnode_t * tree,
       else if (new_logl < *mcmc_min_logl)
         *mcmc_min_logl = new_logl;
 
-      double aic_new_logl = -aic(new_logl, species_count-1, tree->leaves+2);
-      double aic_logl = -aic(logl, species_count, tree->leaves+2);
+      double aic_new_logl = -aic(new_logl, species_count-1, tree->tip_count+2);
+      double aic_logl = -aic(logl, species_count, tree->tip_count+2);
 
       /* Hastings ratio */
       double a = exp(aic_new_logl - aic_logl) * (old_snodes_count / new_crnodes_count);
@@ -1123,6 +1125,6 @@ void aic_mcmc(rnode_t * tree,
   //printf("Acceptance: %ld\n", accept_count);
   /* TODO: DEBUG variables for checking the max likelihood mcmc runs give.
      Must be removed */
-  mcmc_finalize(tree, *mcmc_min_logl, *mcmc_max_logl, seed, aic_weight_prefix_sum);
+  mcmc_finalize(root, *mcmc_min_logl, *mcmc_max_logl, seed, aic_weight_prefix_sum);
 
 }

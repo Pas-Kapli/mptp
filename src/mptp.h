@@ -461,7 +461,7 @@ void detect_min_bl(rtree_t * tree);
 
 /* functions in aic.c */
 
-void aic_mcmc(rnode_t * tree,
+void aic_mcmc(rtree_t * tree,
               long method,
               unsigned short * rstate,
               long seed,

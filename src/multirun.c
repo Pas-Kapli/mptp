@@ -185,7 +185,7 @@ void multirun(rtree_t * tree, long method)
     dp_set_pernode_spec_edges(trees[i]);
     if (!opt_quiet)
       fprintf(stdout, "\nMCMC run %ld...\n", i);
-    aic_mcmc(trees[i]->root,
+    aic_mcmc(trees[i],
              method,
              rstates[i],
              seeds[i],
