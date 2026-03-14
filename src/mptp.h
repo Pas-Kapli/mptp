@@ -389,10 +389,10 @@ long arch_get_cores(void);
 
 /* functions in dp.c */
 
-void dp_init(rnode_t * tree);
-void dp_free(rnode_t * tree);
-void dp_ptp(rnode_t * rtree, long method);
-void dp_set_pernode_spec_edges(rnode_t * node);
+void dp_init(rtree_t * tree);
+void dp_free(rtree_t * tree);
+void dp_ptp(rtree_t * tree, long method);
+void dp_set_pernode_spec_edges(rtree_t * tree);
 
 /* functions in svg.c */
 

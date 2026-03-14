@@ -452,10 +452,10 @@ void cmd_ml(void)
 {
   rtree_t * tree = load_tree();
 
-  dp_init(tree->root);
-  dp_set_pernode_spec_edges(tree->root);
-  dp_ptp(tree->root, opt_method);
-  dp_free(tree->root);
+  dp_init(tree);
+  dp_set_pernode_spec_edges(tree);
+  dp_ptp(tree, opt_method);
+  dp_free(tree);
 
   if (opt_treeshow)
     rtree_show_ascii(tree);

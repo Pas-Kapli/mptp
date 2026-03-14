@@ -181,8 +181,8 @@ void multirun(rtree_t * tree, long method)
   /* execute each run sequentially  */
   for (i = 0; i < opt_mcmc_runs; ++i)
   {
-    dp_init(trees[i]->root);
-    dp_set_pernode_spec_edges(trees[i]->root);
+    dp_init(trees[i]);
+    dp_set_pernode_spec_edges(trees[i]);
     if (!opt_quiet)
       fprintf(stdout, "\nMCMC run %ld...\n", i);
     aic_mcmc(trees[i]->root,
@@ -191,7 +191,7 @@ void multirun(rtree_t * tree, long method)
              seeds[i],
              mcmc_min_logl+i,
              mcmc_max_logl+i);
-    dp_free(trees[i]->root);
+    dp_free(trees[i]);
 
     /* add up support values */
     rnode_query_innernodes(trees[i]->root, inner_node_list);
@@ -255,9 +255,9 @@ void multirun(rtree_t * tree, long method)
   }
 
   /* compute ML tree */
-  dp_init(mltree->root);
-  dp_set_pernode_spec_edges(mltree->root);
-  dp_ptp(mltree->root, method);
+  dp_init(mltree);
+  dp_set_pernode_spec_edges(mltree);
+  dp_ptp(mltree, method);
   int * mlcroots = (int *)xmalloc((size_t)(mltree->root->leaves) * sizeof(int));
   int croots_count = extract_croots(mltree->root, mlcroots);
 
@@ -280,7 +280,7 @@ void multirun(rtree_t * tree, long method)
     }
   }
 
-  dp_free(mltree->root);
+  dp_free(mltree);
   rtree_destroy(mltree);
   free(mlcroots);
 

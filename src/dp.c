@@ -208,7 +208,7 @@ void multi_getcoalparamscount(rnode_t * node, int index)
   }
 }
 
-void dp_ptp(rnode_t * tree, long method)
+void dp_ptp(rtree_t * tree, long method)
 {
   int i;
   int lrt_pass;
@@ -217,23 +217,24 @@ void dp_ptp(rnode_t * tree, long method)
   double max = 0;
   double pvalue = -1;
 
+  rnode_t * root = tree->root;
 
   /* reset species counter */
   species_iter = 0;
 
   /* fill DP table */
-  dp_recurse(tree, method);
+  dp_recurse(root, method);
 
   /* obtain best entry in the root DP table */
-  dp_vector_t * vec = tree->vector;
+  dp_vector_t * vec = root->vector;
   if (method == PTP_METHOD_MULTI)
   {
-    double min_aic_score = aic(vec[0].score_multi, vec[0].species_count, tree->leaves+2);
-    for (i = 1; i < tree->edge_count; i++)
+    double min_aic_score = aic(vec[0].score_multi, vec[0].species_count, tree->tip_count+2);
+    for (i = 1; i < root->edge_count; i++)
     {
       if (vec[i].filled)
       {
-        double aic_score = aic(vec[i].score_multi, vec[i].species_count, tree->leaves+2);
+        double aic_score = aic(vec[i].score_multi, vec[i].species_count, tree->tip_count+2);
         //printf("edges: %d logl: %f aic: %f species: %d\n", i, vec[i].score_multi, aic_score, vec[i].species_count);
         if (aic_score < min_aic_score)
         {
@@ -247,7 +248,7 @@ void dp_ptp(rnode_t * tree, long method)
   else
   {
     max = vec[0].score_single;
-    for (i = 1; i < tree->edge_count; i++)
+    for (i = 1; i < root->edge_count; i++)
     {
       if (max < vec[i].score_single && vec[i].filled)
       {
@@ -261,10 +262,10 @@ void dp_ptp(rnode_t * tree, long method)
   if (!opt_quiet)
   {
     fprintf(stdout,
-           "Number of edges greater than minimum branch length: %d / %d\n",
-           tree->edge_count,
-           2 * tree->leaves - 2);
-    printf("Score Null Model: %.6f\n", tree->coal_logl);
+           "Number of edges greater than minimum branch length: %d / %u\n",
+           root->edge_count,
+           2 * tree->tip_count - 2);
+    printf("Score Null Model: %.6f\n", root->coal_logl);
     if (method == PTP_METHOD_SINGLE)
       fprintf(stdout, "Best score for single coalescent rate: %.6f\n",
                       vec[best_index].score_single);
@@ -278,11 +279,11 @@ void dp_ptp(rnode_t * tree, long method)
 
   /* fills the coal_param_count variable with # coalescent pop parameters */
   coal_param_count = 0;
-  multi_getcoalparamscount(tree,best_index);
+  multi_getcoalparamscount(root,best_index);
 
   /* likelihood ratio test */
   unsigned int df = (method == PTP_METHOD_SINGLE) ? 1 : coal_param_count;
-  lrt_pass = lrt(tree->coal_logl,max,df,&pvalue);
+  lrt_pass = lrt(root->coal_logl,max,df,&pvalue);
 
   if (!opt_quiet)
     fprintf(stdout,"LRT computed p-value: %.6f\n", pvalue);
@@ -301,11 +302,11 @@ void dp_ptp(rnode_t * tree, long method)
   /* write information about delimitation to file */
   output_info(out,
               method,
-              tree->coal_logl,
+              root->coal_logl,
               max,
               pvalue,
               lrt_pass,
-              tree,
+              root,
               species_count);
 
   /* if LRT passed, then back-track the DP table and print the delimitation,
@@ -314,7 +315,7 @@ void dp_ptp(rnode_t * tree, long method)
   if (lrt_pass)
   {
     bool warning_minbr = false;
-    backtrack(tree, best_index, &warning_minbr,out);
+    backtrack(root, best_index, &warning_minbr,out);
     if (warning_minbr)
       fprintf(stderr,"WARNING: A speciation edge is smaller than the specified "
                      "minimum branch length.\n");
@@ -324,52 +325,53 @@ void dp_ptp(rnode_t * tree, long method)
     species_iter = 1;
     fprintf(stdout, "LRT failed -- null-model is preferred and printed\n");
     fprintf(out,"\nSpecies 1:\n");
-    rnode_print_tips(tree,out);
+    rnode_print_tips(root,out);
   }
 
   if (!opt_quiet)
     printf("Number of delimited species: %d\n", species_iter);
 
-  if (tree->edge_count == 0)
+  if (root->edge_count == 0)
     fprintf(stderr, "WARNING: The tree has no edges > %f. "
                     "All edges have been ignored. \n", opt_minbr);
 
   fclose(out);
 }
 
-void dp_init(rnode_t * tree)
+void dp_init(rtree_t * tree)
 {
-  int i;
+  unsigned int i;
+  unsigned int total = tree->tip_count + tree->inner_count;
 
-  if (tree->left)  dp_init(tree->left);
-  if (tree->right) dp_init(tree->right);
-
-  // TODO: Check whether this is the best way to handle those
-  //   nasty zero-length edges.
-
-  tree->vector = xcalloc((size_t)(tree->edge_count + 1), sizeof(dp_vector_t));
-
-  for (i = 0; i <= tree->edge_count; i++)
+  for (i = 0; i < total; ++i)
   {
-    tree->vector[i].vec_left  = -1;
-    tree->vector[i].vec_right = -1;
+    rnode_t * node = tree->nodes[i];
+    int j;
+
+    node->vector = xcalloc((size_t)(node->edge_count + 1), sizeof(dp_vector_t));
+    for (j = 0; j <= node->edge_count; j++)
+    {
+      node->vector[j].vec_left  = -1;
+      node->vector[j].vec_right = -1;
+    }
+    assert(node->edge_count >= 0);
+    node->coal_logl = loglikelihood(node->edge_count, node->edgelen_sum);
   }
-
-  assert(tree->edge_count >= 0);
-
-  tree->coal_logl = loglikelihood(tree->edge_count,
-                                  tree->edgelen_sum);
 }
 
-void dp_free(rnode_t * tree)
+void dp_free(rtree_t * tree)
 {
-  if (tree->left)  dp_free(tree->left);
-  if (tree->right) dp_free(tree->right);
+  unsigned int i;
+  unsigned int total = tree->tip_count + tree->inner_count;
 
-  if (tree->vector) free(tree->vector);
+  for (i = 0; i < total; ++i)
+  {
+    if (tree->nodes[i]->vector)
+      free(tree->nodes[i]->vector);
+  }
 }
 
-void dp_set_pernode_spec_edges(rnode_t * node)
+static void dp_set_pernode_spec_edges_recursive(rnode_t * node)
 {
   if (!node) return;
 
@@ -399,6 +401,11 @@ void dp_set_pernode_spec_edges(rnode_t * node)
     }
   }
 
-  dp_set_pernode_spec_edges(node->left);
-  dp_set_pernode_spec_edges(node->right);
+  dp_set_pernode_spec_edges_recursive(node->left);
+  dp_set_pernode_spec_edges_recursive(node->right);
+}
+
+void dp_set_pernode_spec_edges(rtree_t * tree)
+{
+  dp_set_pernode_spec_edges_recursive(tree->root);
 }
