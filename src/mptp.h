@@ -425,7 +425,7 @@ void svg_landscape_combined(double mcmc_min_log, double mcmc_max_logl, long runs
 
 /* functions in random.c */
 
-double random_delimitation(rnode_t * root,
+double random_delimitation(rtree_t * tree,
                            long * delimited_species,
                            long * coal_edge_count,
                            double * coal_edgelen_sum,

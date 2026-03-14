@@ -66,7 +66,7 @@ static int cb_node_select(rnode_t * node)
   return 0;
 }
 
-double random_delimitation(rnode_t * root,
+double random_delimitation(rtree_t * tree,
                            long * delimited_species,
                            long * coal_edge_count,
                            double * coal_edgelen_sum,
@@ -80,6 +80,7 @@ double random_delimitation(rnode_t * root,
   long rand_long = 0;
   double logl = 0;
   double edgelen_sum = 0;
+  rnode_t * root = tree->root;
 
   /* initialize */
   min_species = 1;

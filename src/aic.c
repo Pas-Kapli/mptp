@@ -748,7 +748,7 @@ void aic_mcmc(rtree_t * tree,
   else if (opt_mcmc_startrandom)
   {
     bool warning_minbr = false;
-    logl = random_delimitation(root,
+    logl = random_delimitation(tree,
                                &species_count,
                                &coal_edge_count,
                                &coal_edgelen_sum,
