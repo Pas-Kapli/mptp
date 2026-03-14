@@ -48,14 +48,14 @@ void output_info(FILE * out,
                  double logl,
                  double pvalue,
                  int lrt_result,
-                 rnode_t * root,
+                 rtree_t * tree,
                  unsigned int species_count)
 {
   fprintf(out, "Command: %s\n", cmdline);
   fprintf(out,
-          "Number of edges greater than minimum branch length: %d / %d\n",
-           root->edge_count,
-           2 * root->leaves - 2);
+          "Number of edges greater than minimum branch length: %u / %u\n",
+           tree->edge_count,
+           2 * tree->tip_count - 2);
   fprintf(out, "Null-model score: %.6f\n", nullmodel_logl);
   fprintf(out,
           "Best score for %s coalescent rate: %.6f\n",

@@ -412,7 +412,7 @@ void output_info(FILE * out,
 		 double logl,
 		 double pvalue,
 		 int lrt_result,
-                 rnode_t * root,
+                 rtree_t * tree,
                  unsigned int species_count);
 void output_minbr(double minbr);
 

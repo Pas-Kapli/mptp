@@ -306,7 +306,7 @@ void dp_ptp(rtree_t * tree, long method)
               max,
               pvalue,
               lrt_pass,
-              root,
+              tree,
               species_count);
 
   /* if LRT passed, then back-track the DP table and print the delimitation,
