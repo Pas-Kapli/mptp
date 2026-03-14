@@ -26,7 +26,7 @@ static long max_species;
 static long species_count;
 static unsigned short * g_rstate;
 
-static int cb_node_select(rtree_t * node)
+static int cb_node_select(rnode_t * node)
 {
   double rand_double = 0;
 
@@ -66,7 +66,7 @@ static int cb_node_select(rtree_t * node)
   return 0;
 }
 
-double random_delimitation(rtree_t * root,
+double random_delimitation(rnode_t * root,
                            long * delimited_species,
                            long * coal_edge_count,
                            double * coal_edgelen_sum,
@@ -92,10 +92,10 @@ double random_delimitation(rtree_t * root,
   else
     species_count = (rand_long % root->max_species_count) + 1;
 
-  rtree_t ** inner_node_list =  (rtree_t **)xmalloc((size_t)species_count *
-                                                    sizeof(rtree_t *));
+  rnode_t ** inner_node_list =  (rnode_t **)xmalloc((size_t)species_count *
+                                                    sizeof(rnode_t *));
 
-  long count = rtree_traverse(root, cb_node_select, rstate, inner_node_list);
+  long count = rnode_traverse(root, cb_node_select, rstate, inner_node_list);
 
   for (i = 0; i < count; ++i)
   {

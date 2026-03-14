@@ -47,7 +47,7 @@ static double asv(int * mlcroots, double * support, int count)
   return sum / croots_count;
 }
 
-static void extract_croots_recursive(rtree_t * node,
+static void extract_croots_recursive(rnode_t * node,
                                      int * index,
                                      int * outbuffer)
 {
@@ -82,7 +82,7 @@ static void extract_croots_recursive(rtree_t * node,
 }
 
 /* recursively extract support values from a tree into an array */
-static int extract_croots(rtree_t * root, int * outbuffer)
+static int extract_croots(rnode_t * root, int * outbuffer)
 {
   int index = 0;
   int count = 0;
@@ -99,7 +99,7 @@ static int extract_croots(rtree_t * root, int * outbuffer)
   return count;
 }
 
-static void extract_support_recursive(rtree_t * node,
+static void extract_support_recursive(rnode_t * node,
                                       int * index,
                                       double * outbuffer)
 {
@@ -113,7 +113,7 @@ static void extract_support_recursive(rtree_t * node,
 }
 
 /* recursively extract support values from a tree into an array */
-static int extract_support(rtree_t * root, double * outbuffer)
+static int extract_support(rnode_t * root, double * outbuffer)
 {
   int index = 0;
 
@@ -124,7 +124,7 @@ static int extract_support(rtree_t * root, double * outbuffer)
   return index;
 }
 
-void multirun(rtree_t * root, long method)
+void multirun(rtree_t * tree, long method)
 {
   long i,j;
   long * seeds;
@@ -136,13 +136,12 @@ void multirun(rtree_t * root, long method)
   double * mcmc_max_logl;
 
   trees = (rtree_t **)xmalloc((size_t)opt_mcmc_runs * sizeof(rtree_t *));
-  trees[0] = root;
 
   /* clone trees in order to have one independent tree per run */
-  for (i = 1; i < opt_mcmc_runs; ++i)
-    trees[i] = rtree_clone(root, NULL);
-  mltree = rtree_clone(root,NULL);
-  ctree = rtree_clone(root,NULL);
+  for (i = 0; i < opt_mcmc_runs; ++i)
+    trees[i] = rtree_clone(tree);
+  mltree = rtree_clone(tree);
+  ctree = rtree_clone(tree);
 
   /* allocate memory for storing min and max logl for each run */
   mcmc_min_logl = (double *)xmalloc((size_t)opt_mcmc_runs * sizeof(double));
@@ -173,30 +172,30 @@ void multirun(rtree_t * root, long method)
   /* create an array for storing the sum of support values for each node
      across all MCMC runs */
   double * combined_val;
-  combined_val = (double *)xmalloc((size_t)(root->leaves-1) * sizeof(double));
-  memset(combined_val,0,(unsigned long)(root->leaves-1)*sizeof(double));
+  combined_val = (double *)xmalloc((size_t)(tree->root->leaves-1) * sizeof(double));
+  memset(combined_val,0,(unsigned long)(tree->root->leaves-1)*sizeof(double));
 
-  rtree_t ** inner_node_list = (rtree_t **)xmalloc((size_t)(root->leaves-1) *
-                                                   sizeof(rtree_t *));
+  rnode_t ** inner_node_list = (rnode_t **)xmalloc((size_t)(tree->root->leaves-1) *
+                                                   sizeof(rnode_t *));
 
   /* execute each run sequentially  */
   for (i = 0; i < opt_mcmc_runs; ++i)
   {
-    dp_init(trees[i]);
-    dp_set_pernode_spec_edges(trees[i]);
+    dp_init(trees[i]->root);
+    dp_set_pernode_spec_edges(trees[i]->root);
     if (!opt_quiet)
       fprintf(stdout, "\nMCMC run %ld...\n", i);
-    aic_mcmc(trees[i],
+    aic_mcmc(trees[i]->root,
              method,
              rstates[i],
              seeds[i],
              mcmc_min_logl+i,
              mcmc_max_logl+i);
-    dp_free(trees[i]);
+    dp_free(trees[i]->root);
 
     /* add up support values */
-    rtree_query_innernodes(trees[i], inner_node_list);
-    for (j = 0; j < trees[i]->leaves-1; ++j)
+    rnode_query_innernodes(trees[i]->root, inner_node_list);
+    for (j = 0; j < trees[i]->root->leaves-1; ++j)
       combined_val[j] += inner_node_list[j]->support;
 
 
@@ -220,7 +219,7 @@ void multirun(rtree_t * root, long method)
     fprintf(newick_fp, "%s\n", newick);
     fclose(newick_fp);
 
-    cmd_svg(trees[i], seeds[i], "svg");
+    cmd_svg(trees[i]->root, seeds[i], "svg");
 
     free(newick);
   }
@@ -250,17 +249,17 @@ void multirun(rtree_t * root, long method)
   int support_count = 0;
   for (i = 0; i < opt_mcmc_runs; ++i)
   {
-    support[i] = (double *)xmalloc((size_t)(trees[i]->leaves) * sizeof(double));
-    support_count = extract_support(trees[i], support[i]);
+    support[i] = (double *)xmalloc((size_t)(trees[i]->root->leaves) * sizeof(double));
+    support_count = extract_support(trees[i]->root, support[i]);
     rtree_destroy(trees[i]);
   }
 
   /* compute ML tree */
-  dp_init(mltree);
-  dp_set_pernode_spec_edges(mltree);
-  dp_ptp(mltree, method);
-  int * mlcroots = (int *)xmalloc((size_t)(mltree->leaves) * sizeof(int));
-  int croots_count = extract_croots(mltree, mlcroots);
+  dp_init(mltree->root);
+  dp_set_pernode_spec_edges(mltree->root);
+  dp_ptp(mltree->root, method);
+  int * mlcroots = (int *)xmalloc((size_t)(mltree->root->leaves) * sizeof(int));
+  int croots_count = extract_croots(mltree->root, mlcroots);
 
   /* If any of the two following conditions hold then the ML solution is the
      null-model in the following form:
@@ -281,7 +280,7 @@ void multirun(rtree_t * root, long method)
     }
   }
 
-  dp_free(mltree);
+  dp_free(mltree->root);
   rtree_destroy(mltree);
   free(mlcroots);
 
@@ -312,12 +311,12 @@ void multirun(rtree_t * root, long method)
            avg_stdev);
 
   /* compute the combined support values */
-  for (j = 0; j < ctree->leaves-1; ++j)
+  for (j = 0; j < ctree->root->leaves-1; ++j)
     combined_val[j] /= opt_mcmc_runs;
 
   /* query inner nodes and set the combined support values */
-  rtree_query_innernodes(ctree, inner_node_list);
-  for (j = 0; j < ctree->leaves-1; ++j)
+  rnode_query_innernodes(ctree->root, inner_node_list);
+  for (j = 0; j < ctree->root->leaves-1; ++j)
     inner_node_list[j]->support = combined_val[j];
 
   /* deallocate the structures */
@@ -340,7 +339,7 @@ void multirun(rtree_t * root, long method)
   free(newick);
 
   /* create an SVG of the combined tree with support values */
-  cmd_svg(ctree, opt_seed, "combined.svg");
+  cmd_svg(ctree->root, opt_seed, "combined.svg");
 
 
   /* destroy combined tree */
@@ -352,7 +351,7 @@ void multirun(rtree_t * root, long method)
     free(support[i]);
   free(support);
 
-  /* deallocate all cloned trees (except from the original) */
+  /* deallocate all cloned roots (except from the original) */
   for (i = 0; i < opt_mcmc_runs; ++i)
     free(rstates[i]);
   free(rstates);

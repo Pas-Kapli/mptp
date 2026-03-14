@@ -130,28 +130,36 @@ typedef struct dp_vector_s
   int filled;
 } dp_vector_t;
 
-typedef struct utree_s
+/* Multifurcating parse tree node */
+typedef struct node_s
 {
   char * label;
   double length;
-  int height;
-  struct utree_s * next;
-  struct utree_s * back;
-
+  struct node_s ** children;
+  struct node_s * parent;
+  int children_count;
+  int leaves;
   void * data;
+} node_t;
 
-  /* for finding the lca */
-  int mark;
+/* Multifurcating parse tree container */
+typedef struct ntree_s
+{
+  int tip_count;
+  int inner_count;
+  node_t * root;
+  node_t ** leaves_list;
+  node_t ** inner_list;
+} ntree_t;
 
-} utree_t;
-
-typedef struct rtree_s
+/* Rooted binary tree node (formerly rtree_t) */
+typedef struct rnode_s
 {
   char * label;
   double length;
-  struct rtree_s * left;
-  struct rtree_s * right;
-  struct rtree_s * parent;
+  struct rnode_s * left;
+  struct rnode_s * right;
+  struct rnode_s * parent;
   int leaves;
 
   /* number of edges within current subtree with lengths greater than opt_minbr
@@ -189,6 +197,16 @@ typedef struct rtree_s
   int mark;
   char * sequence;
 
+} rnode_t;
+
+/* Rooted binary tree container */
+typedef struct rtree_s
+{
+  rnode_t * root;
+  rnode_t ** nodes;          /* tips [0..tip_count-1], inner [tip_count..] */
+  unsigned int tip_count;
+  unsigned int inner_count;
+  unsigned int edge_count;
 } rtree_t;
 
 typedef struct pll_fasta
@@ -318,7 +336,7 @@ long getusec(void);
 FILE * xopen(const char * filename, const char * mode);
 void random_init(unsigned short * rstate, long seedval);
 double mptp_erand48(unsigned short * rstate);
-long mptp_nrand48(unsigned short * rstate); 
+long mptp_nrand48(unsigned short * rstate);
 
 /* functions in mptp.c */
 
@@ -331,63 +349,37 @@ void cmd_ml(void);
 void cmd_multirun(void);
 void cmd_auto(void);
 
-/* functions in parse_rtree.y */
+/* functions in treeparse.c */
 
-rtree_t * rtree_parse_newick(const char * filename);
-void rtree_destroy(rtree_t * root);
-
-/* functions in parse_utree.y */
-
-utree_t * utree_parse_newick(const char * filename, unsigned int * tip_count);
-
-void utree_destroy(utree_t * root);
-
-/* functions in utree.c */
-
-void utree_show_ascii(utree_t * tree);
-char * utree_export_newick(utree_t * root);
-int utree_query_tipnodes(utree_t * root, utree_t ** node_list);
-int utree_query_innernodes(utree_t * root, utree_t ** node_list);
-rtree_t * utree_convert_rtree(utree_t * root);
-int utree_traverse(utree_t * root,
-                   int (*cbtrav)(utree_t *),
-                   utree_t ** outbuffer);
-utree_t * utree_longest_branchtip(utree_t * node, unsigned int tip_count);
-utree_t * utree_outgroup_lca(utree_t * root, unsigned int tip_count);
-rtree_t * utree_crop(utree_t * lca);
+rtree_t * parse_newick(const char * filename);
+ntree_t * parse_newick_string(const char * newick);
+void ntree_destroy(ntree_t * tree);
 
 /* functions in rtree.c */
 
-void rtree_show_ascii(rtree_t * tree);
-char * rtree_export_newick(rtree_t * root);
-int rtree_query_tipnodes(rtree_t * root, rtree_t ** node_list);
-int rtree_query_innernodes(rtree_t * root, rtree_t ** node_list);
-void rtree_reset_info(rtree_t * root);
-void rtree_print_tips(rtree_t * node, FILE * out);
-int rtree_traverse(rtree_t * root,
-                   int (*cbtrav)(rtree_t *),
+int rnode_query_tipnodes(rnode_t * root, rnode_t ** node_list);
+int rnode_query_innernodes(rnode_t * root, rnode_t ** node_list);
+void rnode_reset_info(rnode_t * root);
+void rnode_print_tips(rnode_t * node, FILE * out);
+int rnode_traverse(rnode_t * root,
+                   int (*cbtrav)(rnode_t *),
                    unsigned short * rstate,
-                   rtree_t ** outbuffer);
-rtree_t * rtree_clone(rtree_t * node, rtree_t * parent);
-int rtree_traverse_postorder(rtree_t * root,
-                             int (*cbtrav)(rtree_t *),
-                             rtree_t ** outbuffer);
-rtree_t * get_outgroup_lca(rtree_t * root);
-rtree_t * rtree_lca(rtree_t * root,
-                    rtree_t ** tip_nodes,
+                   rnode_t ** outbuffer);
+rnode_t * rnode_clone(rnode_t * node, rnode_t * parent);
+int rnode_traverse_postorder(rnode_t * root,
+                             int (*cbtrav)(rnode_t *),
+                             rnode_t ** outbuffer);
+rnode_t * rnode_lca(rnode_t * root,
+                    rnode_t ** tip_nodes,
                     unsigned int count);
-rtree_t * rtree_crop(rtree_t * root, rtree_t * crop_root);
-int rtree_height(rtree_t * root);
-
-/* functions in parse_rtree.y */
-
-rtree_t * rtree_parse_newick(const char * filename);
-
-/* functions in lca_utree.c */
-
-void lca_init(utree_t * root);
-utree_t * lca_compute(utree_t * tip1, utree_t * tip2);
-void lca_destroy(void);
+int rnode_height(rnode_t * root);
+void rnode_destroy(rnode_t * root);
+void rtree_destroy(rtree_t * tree);
+rtree_t * rtree_clone(rtree_t * tree);
+void rtree_show_ascii(rtree_t * tree);
+char * rtree_export_newick(rtree_t * tree);
+rnode_t * rtree_outgroup_lca(rtree_t * tree);
+int rtree_crop(rtree_t * tree, rnode_t * crop_root);
 
 /* functions in arch.c */
 
@@ -397,14 +389,14 @@ long arch_get_cores(void);
 
 /* functions in dp.c */
 
-void dp_init(rtree_t * tree);
-void dp_free(rtree_t * tree);
-void dp_ptp(rtree_t * rtree, long method);
-void dp_set_pernode_spec_edges(rtree_t * node);
+void dp_init(rnode_t * tree);
+void dp_free(rnode_t * tree);
+void dp_ptp(rnode_t * rtree, long method);
+void dp_set_pernode_spec_edges(rnode_t * node);
 
 /* functions in svg.c */
 
-void cmd_svg(rtree_t * rtree, long seed, const char * ext);
+void cmd_svg(rnode_t * rtree, long seed, const char * ext);
 
 /* functions in likelihood.c */
 
@@ -420,7 +412,7 @@ void output_info(FILE * out,
 		 double logl,
 		 double pvalue,
 		 int lrt_result,
-                 rtree_t * root,
+                 rnode_t * root,
                  unsigned int species_count);
 void output_minbr(double minbr);
 
@@ -433,7 +425,7 @@ void svg_landscape_combined(double mcmc_min_log, double mcmc_max_logl, long runs
 
 /* functions in random.c */
 
-double random_delimitation(rtree_t * root,
+double random_delimitation(rnode_t * root,
                            long * delimited_species,
                            long * coal_edge_count,
                            double * coal_edgelen_sum,
@@ -444,7 +436,7 @@ double random_delimitation(rtree_t * root,
 
 /* functions in multirun.c */
 
-void multirun(rtree_t * root, long method);
+void multirun(rtree_t * tree, long method);
 
 /* functions in fasta.c */
 
@@ -465,11 +457,11 @@ int pll_fasta_rewind(pll_fasta_t * fd);
 
 /* functions in auto.c */
 
-void detect_min_bl(rtree_t * rtree);
+void detect_min_bl(rnode_t * rtree);
 
 /* functions in aic.c */
 
-void aic_mcmc(rtree_t * tree,
+void aic_mcmc(rnode_t * tree,
               long method,
               unsigned short * rstate,
               long seed,

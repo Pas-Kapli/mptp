@@ -13,17 +13,7 @@ ${CFLAGS=""}
 
 # Checks for programs.
 AC_PROG_CC
-AC_PROG_RANLIB
 AC_PROG_SED
-AC_PROG_LEX
-if test "x$LEX" != xflex; then
-  AC_MSG_ERROR(could not find required installation of FLEX)
-fi
-
-AC_PROG_YACC
-if test "x$YACC" != x"bison -y"; then
-  AC_MSG_ERROR(could not find required installation of BISON)
-fi
 
 AC_PROG_INSTALL
 

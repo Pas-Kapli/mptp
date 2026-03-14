@@ -27,8 +27,8 @@ typedef struct density_s
   long species_count;
 } density_t;
 
-static rtree_t ** crnodes;
-static rtree_t ** snodes;
+static rnode_t ** crnodes;
+static rnode_t ** snodes;
 
 static long crnodes_count = 0;
 static long snodes_count = 0;
@@ -59,12 +59,12 @@ static int cb_desc(const void * va, const void * vb)
   return 0;
 }
 
-static void mcmc_init(rtree_t * root, long seed)
+static void mcmc_init(rnode_t * root, long seed)
 {
   long i;
 
-  crnodes = (rtree_t **)xmalloc((size_t)(root->leaves)*sizeof(rtree_t *));
-  snodes = (rtree_t **)xmalloc((size_t)(root->leaves)*sizeof(rtree_t *));
+  crnodes = (rnode_t **)xmalloc((size_t)(root->leaves)*sizeof(rnode_t *));
+  snodes = (rnode_t **)xmalloc((size_t)(root->leaves)*sizeof(rnode_t *));
 
   crnodes_count = 0;
   snodes_count = 0;
@@ -80,13 +80,13 @@ static void mcmc_init(rtree_t * root, long seed)
     fp_log = open_file_ext("log", seed);
 }
 
-static void init_null(rtree_t * root)
+static void init_null(rnode_t * root)
 {
   int i;
 
-  rtree_t ** inner_node_list = (rtree_t **)xmalloc((size_t)(root->leaves-1) *
-                                                   sizeof(rtree_t *));
-  rtree_query_innernodes(root, inner_node_list);
+  rnode_t ** inner_node_list = (rnode_t **)xmalloc((size_t)(root->leaves-1) *
+                                                   sizeof(rnode_t *));
+  rnode_query_innernodes(root, inner_node_list);
 
   /* start mcmc analysis from null model */
   for (i = 0; i < root->leaves - 1; ++i)
@@ -94,13 +94,13 @@ static void init_null(rtree_t * root)
   free(inner_node_list);
 }
 
-static void mcmc_stats_init(rtree_t * root)
+static void mcmc_stats_init(rnode_t * root)
 {
   int i;
 
-  rtree_t ** inner_node_list = (rtree_t **)xmalloc((size_t)(root->leaves-1) *
-                                                   sizeof(rtree_t *));
-  rtree_query_innernodes(root, inner_node_list);
+  rnode_t ** inner_node_list = (rnode_t **)xmalloc((size_t)(root->leaves-1) *
+                                                   sizeof(rnode_t *));
+  rnode_query_innernodes(root, inner_node_list);
 
   for (i = 0; i < root->leaves - 1; ++i)
   {
@@ -181,7 +181,7 @@ static void hpd(long n, FILE * fp)
 
 }
 
-static void mcmc_finalize(rtree_t * root,
+static void mcmc_finalize(rnode_t * root,
                           double mcmc_min_logl,
                           double mcmc_max_logl,
                           long seed,
@@ -196,9 +196,9 @@ static void mcmc_finalize(rtree_t * root,
   }
 
   /* write support values to all nodes */
-  rtree_t ** inner_node_list = (rtree_t **)xmalloc((size_t)(root->leaves-1) *
-                                                   sizeof(rtree_t *));
-  rtree_query_innernodes(root, inner_node_list);
+  rnode_t ** inner_node_list = (rnode_t **)xmalloc((size_t)(root->leaves-1) *
+                                                   sizeof(rnode_t *));
+  rnode_query_innernodes(root, inner_node_list);
 
   for (i = 0; i < root->leaves - 1; ++i)
   {
@@ -258,7 +258,7 @@ static void mcmc_finalize(rtree_t * root,
   free(densities);
 }
 
-static void dp_recurse(rtree_t * node, long method)
+static void dp_recurse(rnode_t * node, long method)
 {
   int k,j;
 
@@ -374,7 +374,7 @@ static void dp_recurse(rtree_t * node, long method)
   }
 }
 
-static void backtrack_random(rtree_t * node,
+static void backtrack_random(rnode_t * node,
                              bool *warning_minbr)
 
 {
@@ -415,7 +415,7 @@ static void backtrack_random(rtree_t * node,
   }
 }
 
-static void backtrack(rtree_t * node,
+static void backtrack(rnode_t * node,
                       long index,
                       bool *warning_minbr)
 
@@ -471,7 +471,7 @@ static void speciate(long r)
   /* select the coalescent root at position r and split it into
      two coalescent root nodes */
 
-  rtree_t * node = crnodes[r];
+  rnode_t * node = crnodes[r];
 
   /* move the last node of the list to the position of the node
      we just used */
@@ -548,7 +548,7 @@ static void coalesce(long r)
               /   \                      /   \
          CR  *     *  CR             C  *     *  C             */
 
-  rtree_t * node = snodes[r];
+  rnode_t * node = snodes[r];
 
   /* move the last node of the list to the position of the node
      we just used */
@@ -634,7 +634,7 @@ static double aic_weight_nominator(double aic_score)
   return exp(-0.5 * aic_score);
 }
 
-void aic_mcmc(rtree_t * tree,
+void aic_mcmc(rnode_t * tree,
               long method,
               unsigned short * rstate,
               long seed,
@@ -846,7 +846,7 @@ void aic_mcmc(rtree_t * tree,
       /* select a coalescent root, split it into two coalescent nodes */
       rand_long = mptp_nrand48(rstate);
       long r = rand_long % crnodes_count;
-      rtree_t * node = crnodes[r];
+      rnode_t * node = crnodes[r];
 
       /* store the count of crnodes for the Hasting ratio */
       double old_crnodes_count = crnodes_count;
@@ -989,7 +989,7 @@ void aic_mcmc(rtree_t * tree,
 
       rand_long = mptp_nrand48(rstate);
       long r = rand_long % snodes_count;
-      rtree_t * node = snodes[r];
+      rnode_t * node = snodes[r];
 
       /* store the count of snodes for the Hastings ratio */
       double old_snodes_count = snodes_count;

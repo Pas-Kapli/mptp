@@ -48,7 +48,7 @@ void output_info(FILE * out,
                  double logl,
                  double pvalue,
                  int lrt_result,
-                 rtree_t * root,
+                 rnode_t * root,
                  unsigned int species_count)
 {
   fprintf(out, "Command: %s\n", cmdline);
@@ -83,4 +83,6 @@ void output_minbr(double minbr)
     fprintf(fp_out, "Minimum branch length (--minbr) should be set to 0\n");
   else
     fprintf(fp_out, "Minimum branch length (--minbr) should be set to %f\n",minbr);
+
+  fclose(fp_out);
 }

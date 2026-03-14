@@ -24,7 +24,7 @@
 static unsigned int species_iter = 0;
 static unsigned int coal_param_count = 0;
 
-static void dp_recurse(rtree_t * node, long method)
+static void dp_recurse(rnode_t * node, long method)
 {
   int k,j;
 
@@ -140,7 +140,7 @@ static void dp_recurse(rtree_t * node, long method)
   }
 }
 
-static void backtrack(rtree_t * node,
+static void backtrack(rnode_t * node,
                       int index,
                       bool *warning_minbr,
                       FILE * out)
@@ -163,11 +163,11 @@ static void backtrack(rtree_t * node,
     node->event = EVENT_COALESCENT;
 
     fprintf(out, "\nSpecies %d:\n", species_iter);
-    rtree_print_tips(node,out);
+    rnode_print_tips(node,out);
   }
 }
 
-long multi_coalpopedgecount(rtree_t * node)
+long multi_coalpopedgecount(rnode_t * node)
 {
   long edges = 0;
 
@@ -187,7 +187,7 @@ long multi_coalpopedgecount(rtree_t * node)
   return edges;
 
 }
-void multi_getcoalparamscount(rtree_t * node, int index)
+void multi_getcoalparamscount(rnode_t * node, int index)
 {
   dp_vector_t * vec = node->vector;
 
@@ -208,7 +208,7 @@ void multi_getcoalparamscount(rtree_t * node, int index)
   }
 }
 
-void dp_ptp(rtree_t * tree, long method)
+void dp_ptp(rnode_t * tree, long method)
 {
   int i;
   int lrt_pass;
@@ -324,7 +324,7 @@ void dp_ptp(rtree_t * tree, long method)
     species_iter = 1;
     fprintf(stdout, "LRT failed -- null-model is preferred and printed\n");
     fprintf(out,"\nSpecies 1:\n");
-    rtree_print_tips(tree,out);
+    rnode_print_tips(tree,out);
   }
 
   if (!opt_quiet)
@@ -337,7 +337,7 @@ void dp_ptp(rtree_t * tree, long method)
   fclose(out);
 }
 
-void dp_init(rtree_t * tree)
+void dp_init(rnode_t * tree)
 {
   int i;
 
@@ -361,7 +361,7 @@ void dp_init(rtree_t * tree)
                                   tree->edgelen_sum);
 }
 
-void dp_free(rtree_t * tree)
+void dp_free(rnode_t * tree)
 {
   if (tree->left)  dp_free(tree->left);
   if (tree->right) dp_free(tree->right);
@@ -369,7 +369,7 @@ void dp_free(rtree_t * tree)
   if (tree->vector) free(tree->vector);
 }
 
-void dp_set_pernode_spec_edges(rtree_t * node)
+void dp_set_pernode_spec_edges(rnode_t * node)
 {
   if (!node) return;
 

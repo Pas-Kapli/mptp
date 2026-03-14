@@ -115,12 +115,12 @@ static int cb_ascending(const void * a, const void * b)
 
 }
 
-static int cb_allnodes(rtree_t * node)
+static int cb_allnodes(rnode_t * node)
 {
   return 1;
 }
 
-static int cb_short_trees(rtree_t * node)
+static int cb_short_trees(rnode_t * node)
 {
   /* mark tip down but don't include them in the list */
   if (!node->left)
@@ -159,7 +159,7 @@ static int cb_short_trees(rtree_t * node)
 
 }
 
-static void set_encode_sequence(rtree_t * node,
+static void set_encode_sequence(rnode_t * node,
                                 char * sequence,
                                 long seqlen,
                                 const unsigned int * map)
@@ -183,14 +183,14 @@ static void set_encode_sequence(rtree_t * node,
 
 }
 
-static void link_sequences(rtree_t * root, char ** headers, char ** sequence, long seqlen)
+static void link_sequences(rnode_t * root, char ** headers, char ** sequence, long seqlen)
 {
   int i;
 
   /*  obtain an array of pointers to tip names */
-  rtree_t ** tipnodes = (rtree_t  **)xmalloc((size_t)(root->leaves) *
-                                             sizeof(rtree_t *));
-  rtree_query_tipnodes(root, tipnodes);
+  rnode_t ** tipnodes = (rnode_t  **)xmalloc((size_t)(root->leaves) *
+                                             sizeof(rnode_t *));
+  rnode_query_tipnodes(root, tipnodes);
 
   /* create a libc hash table of size tip_count */
   hashtable_t * ht = hashtable_create((unsigned long)(root->leaves));
@@ -229,7 +229,7 @@ static void link_sequences(rtree_t * root, char ** headers, char ** sequence, lo
   hashtable_destroy(ht,free);
 }
 
-static int all_pairwise_dist(rtree_t ** tip_node_list, int tip_list_count, long seqlen)
+static int all_pairwise_dist(rnode_t ** tip_node_list, int tip_list_count, long seqlen)
 {
   int j,k;
 
@@ -241,10 +241,10 @@ static int all_pairwise_dist(rtree_t ** tip_node_list, int tip_list_count, long 
   return 0;
 }
 
-void detect_min_bl(rtree_t * rtree)
+void detect_min_bl(rnode_t * rtree)
 {
-  rtree_t ** inner_node_list;
-  rtree_t ** tip_node_list = NULL;
+  rnode_t ** inner_node_list;
+  rnode_t ** tip_node_list = NULL;
   int inner_list_count = 0;
   int tip_list_count = 0;
   int i,n;
@@ -272,19 +272,19 @@ void detect_min_bl(rtree_t * rtree)
      opt_subtree_short. The largest such subtrees are those that are not
      subtrees of short subtrees.
   */
-  inner_node_list = (rtree_t **)xmalloc((size_t)(rtree->leaves-1) *
-                                        sizeof(rtree_t *));
+  inner_node_list = (rnode_t **)xmalloc((size_t)(rtree->leaves-1) *
+                                        sizeof(rnode_t *));
 
 
   double * branch_lengths = (double *)xmalloc((size_t)(2*rtree->leaves-1) *
                                               sizeof(double));
-  rtree_t ** allnodes_list = (rtree_t **)xmalloc((size_t)(2*rtree->leaves-1) *
-                                                 sizeof(rtree_t *));
+  rnode_t ** allnodes_list = (rnode_t **)xmalloc((size_t)(2*rtree->leaves-1) *
+                                                 sizeof(rnode_t *));
   int allnodes_count;
 
   /* get list of all nodes, extract branch lengths and sort them in ascending 
      order */
-  allnodes_count = rtree_traverse_postorder(rtree, cb_allnodes, allnodes_list);
+  allnodes_count = rnode_traverse_postorder(rtree, cb_allnodes, allnodes_list);
   assert(allnodes_count == 2*rtree->leaves-1);
   for (i = 0; i < allnodes_count; ++i)
     branch_lengths[i] = allnodes_list[i]->length;
@@ -294,8 +294,8 @@ void detect_min_bl(rtree_t * rtree)
 
   printf("Computing all pairwise p-distances ...\n");
 
-  tip_node_list = (rtree_t **)xmalloc((size_t)(rtree->leaves) *
-                                      sizeof(rtree_t *));
+  tip_node_list = (rnode_t **)xmalloc((size_t)(rtree->leaves) *
+                                      sizeof(rnode_t *));
 
 
   int minfound = 0;
@@ -303,14 +303,14 @@ void detect_min_bl(rtree_t * rtree)
   for (n = 1; n < allnodes_count && !minfound; ++n)
   {
     minbr = branch_lengths[n];
-    inner_list_count = rtree_traverse_postorder(rtree,
+    inner_list_count = rnode_traverse_postorder(rtree,
                                                 cb_short_trees,
                                                 inner_node_list);
 
     for (i = 0; i < inner_list_count && !minfound; ++i)
     {
       /* traverse the roots and grab the tips */
-      tip_list_count = rtree_query_tipnodes(inner_node_list[i], tip_node_list);
+      tip_list_count = rnode_query_tipnodes(inner_node_list[i], tip_node_list);
       minfound = all_pairwise_dist(tip_node_list, tip_list_count, seqlen);
       if (minfound) break;
     }

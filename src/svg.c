@@ -89,7 +89,7 @@ static void svg_text(double x, double y, long fontsize, const char * text)
           x,y,fontsize,text);
 }
 
-static void rtree_set_xcoord(rtree_t * node)
+static void rnode_set_xcoord(rnode_t * node)
 {
   /* create the coordinate info of the node's scaled branch length (edge
      towards root) */
@@ -110,11 +110,11 @@ static void rtree_set_xcoord(rtree_t * node)
     return;
 
   /* recursively set coordinates of the other nodes in a pre-order fashion */
-  rtree_set_xcoord(node->left);
-  rtree_set_xcoord(node->right);
+  rnode_set_xcoord(node->left);
+  rnode_set_xcoord(node->right);
 }
 
-static void svg_rtree_plot(rtree_t * node)
+static void svg_rnode_plot(rnode_t * node)
 {
   char * current_color;
   double y;
@@ -123,8 +123,8 @@ static void svg_rtree_plot(rtree_t * node)
   /* traverse tree in post-order */
   if (node->left)
   {
-    svg_rtree_plot(node->left);
-    svg_rtree_plot(node->right);
+    svg_rnode_plot(node->left);
+    svg_rnode_plot(node->right);
   }
 
   /* any node that has a parent, i.e. any node apart from the root */
@@ -271,22 +271,22 @@ static void svg_rtree_plot(rtree_t * node)
   }
 }
 
-static void rtree_scaler_init(rtree_t * root)
+static void rnode_scaler_init(rnode_t * root)
 {
   double len = 0;
   double label_len;
   int i;
 
-  rtree_t ** node_list = (rtree_t **)malloc((size_t)(2 * root->leaves - 1) *
-                                             sizeof(rtree_t *));
+  rnode_t ** node_list = (rnode_t **)malloc((size_t)(2 * root->leaves - 1) *
+                                             sizeof(rnode_t *));
 
-  rtree_query_tipnodes(root, node_list);
+  rnode_query_tipnodes(root, node_list);
 
   /* find longest path to root */
 
   for (i = 0; i < root->leaves; ++i)
   {
-    rtree_t * node = node_list[i];
+    rnode_t * node = node_list[i];
 
     len = 0;
     while(node)
@@ -319,7 +319,7 @@ static void rtree_scaler_init(rtree_t * root)
   free(node_list);
 }
 
-static void svg_rtree_init(rtree_t * root)
+static void svg_rnode_init(rnode_t * root)
 {
   long svg_height;
 
@@ -327,7 +327,7 @@ static void svg_rtree_init(rtree_t * root)
 
   /* initialize pixel scaler (scaler) and compute max tree
      length (max_tree_len) */
-  rtree_scaler_init(root);
+  rnode_scaler_init(root);
 
   svg_height = opt_svg_margintop + legend_spacing + opt_svg_marginbottom +
                opt_svg_tipspace * root->leaves;
@@ -369,15 +369,15 @@ static void svg_rtree_init(rtree_t * root)
           svg_height - opt_svg_margintop - legend_spacing - opt_svg_marginbottom);
   */
 
-  rtree_set_xcoord(root);
+  rnode_set_xcoord(root);
 
-  svg_rtree_plot(root);
+  svg_rnode_plot(root);
 
   fprintf(svg_fp, "</svg>\n");
 }
 
 
-void cmd_svg(rtree_t * root, long seed, const char * ext)
+void cmd_svg(rnode_t * root, long seed, const char * ext)
 {
 
   /* reset tip occurrence */
@@ -398,7 +398,7 @@ void cmd_svg(rtree_t * root, long seed, const char * ext)
 
   svg_fp = open_file_ext(ext, seed);
 
-  svg_rtree_init(root);
+  svg_rnode_init(root);
 
   fclose(svg_fp);
 }

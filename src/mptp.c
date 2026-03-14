@@ -428,108 +428,42 @@ void cmd_help()
 
 static rtree_t * load_tree(void)
 {
-  /* parse tree */
   if (!opt_quiet)
     fprintf(stdout, "Parsing tree file...\n");
 
-  rtree_t * rtree = rtree_parse_newick(opt_treefile);
+  rtree_t * tree = parse_newick(opt_treefile);
+  if (!tree)
+    fatal("Unable to parse tree from file %s", opt_treefile);
 
-  if (!rtree)
-  {
-    unsigned int tip_count;
-    utree_t * utree = utree_parse_newick(opt_treefile, &tip_count);
-    if (!utree)
-      fatal("Tree is neither unrooted nor rooted.");
-
-    if (!opt_quiet)
-    {
-      fprintf(stdout, "Loaded unrooted tree...\n");
-      fprintf(stdout, "Converting to rooted tree...\n");
-    }
-
-    /* if outgroup was not specified, get the node with the longest branch */
-    utree_t * og_root = NULL;
-
-    /* if outgroup was not specified, get the tip with the longest branch */
-    if (!opt_outgroup)
-    {
-      og_root = utree_longest_branchtip(utree, tip_count);
-      assert(og_root);
-      fprintf(stdout,
-              "Selected %s as outgroup based on longest tip-branch criterion\n",
-              og_root->label);
-    }
-    else
-    {
-      /* get LCA of out group */
-      og_root = utree_outgroup_lca(utree, tip_count);
-      if (!og_root)
-      {
-        utree_destroy(utree);
-        fatal("Outgroup must be a single tip or a list of all tips of a subtree");
-      }
-    }
-
-    if (opt_crop)
-    {
-      rtree = utree_crop(og_root);
-    }
-    else
-    {
-      rtree = utree_convert_rtree(og_root);
-    }
-
-    utree_destroy(utree);
-  }
-  else
-  {
-    if (!opt_quiet)
-      fprintf(stdout, "Loaded rooted tree...\n");
-      
-    if (opt_crop)
-    {
-      if (!opt_outgroup)
-        fatal("--outgroup must be specified when using --outgroup_crop.");
-
-      /* get LCA of outgroup */
-      rtree_t * og_root = get_outgroup_lca(rtree);
-
-      /* crop outgroup from tree */
-      rtree = rtree_crop(rtree,og_root);
-      if (!rtree)
-        fatal("Cropping the outgroup leads to less than two tips.");
-    }
-  }
-
-  return rtree;
+  return tree;
 }
 
 void cmd_auto()
 {
-  rtree_t * rtree = load_tree();
+  rtree_t * tree = load_tree();
 
-  detect_min_bl(rtree);
+  detect_min_bl(tree->root);
 
   /* deallocate tree structure */
-  rtree_destroy(rtree);
+  rtree_destroy(tree);
 }
 
 void cmd_ml(void)
 {
-  rtree_t * rtree = load_tree();
+  rtree_t * tree = load_tree();
 
-  dp_init(rtree);
-  dp_set_pernode_spec_edges(rtree);
-  dp_ptp(rtree, opt_method);
-  dp_free(rtree);
+  dp_init(tree->root);
+  dp_set_pernode_spec_edges(tree->root);
+  dp_ptp(tree->root, opt_method);
+  dp_free(tree->root);
 
   if (opt_treeshow)
-    rtree_show_ascii(rtree);
+    rtree_show_ascii(tree);
 
-  cmd_svg(rtree, opt_seed, "svg");
+  cmd_svg(tree->root, opt_seed, "svg");
 
   /* deallocate tree structure */
-  rtree_destroy(rtree);
+  rtree_destroy(tree);
 
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
@@ -546,16 +480,17 @@ void cmd_multirun(void)
   if (opt_mcmc_credible < 0 || opt_mcmc_credible > 1)
     fatal("--opt_mcmc_credible must be a real number between 0 and 1");
 
-  rtree_t * rtree = load_tree();
-
-  multirun(rtree, opt_method);
+  rtree_t * tree = load_tree();
 
   if (opt_treeshow)
-    rtree_show_ascii(rtree);
+    rtree_show_ascii(tree);
+
+  multirun(tree, opt_method);
 
   if (!opt_quiet)
     fprintf(stdout, "Done...\n");
 
+  rtree_destroy(tree);
 }
 
 void getentirecommandline(int argc, char * argv[])
